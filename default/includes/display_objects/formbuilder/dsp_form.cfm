@@ -54,13 +54,18 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cfset dataset		= "" />
 <cfset isMultipart	= false />
 
+<!--- start with fieldsets closed --->
+<cfset request.fieldsetopen = false />
+
 <cfset aFieldOrder = frmForm.fieldorder />
 <cfsavecontent variable="frmFieldContents">
 <cfoutput>
-<ol>
 <cfloop from="1" to="#ArrayLen(aFieldOrder)#" index="iiX">
 	<cfif StructKeyExists(frmFields,aFieldOrder[iiX])>
 		<cfset field = frmFields[aFieldOrder[iiX]] />
+		<cfif iiX eq 1 and field.fieldtype.fieldtype neq "section">
+			<ol>
+		</cfif>
 		<cfif field.fieldtype.isdata eq 1 and len(field.datasetid)>
 			<cfset dataset = fbManager.processDataset( $,frmData[field.datasetid] ) />  
 		</cfif>
@@ -73,14 +78,21 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 			dataset=dataset
 			)#			
 		<cfelseif field.fieldtype.fieldtype neq "section">
-		<li<cfif field.fieldtype.fieldtype eq "radio"> class="mura-form-radio"
-		<cfelseif field.fieldtype.fieldtype eq "checkbox"> class="mura-form-checkbox"
-		</cfif>>
-		#$.dspObject_Include(thefile='/formbuilder/fields/dsp_#field.fieldtype.fieldtype#.cfm',
-			field=field,
-			dataset=dataset
-			)#			
-		</li>
+			<li class="mura-form-#field.fieldtype.fieldtype#">
+			#$.dspObject_Include(thefile='/formbuilder/fields/dsp_#field.fieldtype.fieldtype#.cfm',
+				field=field,
+				dataset=dataset
+				)#			
+			</li>
+		<cfelseif field.fieldtype.fieldtype eq "section">
+			<cfif iiX neq 1>
+				</ol>
+			</cfif>
+			#$.dspObject_Include(thefile='/formbuilder/fields/dsp_#field.fieldtype.fieldtype#.cfm',
+				field=field,
+				dataset=dataset
+				)#
+			<ol>
 		<cfelse>
 		#$.dspObject_Include(thefile='/formbuilder/fields/dsp_#field.fieldtype.fieldtype#.cfm',
 			field=field,
@@ -92,11 +104,12 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<!---<cfthrow message="ERROR 9000: Field Missing: #aFieldOrder[iiX]#">--->
 	</cfif>
 </cfloop>
+<cfif request.fieldsetopen eq true></fieldset><cfset request.fieldsetopen = false /></cfif>
 </ol>
 </cfoutput>
 </cfsavecontent>
 <cfoutput>
-<form <!---id="#frmID#"--->method="post"<cfif isMultipart>enctype="multipart/form-data"</cfif>>
+<form id="#frmID#" method="post"<cfif isMultipart>enctype="multipart/form-data"</cfif>>
 	#frmFieldContents#
 	<div class="buttons"><input type="submit" class="submit" value="Submit"></div>
 	<cfinclude template="../dsp_form_protect.cfm">

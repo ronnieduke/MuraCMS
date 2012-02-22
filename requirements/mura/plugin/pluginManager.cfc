@@ -48,7 +48,8 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 
 <cfset variables.configBean="">
 <cfset variables.settingsManager="">
-<cfset variables.standardEventsHandlers="">
+<cfset variables.standardEventFactories=structNew()>
+<cfset variables.standardEventsHandler="">	
 <cfset variables.cacheFactories=structNew()>
 <cfset variables.siteListeners=structNew()>
 <cfset variables.globalListeners=structNew()>
@@ -66,7 +67,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfset setConfigBean(arguments.configBean)>
 	<cfset setSettingsManager(arguments.settingsManager)>
 	<cfset setUtility(arguments.utility)>
-	<cfset setstandardEventsHandler(arguments.standardEventsHandler)>
+	<cfset setStandardEventsHandler(arguments.standardEventsHandler)>
 	<cfset variables.fileWriter=arguments.fileWriter>
 	
 <cfreturn this />
@@ -147,7 +148,6 @@ and tplugins.deployed=1
 </cfif>
 </cfquery>
 
-
 <cfquery name="variables.rsScripts" dbtype="query">
 select * from rsScripts1
 union
@@ -169,7 +169,7 @@ inner join tcontent on (tplugins.moduleID=tcontent.moduleID)
 </cfif>
 </cfquery>
 
-<cfset purgeEventManagers()/>
+<cfset purgeStandardEventFactories()/>
 <cfset purgeCacheFactories()/>
 <cfset purgePluginConfigs()/>
 </cffunction>
@@ -365,12 +365,16 @@ select * from tplugins order by #arguments.orderby#
 			<cfset deployArgs.moduleID=modID>
 			
 			<cfloop from="1" to="#settingsLen#" index="i">
-				<cfset settingBean=application.pluginManager.getAttributeBean(pluginXML.plugin.settings.setting[i],modID)/>		
+				<cfset settingBean=getAttributeBean(pluginXML.plugin.settings.setting[i],modID)/>		
 				<cfif not len(settingBean.getSettingValue())
-						and not rsPlugin.deployed and structKeyExists(pluginXML.plugin.settings.setting[i],'defaultValue')>
-					<cfset settingBean.setSettingValue(pluginXML.plugin.settings.setting[i].defaultValue.xmlText)>
+						and not rsPlugin.deployed>
+					<cfif structKeyExists(pluginXML.plugin.settings.setting[i],'defaultValue')>
+						<cfset settingBean.setSettingValue(pluginXML.plugin.settings.setting[i].defaultValue.xmlText)>
+					<cfelseif structKeyExists(pluginXML.plugin.settings.setting[i].xmlAttributes,'defaultValue')>
+						<cfset settingBean.setSettingValue(pluginXML.plugin.settings.setting[i].xmlAttributes.defaultValue)>
+					</cfif>
 				</cfif>
-				<cfset deployArgs["#settingBean.getname()#"]=application.contentRenderer.setDynamicContent(settingBean.getSettingValue())>
+				<cfset deployArgs["#settingBean.getname()#"]=getBean('contentRenderer').setDynamicContent(settingBean.getSettingValue())>
 			</cfloop>
 			
 			<cfset updateSettings(deployArgs)>
@@ -787,7 +791,7 @@ select * from tplugins order by #arguments.orderby#
 <cffunction name="getAttributeBean" returntype="any" output="false">
 <cfargument name="theXML">
 <cfargument name="moduleID">
-	<cfset var bean=createObject("component","mura.plugin.pluginSettingBean").init()>
+	<cfset var bean=getBean("pluginSettingBean")>
 	<cfset bean.set(arguments.theXML,arguments.moduleID)/>
 	
 	<cfreturn bean/>
@@ -960,7 +964,11 @@ select * from tplugins order by #arguments.orderby#
 	<cfset deleteAssignedSites(arguments.args.moduleID) />
 	
 	<cfif structKeyExists(arguments.args,"siteAssignID") and len(arguments.args.siteAssignID)>
+
 		<cfloop list="#arguments.args.siteAssignID#" index="i">
+
+			<cfset variables.configBean.getClassExtensionManager().loadConfigXML(pluginXML,i)>
+			
 			<cfquery datasource="#variables.configBean.getDatasource()#" username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
 			insert into tcontent (siteID,moduleID,contentID,contentHistID,parentID,type,subType,title,
 			display,approved,isNav,active,forceSSL,searchExclude) values (
@@ -1621,7 +1629,7 @@ select * from tplugins order by #arguments.orderby#
 	<cfif len(arguments.moduleID)>
 	and moduleID=<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.moduleID#">
 	</cfif>
-	order by pluginID
+	order by loadPriority
 	</cfquery>
 <cfreturn rs/>
 
@@ -1794,26 +1802,26 @@ select * from tplugins order by #arguments.orderby#
 </cffunction>
 
 <cffunction name="getDisplayObjectBean" returntype="any" output="false">
-<cfreturn createObject("component","pluginDisplayObjectBean").init() />
+<cfreturn getBean("pluginDisplayObjectBean") />
 </cffunction>
 
 <cffunction name="getScriptBean" returntype="any" output="false">
-<cfreturn createObject("component","pluginScriptBean").init() />
+<cfreturn getBean("pluginScriptBean") />
 </cffunction>
 
-<cffunction name="purgeEventManagers" returntype="any" output="false">
-<cfset variables.eventManagers=structNew()/>
+<cffunction name="purgeStandardEventFactories" returntype="any" output="false">
+<cfset variables.standardEventFactories=structNew()/>
 </cffunction>
 
-<cffunction name="getEventManager" returntype="any" output="false">
+<cffunction name="getStandardEventFactory" returntype="any" output="false">
 <cfargument name="siteid" required="true" default="">
 
 
-	<cfif not structKeyExists(variables.eventManagers,arguments.siteid)>
-		<cfset variables.eventManagers[arguments.siteid]=createObject("component","pluginStandardEventManager").init(arguments.siteID,variables.standardEventsHandler,this)>
+	<cfif not structKeyExists(variables.standardEventFactories,arguments.siteid)>
+		<cfset variables.standardEventFactories[arguments.siteid]=createObject("component","pluginStandardEventFactory").init(arguments.siteID,variables.standardEventsHandler,this)>
 	</cfif>
 	
-	<cfreturn variables.eventManagers[arguments.siteid]>
+	<cfreturn variables.standardEventFactories[arguments.siteid]>
 </cffunction>
 
 <cffunction name="getCacheFactory" returntype="any" output="false">
@@ -1993,7 +2001,7 @@ select * from rs order by name
 		<cfreturn deployPlugin(siteID=arguments.siteID, pluginFile=arguments.pluginFile)>	
 	</cfif>
 	
-	<cfset errors=getBean("settingsManager").restoreBundle(
+	<cfset errors=application.settingsManager.restoreBundle(
 			BundleFile=arguments.bundleFile,
 			siteID=arguments.siteID,
 			keyMode="publish",

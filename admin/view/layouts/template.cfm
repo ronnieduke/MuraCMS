@@ -151,6 +151,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <script src="#application.configBean.getContext()#/admin/js/prototype.js" type="text/javascript" language="Javascript"></script>
 </cfif>
 <script src="#application.configBean.getContext()#/admin/js/admin.min.js?coreversion=#application.coreversion#" type="text/javascript" language="Javascript"></script>
+
 <cfif application.configBean.getValue("htmlEditorType") eq "fckeditor">
 <script type="text/javascript" src="#application.configBean.getContext()#/wysiwyg/fckeditor.js"></script>
 <cfelse>
@@ -158,6 +159,8 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <script type="text/javascript" src="#application.configBean.getContext()#/tasks/widgets/ckeditor/adapters/jquery.js"></script>
 <script type="text/javascript" src="#application.configBean.getContext()#/tasks/widgets/ckfinder/ckfinder.js"></script>
 </cfif>
+<script type="text/javascript" src="#application.configBean.getContext()#/tasks/widgets/miniColors/jquery.miniColors.min.js?coreversion=#application.coreversion#"></script>
+<link href="#application.configBean.getContext()#/tasks/widgets/miniColors/jquery.miniColors.css?coreversion=#application.coreversion#" rel="stylesheet" type="text/css" />
 <script src="#application.configBean.getContext()#/admin/js/json2.js" type="text/javascript" language="Javascript"></script>
 <script type="text/javascript">
 var htmlEditorType='#application.configBean.getValue("htmlEditorType")#';
@@ -169,7 +172,14 @@ var sessionTimeout=#evaluate("application.configBean.getValue('sessionTimeout') 
 </script>
 #session.dateKey#
 <script type="text/javascript">
-	jQuery(document).ready(function(){setDatePickers(".datepicker",dtLocale);setTabs(".tabs",#attributes.activeTab#);setHTMLEditors();setAccordions(".accordion",#attributes.activePanel#);setCheckboxTrees();});
+	jQuery(document).ready(function(){
+			setDatePickers(".datepicker",dtLocale);
+			setTabs(".tabs",#attributes.activeTab#);
+			setHTMLEditors();
+			setAccordions(".accordion",#attributes.activePanel#);
+			setCheckboxTrees();
+			setColorPickers(".colorpicker");
+		});
 </script>
 #fusebox.ajax#
 <cfif myfusebox.originalcircuit neq "cLogin">
@@ -181,6 +191,7 @@ if (top.location != self.location) {
 
 </cfif>
 <link href="#application.configBean.getContext()#/admin/css/admin.min.css?coreversion=#application.coreversion#" rel="stylesheet" type="text/css" />
+<!---<link href="#application.configBean.getContext()#/admin/css/buttons.css?coreversion=#application.coreversion#" rel="stylesheet" type="text/css" />--->
 <cfif cgi.http_user_agent contains 'msie'>
 <!--[if LTE IE 7]>
 	<link href="#application.configBean.getContext()#/admin/css/ie.min.css?coreversion=#application.coreversion#" rel="stylesheet" type="text/css" />

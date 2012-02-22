@@ -401,6 +401,20 @@ function validateForm(theForm) {
 							 errors += getValidationMessage(theField,' must be numeric.');
 						}					
 					}
+					else if(validationType=='COLOR' && theField.value !='')
+					{	
+						var re = new RegExp("^#?([a-f]|[A-F]|[0-9]){3}(([a-f]|[A-F]|[0-9]){3})?$");
+						if(!theField.value.match(re))
+						{
+							if (!started) {
+							started=true;
+							startAt=f;
+							firstErrorNode="input";
+							}
+						
+							 errors += getValidationMessage(theField,' is not a valid color.');
+						}					
+					}
 					
 					else if(validationType=='REGEX' && theField.value !='' && hasValidationRegex(theField))
 					{	
@@ -758,6 +772,17 @@ function setDatePickers(target,locale,delim){
 			}
 		);
 	}
+}
+
+function setColorPickers(target){	
+	jQuery(target).each(
+		function(index){		
+				jQuery(this).miniColors({
+					letterCase: 'uppercase'
+					}
+				);
+		}
+	);	
 }
 
 function setTabs(target,activetab){

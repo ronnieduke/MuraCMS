@@ -44,30 +44,7 @@ For clarity, if you create a modified version of Mura CMS, you are not obligated
 modified version; it is your choice whether to do so, or to make such modified version available under the GNU General Public License 
 version 2 without this exception.  You may, if you choose, apply this exception to your own modified versions of Mura CMS.
 --->
-<cfcomponent extends="mura.cfobject" output="false">
-
-<cfset variables.instance=structNew()/>
-
-<cffunction name="init" output="false" returnType="any">
-<cfargument name="siteid">
-<cfargument name="standardEventsHandler">
-<cfargument name="pluginManager">	
-
-	<cfset variables.siteid=arguments.siteid>
-	<cfset variables.standardEventsHandler=arguments.standardEventsHandler>
-	<cfset variables.pluginManager=arguments.pluginManager>
-	
-	<cfreturn this>
-</cffunction>
-
-<cffunction name="getFactory" output="false" returnType="any">
-<cfargument name="class">
-
-	<cfif not structKeyExists(variables.instance,arguments.class)>
-		<cfset variables.instance[arguments.class]=createObject("component","pluginStandardEventFactory").init(arguments.class,variables.siteid,variables.standardEventsHandler,variables.pluginManager)>
-	</cfif>
-	
-	<cfreturn variables.instance[arguments.class]>
-</cffunction>
-
-</cfcomponent>
+<cfoutput>
+<script>!window.jQuery.ui && document.write(unescape('%3Cscript src="#$.siteConfig("assetPath")#/jquery/ui/jquery-ui.min.js"%3E%3C/script%3E'))</script>
+<link href="#$.siteConfig('assetPath')#/jquery/ui/jquery-ui.min.css" rel="stylesheet" type="text/css" />
+</cfoutput>

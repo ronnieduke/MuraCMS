@@ -9,24 +9,31 @@
 		_packages		= StructNew();
 		_ordered		= ArrayNew(1);
 		_cacheBust      = true;
+		_includePattern = ".*";
+		_excludePattern = "";
 	</cfscript>
 
 <!--- constructor --->
 	<cffunction name="init" access="public" returntype="org.cfstatic.core.PackageCollection" output="false" hint="I am the constructor">
-		<cfargument name="rootDirectory"	type="string" required="true" />
-		<cfargument name="rootUrl"			type="string" required="true" />
-		<cfargument name="minifiedUrl"		type="string" required="true" />
-		<cfargument name="fileType"			type="string" required="true" />
+		<cfargument name="rootDirectory"	type="string"  required="true" />
+		<cfargument name="rootUrl"			type="string"  required="true" />
+		<cfargument name="minifiedUrl"		type="string"  required="true" />
+		<cfargument name="fileType"			type="string"  required="true" />
 		<cfargument name="cacheBust"        type="boolean" required="true" />
+		<cfargument name="includePattern"   type="string"  required="true" />
+		<cfargument name="excludePattern"   type="string"  required="true" />
 		
 		<cfscript>
-			_setRootDirectory	( arguments.rootDirectory	);
-			_setRootUrl			( arguments.rootUrl		 	);
-			_setMinifiedUrl		( arguments.minifiedUrl	 	);
-			_setFileType		( arguments.fileType		);			
-			_setCacheBust       ( arguments.cacheBust );
-			_loadFromFiles		( );
-			
+			_setRootDirectory ( arguments.rootDirectory  );
+			_setRootUrl       ( arguments.rootUrl        );
+			_setMinifiedUrl   ( arguments.minifiedUrl    );
+			_setFileType      ( arguments.fileType       );
+			_setCacheBust     ( arguments.cacheBust      );
+			_setIncludePattern( arguments.includePattern );
+			_setExcludePattern( arguments.excludePattern );
+
+			_loadFromFiles();
+
 			return this;
 		</cfscript>
 	</cffunction>
@@ -55,9 +62,12 @@
 		<cfargument name="downloadExternals" type="boolean" required="true" hint="Whether or not external dependencies are internalized" />
 		<cfargument name="includePackages" type="array" required="false" default="#ArrayNew(1)#" hint="Only include the packages in this array. If empty, include *all* packages." />
 		<cfargument name="includeFiles" type="array" required="false" default="#ArrayNew(1)#" hint="Only include the files in this array. If empty, include *all* files." />
-		
+		<cfargument name="charset"      type="string" required="false" default="utf-8" />		
+
 		<cfscript>
 			var str			=  CreateObject("java","java.lang.StringBuffer");
+			var included    = false;
+			var include     = "";
 			var minify		= "";
 			var packages	= "";
 			var i			= "";
@@ -81,8 +91,15 @@
 						}
 						
 						// add the package's rendering if it is not filtered out
-						if(not ArrayLen(arguments.includePackages) or arguments.includePackages.contains(JavaCast('string', packages[i]))){
-							str.append( getPackage( packages[i] ).renderIncludes( minification = minify, includeFiles = arguments.includeFiles ) );
+						included = arguments.includePackages.contains(JavaCast('string', packages[i]));
+						if(not ArrayLen(arguments.includePackages) or included){
+							// if the package has been directly included, we do not want to filter on files also
+							if( included ){
+								include = ArrayNew(1);
+							} else {
+								include = arguments.includeFiles;
+							}
+							str.append( getPackage( packages[i] ).renderIncludes( minification = minify, includeFiles = include, charset=arguments.charset ) );
 						}
 					}
 					break;
@@ -94,15 +111,15 @@
 					
 					// if we aren't downloading externals, render the external includes as unminified
 					if(not arguments.downloadExternals and _packageExists('external')){
-						str.append( getPackage('external').renderIncludes(minification='none'));
+						str.append( getPackage('external').renderIncludes( minification='none' ));
 					}
 					
 					// simple single include
 					if(_getFileType() EQ 'css'){
 						media = _getCssMedia();
-						str.append( $renderCssInclude( src, media, ie ) );
+						str.append( $renderCssInclude( src, media, ie, arguments.charset ) );
 					} else {
-						str.append( $renderJsInclude( src, ie ) );
+						str.append( $renderJsInclude( src, ie, arguments.charset ) );
 					}
 					break;
 			}
@@ -165,7 +182,7 @@
 			var i			= 1;
 			
 			for(i=1; i lte files.recordCount; i++){
-				_addStaticFile( ListChangeDelims(files.directory[i], '/', '\') & '/' & files.name[i] );
+				_addStaticFile( $normalizeUnixAndWindowsPaths(files.directory[i] & '/' & files.name[i] ));
 			}
 		</cfscript>
 	</cffunction>
@@ -173,7 +190,7 @@
 	<cffunction name="_addStaticFile" access="private" returntype="void" output="false" hint="I add a static file to the collection">
 		<cfargument name="path" type="string" required="true" />
 		<cfscript>
-			var packageName		= _getPackageNameFromPath( arguments.path );
+			var packageName		= "";
 			var package			= "";
 			var dependencies	= "";
 			var dependencyPath	= "";
@@ -181,49 +198,53 @@
 			var file			= "";
 			var i				= "";
 			
-			// get the package object (create if it doesn't exist already)
-			if( not _packageExists( packageName ) ){
-				_addPackage( packageName );
-			}
-			package = getPackage( packageName );
-			
-			// add the file to the package (if it doesn't exist already)
-			if( not package.staticFileExists( arguments.path ) ){
-				package.addStaticFile( arguments.path );
-				file = package.getStaticFile( arguments.path );
+			if ( $shouldFileBeIncluded( arguments.path, _getIncludePattern(), _getExcludePattern() ) ){
+				packageName = _getPackageNameFromPath( arguments.path );
+
+				// get the package object (create if it doesn't exist already)
+				if( not _packageExists( packageName ) ){
+					_addPackage( packageName );
+				}
+				package = getPackage( packageName );
 				
-				// ensure all dependencies are created as static files (including externals)
-				dependencies 	= file.getProperty( 'depends', ArrayNew(1), 'array' );
-				for(i=1; i LTE ArrayLen(dependencies); i++){
-					// calculate dependency path and package
-					if($isUrl(dependencies[i])){
-						dependencyPath = dependencies[i];
-					} else {
-						dependencyPath = _getRootdirectory() & dependencies[i];
-					}
-					dependencyPath	= Trim( dependencyPath );
+				// add the file to the package (if it doesn't exist already)
+				if( not package.staticFileExists( arguments.path ) ){
+					package.addStaticFile( arguments.path );
+					file = package.getStaticFile( arguments.path );
 					
-					// add .css to .less dependencies
-					if(ListLast(dependencyPath, '.') EQ 'less'){
-						dependencyPath = dependencyPath & '.css';
-					}
-					
-					dependencyPkg	= _getPackageNameFromPath( dependencyPath );
-
-					// add the static file (yes, a call to this method - we want n depth recursion)
-					try {
-						_addStaticFile( dependencyPath );
-					} catch(any e) {
-						// if the thrown error is one of ours, we should rethrow it (bubbling up)
-						if(e.type EQ 'org.cfstatic.missingDependency'){
-							$throw( argumentCollection = e );
+					// ensure all dependencies are created as static files (including externals)
+					dependencies 	= file.getProperty( 'depends', ArrayNew(1), 'array' );
+					for(i=1; i LTE ArrayLen(dependencies); i++){
+						// calculate dependency path and package
+						if($isUrl(dependencies[i])){
+							dependencyPath = dependencies[i];
+						} else {
+							dependencyPath = _getRootdirectory() & dependencies[i];
 						}
-						// otherwise, throw our custom missing dependency error 
-						$throw(type="org.cfstatic.missingDependency", message="CFStatic Error: Could not find local dependency.", detail="The dependency, '#dependencies[i]#', could not be found or downloaded. CFStatic is expecting to find it at #dependencyPath#. The dependency is declared in '#arguments.path#'");
-					}
+						dependencyPath	= Trim( dependencyPath );
+						
+						// add .css to .less dependencies
+						if(ListLast(dependencyPath, '.') EQ 'less'){
+							dependencyPath = dependencyPath & '.css';
+						}
+						
+						dependencyPkg	= _getPackageNameFromPath( dependencyPath );
 
-					// add the static file object as a dependency to the file
-					file.addDependency( getPackage( dependencyPkg ).getStaticFile( dependencyPath ) );
+						// add the static file (yes, a call to this method - we want n depth recursion)
+						try {
+							_addStaticFile( dependencyPath );
+						} catch(any e) {
+							// if the thrown error is one of ours, we should rethrow it (bubbling up)
+							if(e.type EQ 'org.cfstatic.missingDependency'){
+								$throw( argumentCollection = e );
+							}
+							// otherwise, throw our custom missing dependency error 
+							$throw(type="org.cfstatic.missingDependency", message="CFStatic Error: Could not find local dependency.", detail="The dependency, '#dependencies[i]#', could not be found or downloaded. CFStatic is expecting to find it at #dependencyPath#. The dependency is declared in '#arguments.path#'");
+						}
+
+						// add the static file object as a dependency to the file
+						file.addDependency( getPackage( dependencyPkg ).getStaticFile( dependencyPath ) );
+					}
 				}
 			}
 		</cfscript>
@@ -384,6 +405,22 @@
 	<cffunction name="_setCacheBust" access="private" returntype="void" output="false">
 		<cfargument name="cacheBust" type="boolean" required="true" />
 		<cfset _cacheBust = arguments.cacheBust />
+	</cffunction>
+
+	<cffunction name="_getIncludePattern" access="private" returntype="string" output="false">
+		<cfreturn _includePattern>
+	</cffunction>
+	<cffunction name="_setIncludePattern" access="private" returntype="void" output="false">
+		<cfargument name="includePattern" type="string" required="true" />
+		<cfset _includePattern = arguments.includePattern />
+	</cffunction>
+
+	<cffunction name="_getExcludePattern" access="private" returntype="string" output="false">
+		<cfreturn _excludePattern>
+	</cffunction>
+	<cffunction name="_setExcludePattern" access="private" returntype="void" output="false">
+		<cfargument name="excludePattern" type="string" required="true" />
+		<cfset _excludePattern = arguments.excludePattern />
 	</cffunction>
 
 </cfcomponent>

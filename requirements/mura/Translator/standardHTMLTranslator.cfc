@@ -49,9 +49,9 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cffunction name="translate" output="false" returnType="any">
 	<cfargument name="event" required="true">
 	<cfset var page = "" />
-	<cfset var themePath=event.getSite().getThemeAssetPath()  />
-	<cfset var $=event.getValue("MuraScope")>
-	<cfset var mura=event.getValue("MuraScope")>
+	<cfset var themePath=arguments.event.getSite().getThemeAssetPath()  />
+	<cfset var $=arguments.event.getValue("MuraScope")>
+	<cfset var mura=arguments.event.getValue("MuraScope")>
 	<cfset var renderer="">
 	<cfset var siteRenderer=arguments.event.getContentRenderer()>
 	<cfset var themeRenderer=arguments.event.getThemeRenderer()>
@@ -60,9 +60,15 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfset var inheritedObjectsPerm="">
 	<cfset var inheritedObjectsContentID="">
 	
+	
+
 	<cfif session.mura.isLoggedIn and siteRenderer.showEditableObjects>
 		<cfset inheritedObjectsContentID=$.getBean("contentGateway").getContentIDFromContentHistID(contentHistID=$.event('inheritedObjects') )>
-		<cfset inheritedObjectsPerm=$.getBean('permUtility').getNodePerm($.getBean('contentGateway').getCrumblist(inheritedObjectsContentID,$.event('siteID')))>
+		<cfif len(inheritedObjectsContentID)>
+			<cfset inheritedObjectsPerm=$.getBean('permUtility').getNodePerm($.getBean('contentGateway').getCrumblist(inheritedObjectsContentID,$.event('siteID')))>
+		<cfelse>
+			<cfset inheritedObjectsPerm="none">
+		</cfif>
 		<cfset $.event("inheritedObjectsPerm",inheritedObjectsPerm)>
 	</cfif>
 	
@@ -72,23 +78,23 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<cfset renderer=siteRenderer>
 	</cfif>
 	
-	<cfset event.setValue('themePath',themePath)>
+	<cfset arguments.event.setValue('themePath',themePath)>
 	
 	<cfsavecontent variable="page">
 		<cfif fileExists(expandPath("#$.siteConfig('templateIncludePath')#/#renderer.getTemplate()#") )>
-		<cfset tracePoint=initTracePoint("#event.getSite().getTemplateIncludePath()#/#renderer.getTemplate()#")>
-		<cfinclude template="#event.getSite().getTemplateIncludePath()#/#renderer.getTemplate()#">
+		<cfset tracePoint=initTracePoint("#arguments.event.getSite().getTemplateIncludePath()#/#renderer.getTemplate()#")>
+		<cfinclude template="#arguments.event.getSite().getTemplateIncludePath()#/#renderer.getTemplate()#">
 		<cfset commitTracePoint(tracePoint)>
 		<cfelse>
-		<cfset tracePoint=initTracePoint("#event.getSite().getTemplateIncludePath()#/default.cfm")>
-		<cfinclude template="#event.getSite().getTemplateIncludePath()#/default.cfm">
+		<cfset tracePoint=initTracePoint("#arguments.event.getSite().getTemplateIncludePath()#/default.cfm")>
+		<cfinclude template="#arguments.event.getSite().getTemplateIncludePath()#/default.cfm">
 		<cfset commitTracePoint(tracePoint)>
 		</cfif>
 	</cfsavecontent>
 	
 	<cfset page=replaceNoCase(page,"</head>", renderer.renderHTMLQueue("Head") & "</head>")>
 	<cfset page=replaceNoCase(page,"</body>", renderer.renderHTMLQueue("Foot") & "</body>")>
-	<cfset event.setValue('__MuraResponse__',trim(page))>
+	<cfset arguments.event.setValue('__MuraResponse__',trim(page))>
 </cffunction>
 
 </cfcomponent>

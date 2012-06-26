@@ -58,10 +58,6 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cfreturn this />
 </cffunction>
 
-<cffunction name="getBean" access="public" returntype="any">
-	<cfreturn super.getBean("user")>
-</cffunction>
-
 <cffunction name="read" access="public" returntype="any" output="false">
 		<cfargument name="userid" type="string" required="yes" />
 		<cfargument name="userBean" type="any" default=""/>
@@ -121,7 +117,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<cfif rsUser.recordcount gt 1>
 			<cfset utility=getBean("utility")>
 			<cfloop query="rsUser">
-				<cfset bean=getBean("email").set(utility.queryRowToStruct(rsUser,rsUser.currentrow))>
+				<cfset bean=getBean("user").set(utility.queryRowToStruct(rsUser,rsUser.currentrow))>
 				<cfset bean.setIsNew(0)>
 				<cfset rsmembs=readMembershipIDs(bean.getUserId()) />
 				<cfset rsInterests=readInterestGroupIDs(bean.getUserId()) />
@@ -191,7 +187,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<cfif rsUser.recordcount gt 1>
 			<cfset utility=getBean("utility")>
 			<cfloop query="rsUser">
-				<cfset bean=getBean("email").set(utility.queryRowToStruct(rsUser,rsUser.currentrow))>
+				<cfset bean=getBean("user").set(utility.queryRowToStruct(rsUser,rsUser.currentrow))>
 				<cfset bean.setIsNew(0)>
 				<cfset rsmembs=readMembershipIDs(bean.getUserId()) />
 				<cfset rsInterests=readInterestGroupIDs(bean.getUserId()) />
@@ -245,7 +241,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<cfif rsUser.recordcount gt 1>
 			<cfset utility=getBean("utility")>
 			<cfloop query="rsUser">
-				<cfset bean=getBean("email").set(utility.queryRowToStruct(rsUser,rsUser.currentrow))>
+				<cfset bean=getBean("user").set(utility.queryRowToStruct(rsUser,rsUser.currentrow))>
 				<cfset bean.setIsNew(0)>
 				<cfset rsmembs=readMembershipIDs(bean.getUserId()) />
 				<cfset rsInterests=readInterestGroupIDs(bean.getUserId()) />
@@ -562,7 +558,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfset var rs =""/>
 	
 	<cfquery name="rs"  datasource="#variables.configBean.getReadOnlyDatasource()#" username="#variables.configBean.getReadOnlyDbUsername()#" password="#variables.configBean.getReadOnlyDbPassword()#">
-	Select tusers.userID groupID, #variables.fieldList# from tusers 
+	Select tusers.userID AS groupID, #variables.fieldList# from tusers 
 	inner join tusersmemb on tusers.userid=tusersmemb.groupid
 	left join tfiles on tusers.photoFileId=tfiles.fileid
 	where tusersmemb.userid=<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.userID#">
@@ -576,7 +572,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfset var rs =""/>
 	
 	<cfquery name="rs"  datasource="#variables.configBean.getReadOnlyDatasource()#" username="#variables.configBean.getReadOnlyDbUsername()#" password="#variables.configBean.getReadOnlyDbPassword()#">
-	Select tusers.userID groupID from tusers 
+	Select tusers.userID AS groupID from tusers 
 	inner join tusersmemb on tusers.userid=tusersmemb.groupid
 	left join tfiles on tusers.photoFileId=tfiles.fileid
 	where tusersmemb.userid=<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.userID#">
@@ -590,7 +586,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfset var rs =""/>
 	
 	<cfquery name="rs" datasource="#variables.configBean.getReadOnlyDatasource()#" username="#variables.configBean.getReadOnlyDbUsername()#" password="#variables.configBean.getReadOnlyDbPassword()#">
-	Select tusers.userID groupID, #variables.fieldList# from tusers
+	Select tusers.userID AS groupID, #variables.fieldList# from tusers
 	inner join  tusersmemb on tusers.userid=tusersmemb.userid 
 	left join tfiles on tusers.photoFileId=tfiles.fileid
 	where tusersmemb.groupid=<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.userID#">

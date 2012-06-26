@@ -155,8 +155,9 @@ config.resourceType[1].name = 'Files';
 config.resourceType[1].url = config.baseUrl & '/File';
 config.resourceType[1].directory = config.baseDir & '/File';
 config.resourceType[1].maxSize = 0;
-config.resourceType[1].allowedExtensions = '7z,aiff,asf,avi,bmp,csv,doc,docx,fla,flv,gif,gz,gzip,jpeg,jpg,mid,mov,mp3,mp4,mpc,mpeg,mpg,ods,odt,pdf,png,ppt,pptx,pxd,qt,ram,rar,rm,rmi,rmvb,rtf,sdc,sitd,swf,sxc,sxw,tar,tgz,tif,tiff,txt,vsd,wav,wma,wmv,xls,xlsx,zip,m4v';
+config.resourceType[1].allowedExtensions = '7z,aiff,asf,avi,bmp,csv,doc,docx,fla,flv,gif,gz,gzip,ics,jpeg,jpg,mid,mov,mp3,mp4,mpc,mpeg,mpg,ods,odt,pdf,png,ppt,pptx,pxd,qt,ram,rar,rm,rmi,rmvb,rtf,sdc,sitd,swf,sxc,sxw,tar,tgz,tif,tiff,txt,vsd,wav,wma,wmv,xls,xlsx,zip,m4v';
 config.resourceType[1].deniedExtensions = '';
+application.serviceFactory.getBean("fileWriter").touchDir(config.resourceType[1].directory);
 
 config.resourceType[2] = structNew();
 config.resourceType[2].name = 'Images';
@@ -165,6 +166,7 @@ config.resourceType[2].directory = config.baseDir & '/Image';
 config.resourceType[2].maxSize = 0;
 config.resourceType[2].allowedExtensions = 'bmp,gif,jpeg,jpg,png';
 config.resourceType[2].deniedExtensions = '';
+application.serviceFactory.getBean("fileWriter").touchDir(config.resourceType[2].directory);
 
 config.resourceType[3] = structNew();
 config.resourceType[3].name = 'Flash';
@@ -173,6 +175,8 @@ config.resourceType[3].directory = config.baseDir & '/Flash';
 config.resourceType[3].maxSize = 0;
 config.resourceType[3].allowedExtensions = 'swf,flv';
 config.resourceType[3].deniedExtensions = '';
+application.serviceFactory.getBean("fileWriter").touchDir(config.resourceType[3].directory);
+
 
 if (isdefined("url.type")){
 	if(currentUser.getS2() and application.configBean.getValue('fmShowApplicationRoot') neq 0){
@@ -195,10 +199,10 @@ if (isdefined("url.type")){
 	    temp.url =  application.configBean.getAssetPath() & '/' & rsSites.siteID[i] & '/assets';
 	    temp.directory ="#application.configBean.getAssetDir()##application.configBean.getFileDelim()##rsSites.siteID[i]##application.configBean.getFileDelim()#assets";
 	    temp.maxSize = 0;
-	    if(application.configBean.getValue('fmAllowedExtensions') neq ''){
-	      temp.allowedExtensions ='7z,aiff,asf,avi,bmp,csv,doc,docx,fla,flv,gif,gz,gzip,jpeg,jpg,mid,mov,mp3,mp4,mpc,mpeg,mpg,ods,odt,pdf,png,ppt,pptx,pxd,qt,ram,rar,rm,rmi,rmvb,rtf,sdc,sitd,swf,sxc,sxw,tar,tgz,tif,tiff,txt,vsd,wav,wma,wmv,xls,xlsx,zip,m4v';
+	    if(application.configBean.getValue('fmAllowedExtensions') eq ''){
+	      temp.allowedExtensions = '7z,aiff,asf,avi,bmp,csv,doc,docx,fla,flv,gif,gz,gzip,jpeg,jpg,mid,mov,mp3,mp4,mpc,mpeg,mpg,ods,odt,pdf,png,ppt,pptx,pxd,qt,ram,rar,rm,rmi,rmvb,rtf,sdc,sitd,swf,sxc,sxw,tar,tgz,tif,tiff,txt,vsd,wav,wma,wmv,xls,xlsx,zip,m4v';
 	    } else {
-	      temp.allowedExtensions ='';    
+	      temp.allowedExtensions = application.configBean.getValue('fmAllowedExtensions');    
 	    }
 	    temp.deniedExtensions = '';
 	    
@@ -324,3 +328,6 @@ if (APPLICATION.CFVersion gte 8 or StructKeyExists(SERVER,"bluedragon")) {
 <cfif (fileExists(expandPath($.siteConfig("themeIncludePath") & '/js/finder/config.cfm') ) )>
      <cfinclude template="#$.siteConfig('themeIncludePath')#/js/finder/config.cfm">
 </cfif>
+
+<cfset $.event("config",config)>
+<cfset $.announceEvent("onSiteCKFinderConfig")>

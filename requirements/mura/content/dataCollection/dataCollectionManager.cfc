@@ -314,7 +314,9 @@ order by tformresponsepackets.entered asc
 				if(polllist.length > 0) {frm.action='?nocache=1&polllist='+ polllist.toString();}		
 			</cfif>
 		</cfif>
-		frm.action=frm.action + "###frmID#";
+		if( !(typeof(window.jQuery) != 'undefined' && typeof(window.jQuery.mobile) != 'undefined') ){
+			frm.action=frm.action + "###frmID#";
+		}
 </script></cfoutput>
 </cfsavecontent>
 
@@ -334,6 +336,8 @@ order by tformresponsepackets.entered asc
 	and type='Form'
 	and contentid=<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.contentBean.getContentID()#"/>
 	</cfquery>
+
+	<cfset getBean("contentManager").purgeContentCache(contentBean=arguments.contentBean)>
 
 </cffunction>
 </cfcomponent>

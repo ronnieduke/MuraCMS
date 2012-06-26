@@ -199,6 +199,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfargument name="siteID" required="true" default=""> 
 	<cfargument name="use404" required="true" default="false">
 	<cfargument name="contentBean" required="true" default="">
+	<cfargument name="type" required="true" default="">
 
 	<cfif not len(arguments.siteID)>
 		<cfthrow message="A 'SITEID' is required in order to read content. ">
@@ -207,13 +208,13 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfif len(arguments.contenthistid)>
 		<cfreturn getcontentVersion(arguments.contenthistid, arguments.siteid, arguments.use404, arguments.contentBean)>
 	<cfelseif structKeyExists(arguments,"filename")>
-		<cfreturn getActiveContentByFilename(arguments.filename, arguments.siteid, arguments.use404, arguments.contentBean)>
+		<cfreturn getActiveContentByFilename(arguments.filename, arguments.siteid, arguments.use404, arguments.contentBean,arguments.type)>
 	<cfelseif len(arguments.remoteid)>
-		<cfreturn getActiveByRemoteID(arguments.remoteid, arguments.siteid, arguments.use404, arguments.contentBean)>
+		<cfreturn getActiveByRemoteID(arguments.remoteid, arguments.siteid, arguments.use404, arguments.contentBean,arguments.type)>
 	<cfelseif len(arguments.title)>
-		<cfreturn getActiveByTitle(arguments.title, arguments.siteid, arguments.use404, arguments.contentBean)>
+		<cfreturn getActiveByTitle(arguments.title, arguments.siteid, arguments.use404, arguments.contentBean,arguments.type)>
 	<cfelseif len(arguments.urltitle)>
-		<cfreturn getActiveByURLTitle(arguments.urltitle, arguments.siteid, arguments.use404, arguments.contentBean)>
+		<cfreturn getActiveByURLTitle(arguments.urltitle, arguments.siteid, arguments.use404, arguments.contentBean,arguments.type)>
 	<cfelse>	
 		<cfreturn getActiveContent(arguments.contentid, arguments.siteid, arguments.use404, arguments.contentBean)>
 	</cfif>
@@ -235,17 +236,26 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 			<!--- otherwise grab it from the cache --->
 			<cfif NOT cacheFactory.has( key )>
 				<cfset bean=variables.contentDAO.readVersion(arguments.contentHistID,arguments.siteid,arguments.use404,bean) />
-				<cfif not bean.getIsNew()>
+				<cfif not isArray(bean) and not bean.getIsNew()>
 					<cfset cacheFactory.get( key, structCopy(bean.getAllValues()) ) />
 				</cfif>
 				<cfreturn bean/>
 			<cfelse>
-				<cfif not isObject(bean)>
-					<cfset bean=getBean("content")/>
-				</cfif>
-				<cfset bean.setAllValues( structCopy(cacheFactory.get( key )) )>
-				<cfset bean.setValue("extendAutoComplete",false)>
-				<cfreturn bean />
+				<cftry>
+					<cfif not isObject(bean)>
+						<cfset bean=getBean("content")/>
+					</cfif>
+					<cfset bean.setAllValues( structCopy(cacheFactory.get( key )) )>
+					<cfset bean.setValue("extendAutoComplete",false)>
+					<cfreturn bean />
+					<cfcatch>
+						<cfset bean=variables.contentDAO.readVersion(arguments.contentHistID,arguments.siteid,arguments.use404,bean) />
+						<cfif not isArray(bean) and not bean.getIsNew()>
+							<cfset cacheFactory.get( key, structCopy(bean.getAllValues()) ) />
+						</cfif>
+						<cfreturn bean/>
+					</cfcatch>
+				</cftry>
 			</cfif>
 		<cfelse>
 			<cfreturn variables.contentDAO.readVersion(arguments.contentHistID,arguments.siteid,arguments.use404,bean) />
@@ -257,6 +267,8 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<cfargument name="siteID" type="string" required="yes" />
 		<cfargument name="use404" type="boolean" required="yes" default="false"/>
 		<cfargument name="contentBean" required="true" default="">
+		<cfargument name="type" required="yes" default=""/>
+
 		<cfset var key="" />
 		<cfset var site=variables.settingsManager.getSite(arguments.siteid)/>
 		<cfset var cacheFactory=site.getCacheFactory(name="data")>
@@ -282,27 +294,36 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 			</cfif>
 		</cfif>
 		
-		<cfset key="filename" & arguments.siteid & arguments.filename />
+		<cfset key="filename" & arguments.siteid & arguments.filename  & arguments.type/>
 		
 		<cfif site.getCache() and not request.muraChangesetPreview>
 			<!--- check to see if it is cached. if not then pass in the context --->
 			<!--- otherwise grab it from the cache --->
 			<cfif NOT cacheFactory.has( key )>
-				<cfset bean=variables.contentDAO.readActiveByFilename(arguments.filename,arguments.siteid,arguments.use404,bean) />
+				<cfset bean=variables.contentDAO.readActiveByFilename(arguments.filename,arguments.siteid,arguments.use404,bean,arguments.type) />
 				<cfif not isArray(bean) and not bean.getIsNew()>
 					<cfset cacheFactory.get( key, structCopy(bean.getAllValues()) ) />
 				</cfif>
 				<cfreturn bean/>
 			<cfelse>
-				<cfif not isObject(bean)>
-					<cfset bean=getBean("content")/>
-				</cfif>
-				<cfset bean.setAllValues( structCopy(cacheFactory.get( key )) )>
-				<cfset bean.setValue("extendAutoComplete",false)>
-				<cfreturn bean />
+				<cftry>
+					<cfif not isObject(bean)>
+						<cfset bean=getBean("content")/>
+					</cfif>
+					<cfset bean.setAllValues( structCopy(cacheFactory.get( key )) )>
+					<cfset bean.setValue("extendAutoComplete",false)>
+					<cfreturn bean />
+					<cfcatch>
+						<cfset bean=variables.contentDAO.readActiveByFilename(arguments.filename,arguments.siteid,arguments.use404,bean,arguments.type) />
+						<cfif not isArray(bean) and not bean.getIsNew()>
+							<cfset cacheFactory.get( key, structCopy(bean.getAllValues()) ) />
+						</cfif>
+						<cfreturn bean/>
+					</cfcatch>
+				</cftry>
 			</cfif>
 		<cfelse>
-			<cfreturn variables.contentDAO.readActiveByFilename(arguments.filename,arguments.siteid,arguments.use404,bean)/>
+			<cfreturn variables.contentDAO.readActiveByFilename(arguments.filename,arguments.siteid,arguments.use404,bean,arguments.type)/>
 		</cfif>
 	
 	</cffunction>
@@ -312,7 +333,8 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<cfargument name="siteID" type="string" required="yes" />
 		<cfargument name="use404" type="boolean" required="yes" default="false"/>
 		<cfargument name="contentBean" required="true" default="">
-		<cfset var key="remoteID" & arguments.siteid & arguments.remoteID />
+		<cfargument name="type" required="yes" default=""/>
+		<cfset var key="remoteID" & arguments.siteid & arguments.remoteID  & arguments.type/>
 		<cfset var site=variables.settingsManager.getSite(arguments.siteid)/>
 		<cfset var cacheFactory=site.getCacheFactory(name="data")/>
 		<cfset var bean=arguments.contentBean/>
@@ -321,21 +343,30 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 			<!--- check to see if it is cached. if not then pass in the context --->
 			<!--- otherwise grab it from the cache --->
 			<cfif NOT cacheFactory.has( key )>
-				<cfset bean=variables.contentDAO.readActiveByRemoteID(arguments.remoteID,arguments.siteid,arguments.use404,bean)  />
+				<cfset bean=variables.contentDAO.readActiveByRemoteID(arguments.remoteID,arguments.siteid,arguments.use404,bean,arguments.type)  />
 				<cfif not isArray(bean) and not bean.getIsNew()>
 					<cfset cacheFactory.get( key, structCopy(bean.getAllValues()) ) />
 				</cfif>
 				<cfreturn bean/>
 			<cfelse>
-				<cfif not isObject(bean)>
-					<cfset bean=getBean("content")/>
-				</cfif>
-				<cfset bean.setAllValues( structCopy(cacheFactory.get( key )) )>
-				<cfset bean.setValue("extendAutoComplete",false)>
-				<cfreturn bean />
+				<cftry>
+					<cfif not isObject(bean)>
+						<cfset bean=getBean("content")/>
+					</cfif>
+					<cfset bean.setAllValues( structCopy(cacheFactory.get( key )) )>
+					<cfset bean.setValue("extendAutoComplete",false)>
+					<cfreturn bean />
+					<cfcatch>
+						<cfset bean=variables.contentDAO.readActiveByRemoteID(arguments.remoteID,arguments.siteid,arguments.use404,bean,arguments.type)  />
+						<cfif not isArray(bean) and not bean.getIsNew()>
+							<cfset cacheFactory.get( key, structCopy(bean.getAllValues()) ) />
+						</cfif>
+						<cfreturn bean/>
+					</cfcatch>
+				</cftry>
 			</cfif>
 		<cfelse>
-			<cfreturn variables.contentDAO.readActiveByRemoteID(arguments.remoteID,arguments.siteid,arguments.use404,bean)/>
+			<cfreturn variables.contentDAO.readActiveByRemoteID(arguments.remoteID,arguments.siteid,arguments.use404,bean,arguments.type)/>
 		</cfif>
 		
 	</cffunction>
@@ -343,31 +374,43 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cffunction name="getActiveByTitle" access="public" returntype="any" output="false">
 		<cfargument name="title" type="string" required="yes" />
 		<cfargument name="siteID" type="string" required="yes" />
+		<cfargument name="use404" type="boolean" required="yes" default="false"/>
 		<cfargument name="contentBean" required="true" default="">
-		<cfset var key="title" & arguments.siteid & arguments.title />
+		<cfargument name="type" required="yes" default=""/>
+		<cfset var key="title" & arguments.siteid & arguments.title  & arguments.type/>
 		<cfset var site=variables.settingsManager.getSite(arguments.siteid)/>
 		<cfset var cacheFactory=site.getCacheFactory(name="data")/>
 		<cfset var bean=arguments.contentBean/>
 		
-		<cfif site.getCache() and not request.muraChangesetPreview>
+		
+ 		<cfif site.getCache() and not request.muraChangesetPreview>
 			<!--- check to see if it is cached. if not then pass in the context --->
 			<!--- otherwise grab it from the cache --->
 			<cfif NOT cacheFactory.has( key )>
-				<cfset bean=variables.contentDAO.readActiveByTitle(arguments.title,arguments.siteid,bean)  />
+				<cfset bean=variables.contentDAO.readActiveByTitle(arguments.title,arguments.siteid,arguments.use404,bean,arguments.type)  />
 				<cfif not isArray(bean) and not bean.getIsNew()>
 					<cfset cacheFactory.get( key, structCopy(bean.getAllValues()) ) />
 				</cfif>
 				<cfreturn bean/>
 			<cfelse>
-				<cfif not isObject(bean)>
-					<cfset bean=getBean("content")/>
-				</cfif>
-				<cfset bean.setAllValues( structCopy(cacheFactory.get( key )) )>
-				<cfset bean.setValue("extendAutoComplete",false)>
-				<cfreturn bean />
+				<cftry>
+					<cfif not isObject(bean)>
+						<cfset bean=getBean("content")/>
+					</cfif>
+					<cfset bean.setAllValues( structCopy(cacheFactory.get( key )) )>
+					<cfset bean.setValue("extendAutoComplete",false)>
+					<cfreturn bean />
+					<cfcatch>
+						<cfset bean=variables.contentDAO.readActiveByTitle(arguments.title,arguments.siteid,arguments.use404,bean,arguments.type)  />
+						<cfif not isArray(bean) and not bean.getIsNew()>
+							<cfset cacheFactory.get( key, structCopy(bean.getAllValues()) ) />
+						</cfif>
+						<cfreturn bean/>
+					</cfcatch>
+				</cftry>
 			</cfif>
 		<cfelse>
-			<cfreturn variables.contentDAO.readActiveByTitle(arguments.title,arguments.siteid,bean)/>
+			<cfreturn variables.contentDAO.readActiveByTitle(arguments.title,arguments.siteid,arguments.use404,bean,arguments.type)/>
 		</cfif>
 		
 	</cffunction>
@@ -375,8 +418,10 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cffunction name="getActiveByURLTitle" access="public" returntype="any" output="false">
 		<cfargument name="URLTitle" type="string" required="yes" />
 		<cfargument name="siteID" type="string" required="yes" />
+		<cfargument name="use404" type="boolean" required="yes" default="false"/>
 		<cfargument name="contentBean" required="true" default="">
-		<cfset var key="urltitle" & arguments.siteid & arguments.urltitle />
+		<cfargument name="type" required="yes" default=""/>
+		<cfset var key="urltitle" & arguments.siteid & arguments.urltitle  & arguments.type/>
 		<cfset var site=variables.settingsManager.getSite(arguments.siteid)/>
 		<cfset var cacheFactory=site.getCacheFactory(name="data")/>
 		<cfset var bean=arguments.contentBean/>
@@ -385,21 +430,30 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 			<!--- check to see if it is cached. if not then pass in the context --->
 			<!--- otherwise grab it from the cache --->
 			<cfif NOT cacheFactory.has( key )>
-				<cfset bean=variables.contentDAO.readActiveByURLTitle(arguments.URLTitle,arguments.siteid,bean)  />
+				<cfset bean=variables.contentDAO.readActiveByURLTitle(arguments.URLTitle,arguments.siteid,arguments.use404,bean,arguments.type)  />
 				<cfif not isArray(bean) and not bean.getIsNew()>
 					<cfset cacheFactory.get( key, structCopy(bean.getAllValues()) ) />
 				</cfif>
 				<cfreturn bean/>
 			<cfelse>
-				<cfif not isObject(bean)>
-					<cfset bean=getBean("content")/>
-				</cfif>
-				<cfset bean.setAllValues( structCopy(cacheFactory.get( key )) )>
-				<cfset bean.setValue("extendAutoComplete",false)>
-				<cfreturn bean />
+				<cftry>
+					<cfif not isObject(bean)>
+						<cfset bean=getBean("content")/>
+					</cfif>
+					<cfset bean.setAllValues( structCopy(cacheFactory.get( key )) )>
+					<cfset bean.setValue("extendAutoComplete",false)>
+					<cfreturn bean />
+					<cfcatch>
+						<cfset bean=variables.contentDAO.readActiveByURLTitle(arguments.URLTitle,arguments.siteid,arguments.use404,bean,arguments.type)  />
+						<cfif not isArray(bean) and not bean.getIsNew()>
+							<cfset cacheFactory.get( key, structCopy(bean.getAllValues()) ) />
+						</cfif>
+						<cfreturn bean/>
+					</cfcatch>
+				</cftry>
 			</cfif>
 		<cfelse>
-			<cfreturn variables.contentDAO.readActiveByURLTitle(arguments.URLTitle,arguments.siteid,bean)/>
+			<cfreturn variables.contentDAO.readActiveByURLTitle(arguments.URLTitle,arguments.siteid,arguments.use404,bean,arguments.type)/>
 		</cfif>
 		
 	</cffunction>
@@ -409,7 +463,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<cfargument name="siteID" type="string" required="yes" />
 		<cfargument name="use404" type="boolean" required="yes" default="false"/>
 		<cfargument name="contentBean" required="true" default="">
-		<cfset var key="contentID" & arguments.siteid & arguments.contentID />
+		<cfset var key="contentID" & arguments.siteid & arguments.contentID/>
 		<cfset var site=variables.settingsManager.getSite(arguments.siteid)/>
 		<cfset var cacheFactory=site.getCacheFactory(name="data")/>
 		<cfset var bean=arguments.contentBean/>
@@ -419,17 +473,26 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 			<!--- otherwise grab it from the cache --->
 			<cfif NOT cacheFactory.has( key )>
 				<cfset bean=variables.contentDAO.readActive(arguments.contentID,arguments.siteid,arguments.use404,bean)  />
-				<cfif not bean.getIsNew()>
+				<cfif not isArray(bean) and not bean.getIsNew()>
 					<cfset cacheFactory.get( key, structCopy(bean.getAllValues()) ) />
 				</cfif>
 				<cfreturn bean/>
 			<cfelse>
-				<cfif not isObject(bean)>
-					<cfset bean=getBean("content")/>
-				</cfif>
-				<cfset bean.setAllValues( structCopy(cacheFactory.get( key )) )>
-				<cfset bean.setValue("extendAutoComplete",false)>
-				<cfreturn bean />
+				<cftry>
+					<cfif not isObject(bean)>
+						<cfset bean=getBean("content")/>
+					</cfif>
+					<cfset bean.setAllValues( structCopy(cacheFactory.get( key )) )>
+					<cfset bean.setValue("extendAutoComplete",false)>
+					<cfreturn bean />
+					<cfcatch>
+						<cfset bean=variables.contentDAO.readActive(arguments.contentID,arguments.siteid,arguments.use404,bean)  />
+						<cfif not isArray(bean) and not bean.getIsNew()>
+							<cfset cacheFactory.get( key, structCopy(bean.getAllValues()) ) />
+						</cfif>
+						<cfreturn bean/>
+					</cfcatch>
+				</cftry>
 			</cfif>
 		<cfelse>
 			<cfreturn variables.contentDAO.readActive(arguments.contentID,arguments.siteid,arguments.use404,bean) />
@@ -726,7 +789,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 				<cfset arguments.data=newBean.getAllValues()>
 
 				<cflock type="exclusive" name="editingContent#arguments.data.siteid##application.instanceID#" timeout="600">
-				<cftransaction isolation="read_uncommitted">
+				<cftransaction>
 				
 				<!--- BEGIN CONTENT TYPE: ALL EXTENDABLE CONTENT TYPES --->
 				<cfif  listFindNoCase(this.ExtendableList,newBean.getType())>
@@ -957,36 +1020,31 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 					<!--- Get version attached to pending changesets--->
 					<cfloop query="rsPendingChangesets">
 						<cfif len(rsPendingChangesets.fileID)>
-							<cfset preserveFileList=listAppend(preserveFileList,rsPendingChangesets.fileID,"^")/>
+							<cfset preserveFileList=listAppend(preserveFileList,rsPendingChangesets.fileID)/>
 						</cfif>
 					</cfloop>
 							
 					<!--- Get archived versions--->
 					<cfloop query="rsArchive">
 						<cfif len(rsPendingChangesets.fileID)>
-							<cfset preserveFileList=listAppend(preserveFileList,rsArchive.fileID,"^")/>
+							<cfset preserveFileList=listAppend(preserveFileList,rsArchive.fileID)/>
 						</cfif>
 					</cfloop>
 							
 					<!--- Get archived versions--->
 					<cfloop query="rsDrafts">
 						<cfif len(rsDrafts.fileID)>
-							<cfset deleteFileList=listAppend(deleteFileList,rsDrafts.fileID,"^")/>
+							<cfset deleteFileList=listAppend(deleteFileList,rsDrafts.fileID)/>
 						</cfif>
 					</cfloop>
 							
 					<!--- delete files in rsDafts that are not in the preserveFileList or attached to the newBean --->	
 					<cfloop list="#draftList#" index="d">
-						<cfif newBean.getFileID() neq d and not listFind(preserveFileList,d,"^") and not listFind(deleteFileList,d,"^")>
-							<cftry>
-							<cflock name="#d#" type="exclusive" timeout="500">
-							<cfset variables.fileManager.deleteVersion(d) />
-							</cflock>
-							<cfcatch></cfcatch>
-							</cftry>
-							<cfset deletedList=listAppend(deleteFileList,d,"^")/>
+						<cfif newBean.getFileID() neq d and not listFind(preserveFileList,d) and not listFind(deleteFileList,d)>
+							<cfset deletedList=listAppend(deleteFileList,d)/>
 						</cfif>	
 					</cfloop>	
+					<cfset variables.fileManager.deleteIfNotUsed(deletedList,valueList(rsDrafts.contentHistID))>
 				</cfif>
 				
 				<!---</cfif>--->
@@ -1235,6 +1293,8 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<cfset var pluginEvent = createObject("component","mura.event").init(arguments.data) />
 		<cfset var historyIterator=getBean("contentIterator")>
 		<cfset var rsPendingChangesets=""/>
+		<cfset var deleteFileList="">
+		<cfset var deleteIDList="">
 		
 		<cfset pluginEvent.setValue("contentBean",currentBean)/>
 		<cfset rsHist=getHist(arguments.data.contentid,arguments.data.siteid)/>
@@ -1258,18 +1318,22 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		
 		<cfloop query="rsPendingChangesets">
 			<cfif len(rsPendingChangesets.fileID)>
-				<cfset fileList=listAppend(fileList,rsPendingChangesets.FileID,"^")/>
+				<cfset fileList=listAppend(fileList,rsPendingChangesets.FileID)/>
 			</cfif>
 		</cfloop>
 		
 		<cfloop query="rsHist">
 			<cfif not (rshist.active eq 1 or (rshist.approved eq 0 and len(rshist.changesetID))) and len(rshist.FileID)>
-					<cfif not listFind(fileList,rshist.FileID,"^")>
-						<cfset variables.fileManager.deleteVersion(rshist.FileID,false) />
-						<cfset fileList=listAppend(fileList,rshist.FileID,"^")/>
-					</cfif>		
+				<cfif not listFind(fileList,rshist.FileID)>
+					<cfset variables.fileManager.deleteVersion(rshist.FileID,false) />
+					<cfset fileList=listAppend(fileList,rshist.FileID)/>
+					<cfset deleteFileList=listAppend(deleteFileList,rshist.FileID)/>
+					<cfset deleteIDList=listAppend(deleteIDList,rshist.contentHistID)/>
+				</cfif>		
 			</cfif>			
 		</cfloop>
+
+		<cfset variables.filemanager.deleteIfNotUsed(deleteFileList,deleteIDList)>
 		
 		<cfif NOT currentBean.getIsNew()>
 			<cfset purgeContentCache(contentBean=currentBean)>
@@ -1381,7 +1445,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		
 		<cfset var rs=""/>
 
-		<cfset rs=variables.contentGateway.getPrivateSearch(arguments.siteid,arguments.keywords,arguments.tag,arguments.sectionID, arguments.searchType) />
+		<cfset rs=variables.contentGateway.getPrivateSearch(argumentCollection=arguments) />
 		
 		<cfreturn rs/>
 		
@@ -1394,7 +1458,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<cfargument name="sectionID" required="true" default=""/>
 		<cfargument name="searchType" type="string" required="true" default="default" hint="Can be default or image">
 		
-		<cfset var rs=getPrivateSearch(arguments.siteid,arguments.keywords,arguments.tag,arguments.sectionID, arguments.searchType) />
+		<cfset var rs=getPrivateSearch(argumentCollection=arguments) />
 		<cfset var it = getBean("contentIterator")>
 		<cfset it.setQuery(rs)>
 		<cfreturn it/>	
@@ -1410,7 +1474,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		
 		<cfset var rs=""/>
 
-		<cfset rs=variables.contentGateway.getPublicSearch(arguments.siteid,arguments.keywords,arguments.tag,arguments.sectionID,arguments.categoryID) />
+		<cfset rs=variables.contentGateway.getPublicSearch(argumentCollection=arguments) />
 		
 		<cfreturn rs/>
 		
@@ -1423,7 +1487,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<cfargument name="sectionID" required="true" default=""/>
 		<cfargument name="categoryID" required="true" default=""/>
 		
-		<cfset var rs=getPublicSearch(arguments.siteid,arguments.keywords,arguments.tag,arguments.sectionID,arguments.categoryID) />
+		<cfset var rs=getPublicSearch(argumentCollection=arguments) />
 		<cfset var it = getBean("contentIterator")>
 		<cfset it.setQuery(rs)>
 		<cfreturn it/>	
@@ -1437,19 +1501,24 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		
 		<cfreturn rs />
 	</cffunction>
-	
-	<cffunction name="exportHtmlSite">
-		<cfargument name="siteid" type="string" required="true" default="default" />
 
-		<cfset traverseSite('00000000000000000000000000000000END', arguments.siteid, variables.settingsManager.getSite(arguments.siteid).getExportLocation()) />
-		<cfset variables.utility.copyDir("#variables.configBean.getWebRoot()#\#arguments.siteid#\client_images\", "#variables.configBean.getWebRoot()#\#variables.settingsManager.getSite(arguments.siteid).getExportLocation()#\client_images\") />
-		<cfset variables.utility.copyDir("#variables.configBean.getWebRoot()#\#arguments.siteid#\css\", "#variables.configBean.getWebRoot()#\#variables.settingsManager.getSite(arguments.siteid).getExportLocation()#\css\") />
-		<cfset variables.utility.copyDir("#variables.configBean.getWebRoot()#\#arguments.siteid#\flash\", "#variables.configBean.getWebRoot()#\#variables.settingsManager.getSite(arguments.siteid).getExportLocation()#\flash\") />
-		<cfset variables.utility.copyDir("#variables.configBean.getWebRoot()#\#arguments.siteid#\images\", "#variables.configBean.getWebRoot()#\#variables.settingsManager.getSite(arguments.siteid).getExportLocation()#\images\") />
-		<cfset variables.utility.copyDir("#variables.configBean.getWebRoot()#\#arguments.siteid#\js\", "#variables.configBean.getWebRoot()#\#variables.settingsManager.getSite(arguments.siteid).getExportLocation()#\js\") />
+	<cffunction name="getCategoriesByParentID" returntype="query" access="public" output="false">
+		<cfargument name="siteID" type="string" required="true" />
+		<cfargument name="parentID" type="string" required="true" />
+		<cfset var rs = ''>
+		<cfset rs = variables.contentGateway.getKidsCategorySummary(arguments.siteID,arguments.parentID)>
+		<cfreturn rs />
+	</cffunction>
+	
+	<cffunction name="exportHtmlSite" output="false">
+		<cfargument name="siteid" type="string" required="true" default="default" />
+		<cfargument name="exportDir" default="">
+
+		<cfset variables.settingsManager.getSite(arguments.siteID).exportHTML(arguments.exportDir)>
 	
 	</cffunction>
 	
+	<!---
 	<cffunction name="traverseSite">
 		<cfargument name="contentid" type="string" required="true" />
 		<cfargument name="siteid" type="string" required="true" default="default" />
@@ -1504,6 +1573,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		</cfloop>
 	
 	</cffunction>
+	--->
 	
 	<cffunction name="getRelatedContent" returntype="query" access="public" output="false">
 		<cfargument name="siteID"  type="string" />
@@ -1658,8 +1728,10 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 			<cfset var commentBean=getCommentBean() />
 			<cfset commentBean.setCommentID(arguments.commentid) />
 			<cfset commentBean.load() />
-			<cfset commentBean.setIsApproved(1) />
-			<cfset commentBean.save(arguments.contentRenderer,arguments.script,arguments.subject) />
+			<cfif not commentBean.getIsNew()>
+				<cfset commentBean.setIsApproved(1) />
+				<cfset commentBean.save(arguments.contentRenderer,arguments.script,arguments.subject) />
+			</cfif>
 			<cfreturn commentBean />
 	</cffunction>
 	
@@ -1857,36 +1929,55 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<cfreturn data />
 	</cffunction>
 	
+	<cffunction name="purgeContentCacheKey" output="false">
+	<cfargument name="cache">
+	<cfargument name="key">
+	<cfargument name="purgeTypes" default="true">
+		<cfset var i="">
+		
+		<cfset arguments.cache.purge(arguments.key)>
+
+		<cfif arguments.purgeTypes>
+			<!--- Purge any keys specifically assigned to a content type --->
+			<cfloop list="Page,Portal,File,Calendar,Link,Gallery,Component,Form" index="i">
+				<cfset arguments.cache.purge(arguments.key & i)>
+			</cfloop>
+		</cfif>
+
+	</cffunction>
+
 	<cffunction name="purgeContentCache" output="false">
 	<cfargument name="contentID">
 	<cfargument name="siteID">
 	<cfargument name="contentBean">
 	<cfargument name="broadcast" default="true">
-	<cfset var cache="">
 	<cfset var history="">
 	<cfset var version="">
+	<cfset var cache=variables.settingsManager.getSite(arguments.contentBean.getSiteID()).getCacheFactory(name="data")>	
 	
 	<cfif not isDefined("arguments.contentBean")>
 		<cfset arguments.contentBean=read(contentID=arguments.contentID,siteID=arguments.siteID)>
 	</cfif>
 	
-	<cfif NOT arguments.contentBean.getIsNew()>
-		<cfset cache=variables.settingsManager.getSite(arguments.contentBean.getSiteID()).getCacheFactory(name="data")>
+	<cfif NOT arguments.contentBean.getIsNew()>	
+		<cfset purgeContentCacheKey(cache, "contentID" & arguments.contentBean.getSiteID() & arguments.contentBean.getContentID(),false)>
 		
-		<cfset cache.purge("contentID" & arguments.contentBean.getSiteID() & arguments.contentBean.getContentID())>
 		<cfif len(arguments.contentBean.getRemoteID())>
-			<cfset cache.purge("remoteID" & arguments.contentBean.getSiteID() & arguments.contentBean.getRemoteID())>
+			<cfset purgeContentCacheKey(cache,"remoteID" & arguments.contentBean.getSiteID() & arguments.contentBean.getRemoteID())>
 		</cfif>
+
 		<cfif len(arguments.contentBean.getFilename()) or arguments.contentBean.getContentID() eq "00000000000000000000000000000000001">
-			<cfset cache.purge("filename" & arguments.contentBean.getSiteID() & arguments.contentBean.getFilename())>	
+			<cfset purgeContentCacheKey(cache,"filename" & arguments.contentBean.getSiteID() & arguments.contentBean.getFilename())>	
 		</cfif>
-		<cfset cache.purge("title" & arguments.contentBean.getSiteID() & arguments.contentBean.getTitle())>
-		<cfset cache.purge("urltitle" & arguments.contentBean.getSiteID() & arguments.contentBean.getURLTitle())>
+
+		<cfset purgeContentCacheKey(cache,"title" & arguments.contentBean.getSiteID() & arguments.contentBean.getTitle())>
+		<cfset purgeContentCacheKey(cache,"urltitle" & arguments.contentBean.getSiteID() & arguments.contentBean.getURLTitle())>
 		
 		<cfset history=arguments.contentBean.getVersionHistoryIterator()>
+		
 		<cfloop condition="history.hasNext()">
 			<cfset version=history.next()>
-			<cfset cache.purge("version" & arguments.contentBean.getSiteID() & arguments.contentBean.getContentHistID())>
+			<cfset purgeContentCacheKey(cache,"version" & arguments.contentBean.getSiteID() & arguments.contentBean.getContentHistID(),false)>
 		</cfloop>
 		
 		<cfif arguments.broadcast>

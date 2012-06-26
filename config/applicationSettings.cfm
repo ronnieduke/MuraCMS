@@ -81,14 +81,16 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfparam name="request.muraShowTrace" default="false"/>
 	<cfparam name="request.muraValidateDomain" default="true"/>
 	
-	<cfset baseDir= left(this.configPath,len(this.configPath)-8) /><cfif not fileExists(baseDir & "/config/settings.ini.cfm")>
+	<cfset variables.baseDir= left(this.configPath,len(this.configPath)-8) /><cfif not fileExists(variables.baseDir & "/config/settings.ini.cfm")>
 		<cftry>
-		<cffile action="copy" source="#baseDir#/config/templates/settings.template.cfm" destination="#baseDir#/config/settings.ini.cfm" mode="777">
+		<cffile action="copy" source="#variables.baseDir#/config/templates/settings.template.cfm" destination="#variables.baseDir#/config/settings.ini.cfm" mode="777">
 		<cfcatch>
-			<cffile action="copy" source="#baseDir#/config/templates/settings.template.cfm" destination="#baseDir#/config/settings.ini.cfm">
+			<cffile action="copy" source="#variables.baseDir#/config/templates/settings.template.cfm" destination="#variables.baseDir#/config/settings.ini.cfm">
 		</cfcatch>
 		</cftry>
 	</cfif>
+
+	<cfset this.baseDir=variables.baseDir>
 	
 	<cfset properties = createObject( 'java', 'java.util.Properties' ).init()>
 	<cfset fileStream = createObject( 'java', 'java.io.FileInputStream').init( getDirectoryFromPath(getCurrentTemplatePath()) & "/settings.ini.cfm")>
@@ -97,16 +99,18 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 
 	<!--- define custom coldfusion mappings. Keys are mapping names, values are full paths  --->
 	<cfif StructKeyExists(SERVER,"bluedragon") and not findNoCase("Windows",server.os.name)>
-		<cfset mapPrefix="$" />
+		<cfset variables.mapPrefix="$" />
 	<cfelse>
-		<cfset mapPrefix="" />
+		<cfset variables.mapPrefix="" />
 	</cfif>
+
+	<cfset this.mapPrefix=variables.mapPrefix>
 	
 	<cfset this.mappings = structNew()>
-	<cfset this.mappings["/plugins"] = mapPrefix & baseDir & "/plugins">
-	<cfset this.mappings["/muraWRM"] = mapPrefix & baseDir>
-	<cfset this.mappings["/savaWRM"] = mapPrefix & baseDir>
-	<cfset this.mappings["/config"] = mapPrefix & baseDir & "/config">
+	<cfset this.mappings["/plugins"] = variables.mapPrefix & variables.baseDir & "/plugins">
+	<cfset this.mappings["/muraWRM"] = variables.mapPrefix & variables.baseDir>
+	<cfset this.mappings["/savaWRM"] = variables.mapPrefix & variables.baseDir>
+	<cfset this.mappings["/config"] = variables.mapPrefix & variables.baseDir & "/config">
 	
 	<cftry>
 		<cfinclude template="#properties.getProperty("context","")#/config/mappings.cfm">
@@ -156,7 +160,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	
 	<!--- define a list of custom tag paths. --->
 	<cfset this.customtagpaths = properties.getProperty("customtagpaths","") />
-	<cfset this.customtagpaths = listAppend(this.customtagpaths,mapPrefix & baseDir  &  "/requirements/custom_tags/")>
+	<cfset this.customtagpaths = listAppend(this.customtagpaths,variables.mapPrefix & variables.baseDir  &  "/requirements/custom_tags/")>
 	
 	<cfset this.clientManagement = properties.getProperty("clientManagement","false") />
 	<cfset this.clientStorage = properties.getProperty("clientStorage","registry") />

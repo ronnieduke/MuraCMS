@@ -173,10 +173,11 @@ return true;
 function isEmail(cur){
 			var string1=cur
 			if (string1.indexOf("@") == -1 || string1.indexOf(".") == -1)
-			{alert(cur)
-			return false;
+			{
+				return false;
 			}else{
-			return true;}
+				return true;
+			}
 
 }
 
@@ -287,11 +288,11 @@ function getValidationIsRequired(theField){
 
 function getValidationMessage(theField, defaultMessage){
 	if(theField.getAttribute('data-message') != undefined){
-		return theField.getAttribute('data-message') + '\n';
+		return theField.getAttribute('data-message') + '<br/>';
 	} else if(theField.getAttribute('message') != undefined){
-		return theField.getAttribute('message') + '\n';
+		return theField.getAttribute('message') + '<br/>';
 	} else {
-		return getValidationFieldName(theField).toUpperCase() + defaultMessage + '\n';
+		return getValidationFieldName(theField).toUpperCase() + defaultMessage + '<br/>';
 	}	
 }
 
@@ -591,22 +592,32 @@ function submitForm(frm,action,msg){
 		}
 
 		if(typeof(htmlEditorType) != "undefined"){
-		if( htmlEditorType!='fckeditor'){
-			 for(var name in CKEDITOR.instances){
-				 CKEDITOR.instances[name].updateElement();
-                 };
+			if( htmlEditorType!='fckeditor'){
+				 for(var name in CKEDITOR.instances){
+				 	if (typeof(CKEDITOR.instances[name]) != 'undefined' && CKEDITOR.instances[name]!=null) {
+						if( jQuery('#' + name).length){
+							CKEDITOR.instances[name].updateElement();
+						} 
+					}
+	             }
 
+			}
 		}
-		}
-		
-		jQuery('#actionIndicator').each(function(){
-			jQuery(this).show();	
-			});
 
-		jQuery('#actionButtons').each(function(){
-			jQuery(this).hide();	
-			});
-		
+		if(jQuery('#actionIndicator').length){
+			jQuery('#actionIndicator').show();
+			jQuery('#actionButtons').hide();
+		} else{
+			jQuery('#actionButtons').html(
+					'<div style="display:none;">' 
+					+ jQuery('#actionButtons').html() 
+					+ '</div>'
+					+ '<img src="./images/progress_bar.gif">'
+				);
+
+			//alert(jQuery('#actionButtons').html());
+		}	
+
 		frm.submit();
 		formSubmitted = true;
 	
@@ -653,6 +664,7 @@ function preview(url,targetParams){
 	}
 	newWindow.focus();
 	void(0);
+	return false;
 }
 
 function createCookie(name,value,days) {
@@ -697,8 +709,8 @@ function setHTMLEditors() {
 			} else {
 				
 				var instance=CKEDITOR.instances[allPageTags[i].id];
-				if (instance) {
-					CKEDITOR.remove(instance);
+				if (typeof(instance) != 'undefined' && instance!=null) {
+					instance.destroy(true);
 				} 
 				
 				if(jQuery(document.getElementById(allPageTags[i].id)).val() == ''){
@@ -920,7 +932,7 @@ function CountDown(){
 	}else{
 	
 		if(document.getElementById('clock').innerHTML != undefined ){document.getElementById('clock').innerHTML = 0  + ':' + 0 + ':' + 0 ;}
-		//location.href=context + "/admin/index.cfm?fuseaction=cLogin.logout"
+		//location.href=context + "/admin/index.cfm?muraAction=cLogin.logout"
 		
 	}
 }
@@ -972,4 +984,23 @@ function getDialogPosition(){
 	} else{
 		return "center";
 	}
+}
+
+function openPreviewDialog(previewURL){
+	if (previewURL.indexOf("?") == -1){
+		previewURL=previewURL + '?muraadminpreview';
+	} else {
+		previewURL=previewURL + '&muraadminpreview';
+	}
+
+	var $dialog = jQuery('<div></div>')
+	    .html('<iframe style="border: 0px; " src="' + previewURL + '" width="1100" height="600"></iframe>')
+	    .dialog({
+	        width: 1100,
+	        height: 600,     
+	        modal: true,
+	        title: 'Preview'
+	    });
+
+	   return false;
 }

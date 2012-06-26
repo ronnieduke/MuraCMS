@@ -103,6 +103,10 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfset var cacheFactory="">
 	<cfset var bean=arguments.userBean>
 	
+	<cfif not len(arguments.siteID) and isdefined("session.siteID")>
+		<cfset arguments.siteID=session.siteID>
+	</cfif>
+	
 	<cfif len(arguments.siteID)>
 		<cfif len(arguments.username)>
 			<cfreturn readByUsername(arguments.username,arguments.siteid,bean) />
@@ -122,17 +126,26 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<!--- otherwise grab it from the cache --->
 		<cfif NOT cacheFactory.has( key )>
 			<cfset bean=variables.userDAO.read(arguments.userid,bean)>
-			<cfif not bean.getIsNew()>
+			<cfif not isArray(bean) and not bean.getIsNew()>
 				<cfset cacheFactory.get( key, structCopy(bean.getAllValues()) ) />
 			</cfif>
 			<cfreturn bean/>
 		<cfelse>
-			<cfif not isObject(bean)>
-				<cfset bean=getBean("user")/>
-			</cfif>
-			<cfset bean.setAllValues( structCopy(cacheFactory.get( key )) )>
-			<cfset bean.setValue("extendAutoComplete",false)>
-			<cfreturn bean />
+			<cftry>
+				<cfif not isObject(bean)>
+					<cfset bean=getBean("user")/>
+				</cfif>
+				<cfset bean.setAllValues( structCopy(cacheFactory.get( key )) )>
+				<cfset bean.setValue("extendAutoComplete",false)>
+				<cfreturn bean />
+				<cfcatch>
+					<cfset bean=variables.userDAO.read(arguments.userid,bean)>
+					<cfif not isArray(bean) and not bean.getIsNew()>
+						<cfset cacheFactory.get( key, structCopy(bean.getAllValues()) ) />
+					</cfif>
+					<cfreturn bean/>
+				</cfcatch>
+			</cftry>
 		</cfif>
 	<cfelse>
 		<cfreturn variables.userDAO.read(arguments.userid,bean) />
@@ -158,17 +171,26 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<!--- otherwise grab it from the cache --->
 		<cfif NOT cacheFactory.has( key )>
 			<cfset bean=variables.userDAO.readByUsername(arguments.username,arguments.siteid,bean) />
-			<cfif not bean.getIsNew()>
+			<cfif not isArray(bean) and not bean.getIsNew()>
 				<cfset cacheFactory.get( key, structCopy(bean.getAllValues()) ) />
 			</cfif>
 			<cfreturn bean/>
 		<cfelse>
-			<cfif not isObject(bean)>
-				<cfset bean=getBean("user")/>
-			</cfif>
-			<cfset bean.setAllValues( structCopy(cacheFactory.get( key )) )>
-			<cfset bean.setValue("extendAutoComplete",false)>
-			<cfreturn bean />
+			<cftry>
+				<cfif not isObject(bean)>
+					<cfset bean=getBean("user")/>
+				</cfif>
+				<cfset bean.setAllValues( structCopy(cacheFactory.get( key )) )>
+				<cfset bean.setValue("extendAutoComplete",false)>
+				<cfreturn bean />
+				<cfcatch>
+					<cfset bean=variables.userDAO.readByUsername(arguments.username,arguments.siteid,bean) />
+					<cfif not isArray(bean) and not bean.getIsNew()>
+						<cfset cacheFactory.get( key, structCopy(bean.getAllValues()) ) />
+					</cfif>
+					<cfreturn bean/>
+				</cfcatch>
+			</cftry>
 		</cfif>
 	<cfelse>
 		<cfreturn variables.userDAO.readByUsername(arguments.username,arguments.siteid,bean) />
@@ -191,17 +213,26 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<!--- otherwise grab it from the cache --->
 		<cfif NOT cacheFactory.has( key )>
 			<cfset bean=variables.userDAO.readByGroupName(arguments.groupname,arguments.siteid,arguments.isPublic,bean)  />
-			<cfif not bean.getIsNew()>
+			<cfif not isArray(bean) and not bean.getIsNew()>
 				<cfset cacheFactory.get( key, structCopy(bean.getAllValues()) ) />
 			</cfif>
 			<cfreturn bean/>
 		<cfelse>
-			<cfif not isObject(bean)>
-				<cfset bean=getBean("user")/>
-			</cfif>
-			<cfset bean.setAllValues( structCopy(cacheFactory.get( key )) )>
-			<cfset bean.setValue("extendAutoComplete",false)>
-			<cfreturn bean />
+			<cftry>
+				<cfif not isObject(bean)>
+					<cfset bean=getBean("user")/>
+				</cfif>
+				<cfset bean.setAllValues( structCopy(cacheFactory.get( key )) )>
+				<cfset bean.setValue("extendAutoComplete",false)>
+				<cfreturn bean />
+				<cfcatch>
+					<cfset bean=variables.userDAO.readByGroupName(arguments.groupname,arguments.siteid,arguments.isPublic,bean)  />
+					<cfif not isArray(bean) and not bean.getIsNew()>
+						<cfset cacheFactory.get( key, structCopy(bean.getAllValues()) ) />
+					</cfif>
+					<cfreturn bean/>
+				</cfcatch>
+			</cftry>
 		</cfif>
 	<cfelse>
 		<cfreturn variables.userDAO.readByGroupName(arguments.groupname,arguments.siteid,arguments.isPublic,bean) />
@@ -223,17 +254,26 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<!--- otherwise grab it from the cache --->
 		<cfif NOT cacheFactory.has( key )>
 			<cfset bean=variables.userDAO.readByRemoteID(arguments.remoteID,arguments.siteid,bean) />
-			<cfif not bean.getIsNew()>
+			<cfif not isArray(bean) and not bean.getIsNew()>
 				<cfset cacheFactory.get( key, structCopy(bean.getAllValues()) ) />
 			</cfif>
 			<cfreturn bean/>
 		<cfelse>
-			<cfif not isObject(bean)>
-				<cfset bean=getBean("user")/>
-			</cfif>
-			<cfset bean.setAllValues( structCopy(cacheFactory.get( key )) )>
-			<cfset bean.setValue("extendAutoComplete",false)>
-			<cfreturn bean />
+			<cftry>
+				<cfif not isObject(bean)>
+					<cfset bean=getBean("user")/>
+				</cfif>
+				<cfset bean.setAllValues( structCopy(cacheFactory.get( key )) )>
+				<cfset bean.setValue("extendAutoComplete",false)>
+				<cfreturn bean />
+				<cfcatch>
+					<cfset bean=variables.userDAO.readByRemoteID(arguments.remoteID,arguments.siteid,bean) />
+					<cfif not isArray(bean) and not bean.getIsNew()>
+						<cfset cacheFactory.get( key, structCopy(bean.getAllValues()) ) />
+					</cfif>
+					<cfreturn bean/>
+				</cfcatch>
+			</cftry>
 		</cfif>
 	<cfelse>
 		<cfreturn variables.userDAO.readByRemoteID(arguments.remoteID,arguments.siteid,bean) />

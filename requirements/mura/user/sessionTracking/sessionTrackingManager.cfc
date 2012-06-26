@@ -45,16 +45,18 @@ modified version; it is your choice whether to do so, or to make such modified v
 version 2 without this exception.  You may, if you choose, apply this exception to your own modified versions of Mura CMS.
 --->
 <cfcomponent extends="mura.cfobject" output="false">
+ 
 <cffunction name="init" returntype="any" access="public" output="false">
-<cfargument name="configBean" type="any" required="yes"/>
-<cfargument name="settingsManager" type="any" required="yes"/>
-<cfargument name="sessionTrackingDAO" type="any" required="yes"/>
-<cfargument name="sessionTrackingGateway" type="any" required="yes"/>
-<cfset variables.configBean=arguments.configBean />
-<cfset variables.settingsManager=arguments.settingsManager />
-<cfset variables.sessionTrackingDAO=arguments.sessionTrackingDAO />
-<cfset variables.sessionTrackingGateway=arguments.sessionTrackingGateway />
-<cfreturn this />
+	<cfargument name="configBean" type="any" required="yes"/>
+	<cfargument name="settingsManager" type="any" required="yes"/>
+	<cfargument name="sessionTrackingDAO" type="any" required="yes"/>
+	<cfargument name="sessionTrackingGateway" type="any" required="yes"/>
+	
+	<cfset variables.configBean=arguments.configBean />
+	<cfset variables.settingsManager=arguments.settingsManager />
+	<cfset variables.sessionTrackingDAO=arguments.sessionTrackingDAO />
+	<cfset variables.sessionTrackingGateway=arguments.sessionTrackingGateway />
+	<cfreturn this />
 </cffunction>
 
 <cffunction name="trackRequest" access="public" returntype="string">
@@ -66,31 +68,35 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfparam name="session.remote_addr" default="#request.remoteAddr#">
 	<cfparam name="session.trackingID" default="#createUUID()#">
 	
-	<cfif session.remote_addr eq request.remoteAddr>
-		<cfif cgi.HTTP_USER_AGENT neq 'vspider'>
-			
-			<cftry>
-			<cfset variables.sessionTrackingDAO.trackRequest(session.REMOTE_ADDR,
-																	arguments.SCRIPT_NAME,
-																	cgi.QUERY_STRING,
-																	listFirst(cgi.http_host,":"),
-																	cgi.HTTP_REFERER,
-																	cgi.USER_AGENT,
-																	arguments.keywords,
-																	session.trackingID,
-																	iif(session.mura.isLoggedIn,de('#session.mura.userID#'),de('')),
-																	arguments.siteid,
-																	arguments.contentid,
-																	getCFLocale( trim( replace( listFirst( listFirst(cgi.HTTP_ACCEPT_LANGUAGE,';') ),"-","_") ) ),
-																	cookie.originalURLToken
-																	)/>
-			<cfcatch><cfreturn ""/></cfcatch></cftry>
+	<cfif application.configBean.getSessionHistory() 
+		and application.configBean.getDashboard() 
+		and not application.sessionTrackingThrottle>
+
+		<cfif session.remote_addr eq request.remoteAddr>
+			<cfif cgi.HTTP_USER_AGENT neq 'vspider'>
+				
+				<!---<cftry>--->
+				<cfset variables.sessionTrackingDAO.trackRequest(session.REMOTE_ADDR,
+																		arguments.SCRIPT_NAME,
+																		cgi.QUERY_STRING,
+																		listFirst(cgi.http_host,":"),
+																		cgi.HTTP_REFERER,
+																		cgi.USER_AGENT,
+																		arguments.keywords,
+																		session.trackingID,
+																		iif(session.mura.isLoggedIn,de('#session.mura.userID#'),de('')),
+																		arguments.siteid,
+																		arguments.contentid,
+																		getCFLocale( trim( replace( listFirst( listFirst(cgi.HTTP_ACCEPT_LANGUAGE,';') ),"-","_") ) ),
+																		cookie.originalURLToken
+																		)/>
+				<!---<cfcatch><cfreturn ""/></cfcatch></cftry>--->
+			</cfif>
+			<cfreturn ""/>
+		<cfelse>
+			<cfreturn "killSession"/>
 		</cfif>
-		<cfreturn ""/>
-	<cfelse>
-		<cfreturn "killSession"/>
 	</cfif>
-	
 
 </cffunction>
 

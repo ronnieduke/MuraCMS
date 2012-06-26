@@ -74,17 +74,23 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cfset request.muraShowTrace=session.mura.showTrace>
 	
 <!--- Making sure that session is valid --->
+<cftry>
 <cfif yesNoFormat(application.configBean.getValue("useLegacySessions")) and structKeyExists(session,"mura")>
 	<cfif 
 		(not session.mura.isLoggedIn and isValid("UUID",listFirst(getAuthUser(),"^")))
 			or
 		(session.mura.isLoggedIn and not isValid("UUID",listFirst(getAuthUser(),"^")))	>
 		
-		<cfset tempcookieuserID=cookie.userID>
+		<cfset variables.tempcookieuserID=cookie.userID>
 		<cfset application.loginManager.logout()>
-		<cfcookie name="userid" expires="never" value="#tempcookieuserID#">	
+		<cfcookie name="userid" expires="never" value="#variables.tempcookieuserID#">	
 	</cfif>
 </cfif>
+<cfcatch>
+	<cfset application.loginManager.logout()>
+	<cfcookie name="userid" expires="never" value="">
+</cfcatch>
+</cftry>
 
 <!---settings.custom.vars.cfm reference is for backwards compatability --->
 <cfif fileExists(expandPath("/muraWRM/config/settings.custom.vars.cfm"))>
@@ -105,16 +111,31 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfcookie name="userid" value="#session.mura.userID#" expires="never" />
 	<cfcookie name="userHash" value="#encrypt(application.userManager.readUserHash(session.mura.userID).userHash,application.configBean.getEncryptionKey(),'cfmx_compat','hex')#" expires="never" />
 	</cfif>
+<cfcatch>
+	<cfcookie name="userid" value="" expires="never" />
+	<cfcookie name="userHash" value="" expires="never" />
+</cfcatch>
+</cftry>
 
+<cftry>
 	<cfif cookie.userid neq '' and not session.mura.isLoggedIn>
 	<cfset application.loginManager.rememberMe(cookie.userid,decrypt(cookie.userHash,application.configBean.getEncryptionKey(),"cfmx_compat",'hex')) />
 	</cfif>
+<cfcatch></cfcatch>
+</cftry>
 
+<cftry>
 	<cfif cookie.userid neq '' and structKeyExists(session,"rememberMe") and session.rememberMe eq 0 and session.mura.isLoggedIn>
 	<cfcookie name="userid" value="" expires="never" />
 	<cfcookie name="userHash" value="" expires="never" />
 	</cfif>
+<cfcatch>
+	<cfcookie name="userid" value="" expires="never" />
+	<cfcookie name="userHash" value="" expires="never" />
+</cfcatch>
+</cftry>
 
+<cftry>
 	<cfif not structKeyExists(cookie,"originalURLToken")>
 	<cfparam name="session.trackingID" default="#application.utility.getUUID()#">
 	<cfcookie name="originalURLToken" value="#session.trackingID#" expires="never" />
@@ -123,10 +144,10 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 </cftry>
 
 <!--- look to see is there is a custom remote IP header in the settings.ini.cfm --->
-<cfset remoteIPHeader=application.configBean.getValue("remoteIPHeader")>
-<cfif len(remoteIPHeader)>
+<cfset variables.remoteIPHeader=application.configBean.getValue("remoteIPHeader")>
+<cfif len(variables.remoteIPHeader)>
 	<cftry>
-		<cfif StructKeyExists(GetHttpRequestData().headers, remoteIPHeader)>
+		<cfif StructKeyExists(GetHttpRequestData().headers, variables.remoteIPHeader)>
 	    	<cfset request.remoteAddr = GetHttpRequestData().headers[remoteIPHeader]>
 	    <cfelse>
 			<cfset request.remoteAddr = CGI.REMOTE_ADDR>

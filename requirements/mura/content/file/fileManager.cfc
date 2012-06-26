@@ -443,8 +443,8 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfset local.results.serverDirectory=arguments.destinationDir>
 	<cfset local.results.serverFile=replace(listLast(local.filePath ,"/")," ","-","all")>
 	<cfset local.results.clientFile=local.results.serverFile>
-	<cfset local.results.serverFileName=listFirst(local.results.serverFile ,".")>
-	<cfset local.results.clientFileName=listFirst(local.results.clientFile ,".")>
+	<cfset local.results.serverFileName=listDeleteAt(local.results.serverFile,listLen(local.results.serverFile ,"."),".")>
+	<cfset local.results.clientFileName=listDeleteAt(local.results.clientFile,listLen(local.results.clientFile ,"."),".")>
 	<cfset local.results.clientFileExt=listLast(local.filePath ,".")>
 	
 	<cfif listFind("/,\",right(local.results.serverDirectory,1))>
@@ -677,7 +677,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 			<cfif not len(arguments.height)>
 				<cfset arguments.height="auto">
 			</cfif>
-			<cfreturn application.configBean.getAssetPath() & "/" & arguments.siteID & "/cache/file/" & getCustomImage("#application.configBean.getFileDir()##application.configBean.getFileDelim()##arguments.siteid##application.configBean.getFileDelim()#cache#application.configBean.getFileDelim()#file#application.configBean.getFileDelim()##arguments.fileID#.#arguments.fileExt#",arguments.height,arguments.width)>
+			<cfset returnURL = application.configBean.getAssetPath() & "/" & arguments.siteID & "/cache/file/" & getCustomImage("#application.configBean.getFileDir()##application.configBean.getFileDelim()##arguments.siteid##application.configBean.getFileDelim()#cache#application.configBean.getFileDelim()#file#application.configBean.getFileDelim()##arguments.fileID#.#arguments.fileExt#",arguments.height,arguments.width)>
 		</cfif>
 	<cfelse>
 		<cfif arguments.size eq "large">

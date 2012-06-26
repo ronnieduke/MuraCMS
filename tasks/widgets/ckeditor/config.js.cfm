@@ -11,7 +11,7 @@ CKEDITOR.editorConfig = function( config )
     
     config.startupFocus = 'false';
     
-	//config.uiColor = '#AADC6E';
+	//config.uiColor = '#ff3405';
 	<cfoutput>
 	CKEditorBasePath='#application.configBean.getContext()#/tasks/widgets';
 	CKFinderBasePath='#application.configBean.getContext()#/tasks/widgets';
@@ -19,29 +19,28 @@ CKEDITOR.editorConfig = function( config )
 	
 	config.skin = 'mura';
 	
-	<!--- If the page title is an <h2> (the Mura default), output the Format Dropdown list like this --->
-	<!---
-config.format_tags = 'p;h1;h2;h3;h4;pre;address;div';
-	
 	<cfoutput>
+	<cfif renderer.headline eq "h1">
+	
+	// Mura page title set to h1
+	config.format_tags = 'p;h1;h2;h3;h4;h5;pre;address;div';
+	
 	config.format_h1 = { element : '#renderer.getHeaderTag('subHead1')#' };
 	config.format_h2 = { element : '#renderer.getHeaderTag('subHead2')#' };
 	config.format_h3 = { element : '#renderer.getHeaderTag('subHead3')#' };
 	config.format_h4 = { element : '#renderer.getHeaderTag('subHead4')#' };
-	</cfoutput>
---->
+	config.format_h5 = { element : '#renderer.getHeaderTag('subHead5')#' };
 	
+	<cfelse>
+	// Mura page title set to h2
+	config.format_tags = 'p;h1;h2;h3;h4;pre;address;div';
 	
-	<!--- Else, output it like this --->
-	config.format_tags = 'p;h1;h2;h3;h4;h5;pre;address;div';
+	config.format_h1 = { element : '#renderer.getHeaderTag('subHead1')#' };
+	config.format_h2 = { element : '#renderer.getHeaderTag('subHead2')#' };
+	config.format_h3 = { element : '#renderer.getHeaderTag('subHead3')#' };
+	config.format_h4 = { element : '#renderer.getHeaderTag('subHead4')#' };
 	
-	<cfoutput>
-	config.format_h1 = { element : '#renderer.getHeaderTag('headline')#' };
-	config.format_h2 = { element : '#renderer.getHeaderTag('subHead1')#' };
-	config.format_h3 = { element : '#renderer.getHeaderTag('subHead2')#' };
-	config.format_h4 = { element : '#renderer.getHeaderTag('subHead3')#' };
-	config.format_h5 = { element : '#renderer.getHeaderTag('subHead4')#' };
-	// config.format_h6 = { element : '#renderer.getHeaderTag('subHead5')#' };
+	</cfif>
 	</cfoutput>
 	
     // config.ignoreEmptyParagraph = 'false';
@@ -66,7 +65,7 @@ config.format_tags = 'p;h1;h2;h3;h4;pre;address;div';
 	                                	['Image','Flash','Media','gmap','-','Table','HorizontalRule','SpecialChar','PageBreak','-','Selectlink','SelectComponent','Templates'<cfif application.configBean.getEnableMuraTag()>,'muratag'</cfif>],
 										['Styles','Format','-','Maximize','ShowBlocks','About']
 	                                ] ;
-
+	
 	config.toolbar_Summary = [
 										['Source'],
 										['Cut','Copy','Paste','PasteText','PasteFromWord','-','Print','SpellChecker','Scayt'],
@@ -106,7 +105,11 @@ config.format_tags = 'p;h1;h2;h3;h4;pre;address;div';
 	                                	['Source'],['Bold','Italic','-','NumberedList','BulletedList','-','Link','Unlink','-','Image']
 	                                ] ;
 
-	config.extraPlugins = <cfif application.configBean.getEnableMuraTag()>'SelectComponent,media,Selectlink,muratag,gmap'<cfelse>'SelectComponent,media,Selectlink,gmap'</cfif>;
+	config.extraPlugins = <cfif application.configBean.getEnableMuraTag()>'SelectComponent,media,Selectlink,muratag,gmap,tableresize'<cfelse>'SelectComponent,media,Selectlink,gmap,tableresize'</cfif>;
+	
+	// Remove the Resize plugin as it does not make sense to use it in conjunction with the AutoGrow plugin.
+	//removePlugins : 'resize';
+	
 	config.entities_additional = "";
 	//config.protectedSource.push( /\[mura\][\s\S]*?\[\/mura\]/g );
 	
@@ -148,9 +151,9 @@ config.format_tags = 'p;h1;h2;h3;h4;pre;address;div';
 	</cfif>
 	
 	<cfif fileExists(expandPath($.siteConfig("includePath") & '/js/editor/config.js.cfm') )>
-		config.customConfig='#$.siteConfig('includePath')#/js/editor/config.js.cfm';
+		config.customConfig='#$.siteConfig('assetPath')#/js/editor/config.js.cfm';
 	<cfelseif fileExists(expandPath($.siteConfig("includePath") & '/js/editor/config.js') )>
-		config.customConfig='#$.siteConfig('includePath')#/js/editor/config.js';
+		config.customConfig='#$.siteConfig('assetPath')#/js/editor/config.js';
 	</cfif>
 
 	<cfif fileExists(expandPath($.siteConfig("themeIncludePath") & '/js/editor/config.js.cfm') )>
@@ -160,6 +163,8 @@ config.format_tags = 'p;h1;h2;h3;h4;pre;address;div';
 	</cfif>
 
 	config.defaultLanguage='#listFirst($.siteConfig('JavaLocale'),'_')#';
+
+	#$.renderEvent("onSiteCKEditorConfigRender")#
     </cfoutput>
 
 

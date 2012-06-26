@@ -5,8 +5,13 @@
 		EXEC sp_MSgetversion
 	</cfquery>
 	
-	<cfset MSSQLversion=left(MSSQLversion.CHARACTER_VALUE,1)>
-
+	<cftry>
+		<cfset MSSQLversion=left(MSSQLversion.CHARACTER_VALUE,1)>
+		<cfcatch>
+			<cfset MSSQLversion=mid(MSSQLversion.COMPUTED_COLUMN_1,1,find(".",MSSQLversion.COMPUTED_COLUMN_1)-1)>
+		</cfcatch>
+	</cftry>
+	
 	<cfif MSSQLversion neq 8>
 		
 		<cfset tableList="tadcampaigns,tadcreatives,tadplacements,tadzones,tclassextend,tclassextendattributes,tclassextenddata,tclassextenddatauseractivity,tclassextendsets,tcontent,tcontentcategories,tcontentcomments,tcontentfeeds,temails,tformresponsepackets,tformresponsequestions,tmailinglist,tsettings,tuseraddresses,tusers">		
@@ -108,17 +113,17 @@ select * from tcontentcomments  where 0=1
 	</cftransaction>
 </cfcase>
 <cfcase value="mysql">
-	<cfset runDBUpdate=false/>
+	<cfset variables.RUNDBUPDATE=false/>
 	<cftry>
 	<cfquery datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
 	select userID as CheckIfTableExists from tuserremotesessions limit 1
 	</cfquery>
 	<cfcatch>
-	<cfset runDBUpdate=true/>
+	<cfset variables.RUNDBUPDATE=true/>
 	</cfcatch>
 	</cftry>
 	
-	<cfif runDBUpdate>
+	<cfif variables.RUNDBUPDATE>
 	<cftry>
 		<cfquery datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
 		CREATE TABLE IF NOT EXISTS  `tuserremotesessions` (
@@ -150,17 +155,17 @@ select * from tcontentcomments  where 0=1
 	</cfif>
 </cfcase>
 <cfcase value="oracle">
-	<cfset runDBUpdate=false/>
+	<cfset variables.RUNDBUPDATE=false/>
 	<cftry>
 	<cfquery datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
 	select * from (select userID as CheckIfTableExists from tuserremotesessions) where ROWNUM <=1
 	</cfquery>
 	<cfcatch>
-	<cfset runDBUpdate=true/>
+	<cfset variables.RUNDBUPDATE=true/>
 	</cfcatch>
 	</cftry>
 	
-	<cfif runDBUpdate>
+	<cfif variables.RUNDBUPDATE>
 		<cftransaction>
 		<cfquery datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
 		CREATE TABLE "TUSERREMOTESESSIONS" (
@@ -263,17 +268,17 @@ cacheCapacity=0
 	</cftransaction>
 </cfcase>
 <cfcase value="mysql">
-	<cfset runDBUpdate=false/>
+	<cfset variables.RUNDBUPDATE=false/>
 	<cftry>
 	<cfquery datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
 	select username as CheckIfTableExists from tuserstrikes limit 1
 	</cfquery>
 	<cfcatch>
-	<cfset runDBUpdate=true/>
+	<cfset variables.RUNDBUPDATE=true/>
 	</cfcatch>
 	</cftry>
 	
-	<cfif runDBUpdate>
+	<cfif variables.RUNDBUPDATE>
 	<cftry>
 		<cfquery datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
 		CREATE TABLE IF NOT EXISTS  `tuserstrikes` (
@@ -297,17 +302,17 @@ cacheCapacity=0
 	</cfif>
 </cfcase>
 <cfcase value="oracle">
-	<cfset runDBUpdate=false/>
+	<cfset variables.RUNDBUPDATE=false/>
 	<cftry>
 	<cfquery datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
 	select * from (select username as CheckIfTableExists from tuserstrikes) where ROWNUM <=1
 	</cfquery>
 	<cfcatch>
-	<cfset runDBUpdate=true/>
+	<cfset variables.RUNDBUPDATE=true/>
 	</cfcatch>
 	</cftry>
 	
-	<cfif runDBUpdate>
+	<cfif variables.RUNDBUPDATE>
 		<cftransaction>
 		<cfquery datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
 		CREATE TABLE "TUSERSTRIKES" (

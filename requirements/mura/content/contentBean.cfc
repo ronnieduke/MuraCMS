@@ -408,12 +408,12 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 			</cfif>
 		</cfif>
 		
-		<cfif not session.mura.isLoggedIn >
-			<cfset variables.instance.LastUpdateBy = "" />
-			<cfset variables.instance.LastUpdateByID = "" />
-		<cfelse>
+		<cfif isDefined("session.mura") and session.mura.isLoggedIn>
 			<cfset variables.instance.LastUpdateBy = left(session.mura.fname & " " & session.mura.lname,50) />
 			<cfset variables.instance.LastUpdateByID = session.mura.userID />
+		<cfelse>
+			<cfset variables.instance.LastUpdateBy = "" />
+			<cfset variables.instance.LastUpdateByID = "" />
 		</cfif>
 		
 	</cfif>
@@ -620,6 +620,16 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfreturn this>
 </cffunction>
 
+<cffunction name="getImageSize" output="false" access="public">
+	<cfif variables.instance.imageSize eq "Custom"
+	and variables.instance.ImageHeight eq "AUTO" 
+	and variables.instance.ImageWidth eq "AUTO">
+  	  <cfreturn "small" />
+	<cfelse>
+		<cfreturn variables.instance.imageSize>
+	</cfif>
+</cffunction>
+
 <cffunction name="setImageHeight" output="false" access="public">
     <cfargument name="ImageHeight" required="true">
 	<cfif isNumeric(arguments.ImageHeight)>
@@ -669,7 +679,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfset var rsExtend=variables.configBean.getClassExtensionManager().getExtendedAttributeList(variables.instance.siteID,"tcontent")>
 	
 	<cfif variables.instance.type neq "Gallery">
-		<cfset returnList="Date,Title,Image,Summary,ReadMore,Credits,Comments,Tags,Rating">
+		<cfset returnList="Date,Title,Image,Summary,Body,ReadMore,Credits,Comments,Tags,Rating">
 	<cfelse>
 		<cfset returnList="Date,Title,Summary,ReadMore,Credits,Comments,Tags,Rating">
 	</cfif>
@@ -771,6 +781,19 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfset it.setQuery(q,variables.instance.nextn)>
 	
 	<cfreturn it>
+</cffunction>
+
+<cffunction name="getKidsCategoryQuery" returntype="any" output="false" access="public">
+	<cfreturn variables.contentManager.getCategoriesByParentID(siteID:variables.instance.siteID,parentID:getContentID()) />
+</cffunction>
+
+<cffunction name="getKidsCategoryIterator">
+	<cfscript>
+		var q = getKidsCategoryQuery();
+		var it = getBean('categoryIterator').init();
+		it.setQuery(q);
+		return it;
+	</cfscript>
 </cffunction>
 
 <cffunction name="getVersionHistoryQuery" returnType="query" output="false" access="public">
@@ -1019,7 +1042,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<cfset topID=variables.instance.moduleID>
 	</cfif>
 	
-	<cfset returnStr= "#variables.configBean.getContext()#/admin/?fuseaction=cArch.edit&contentHistId=#getContentHistId()#&contentId=#getContentId()#&Type=#variables.instance.type#&siteId=#variables.instance.siteID#&topId=#topID#&parentId=#variables.instance.parentID#&moduleId=#variables.instance.moduleID#&compactDisplay=#arguments.compactdisplay#" >
+	<cfset returnStr= "#variables.configBean.getContext()#/admin/?muraAction=cArch.edit&contentHistId=#getContentHistId()#&contentId=#getContentId()#&Type=#variables.instance.type#&siteId=#variables.instance.siteID#&topId=#topID#&parentId=#variables.instance.parentID#&moduleId=#variables.instance.moduleID#&compactDisplay=#arguments.compactdisplay#" >
 	
 	<cfreturn returnStr>
 </cffunction> 

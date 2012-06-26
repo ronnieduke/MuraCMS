@@ -44,7 +44,7 @@ For clarity, if you create a modified version of Mura CMS, you are not obligated
 modified version; it is your choice whether to do so, or to make such modified version available under the GNU General Public License 
 version 2 without this exception.  You may, if you choose, apply this exception to your own modified versions of Mura CMS.
 --->
-<cfcomponent extends="mura.bean.bean" output="false">
+<cfcomponent extends="mura.bean.beanFeed" output="false">
 
 <cfproperty name="feedID" type="string" default="" required="true" />
 <cfproperty name="siteID" type="string" default="" required="true" />
@@ -79,7 +79,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cfproperty name="displayComments" type="numeric" default="0" required="true" />
 <cfproperty name="displayKids" type="numeric" default="0" required="true" />
 <cfproperty name="isNew" type="numeric" default="0" required="true" />
-<cfproperty name="advancedParams" type="query" default="" required="true" />
+<cfproperty name="params" type="query" default="" required="true" />
 <cfproperty name="remoteID" type="string" default="" required="true" />
 <cfproperty name="remoteSourceURL" type="string" default="" required="true" />
 <cfproperty name="remotePubDAte" type="string" default="" required="true" />
@@ -88,6 +88,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cfproperty name="imageWidth" type="string" default="AUTO" required="true" />
 <cfproperty name="displayList" type="string" default="Title,Date,Image,Summary,Tags,Credits" required="true" />
 <cfproperty name="liveOnly" type="numeric" default="1" required="true" />
+<cfproperty name="bean" type="string" default="content" required="true" />
 
 <cffunction name="init" returntype="any" output="false" access="public">
 	<cfset super.init(argumentCollection=arguments)>
@@ -126,7 +127,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfset variables.instance.displaySummaries=1 />
 	<cfset variables.instance.displayKids=0 />
 	<cfset variables.instance.isNew=1 />
-	<cfset variables.instance.advancedParams=queryNew("feedID,param,relationship,field,condition,criteria,dataType","varchar,integer,varchar,varchar,varchar,varchar,varchar" )  />
+	<cfset variables.instance.params=queryNew("feedID,param,relationship,field,condition,criteria,dataType","varchar,integer,varchar,varchar,varchar,varchar,varchar" )  />
 	<cfset variables.instance.errors=structnew() />
 	<cfset variables.instance.remoteID = "" />
 	<cfset variables.instance.remoteSourceURL = "" />
@@ -136,6 +137,8 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfset variables.instance.imageWidth="AUTO" />
 	<cfset variables.instance.displayList="Date,Title,Image,Summary,Credits,Tags" />
 	<cfset variables.instance.liveOnly=1 />
+	<cfset variables.instance.bean="content" />
+	<cfset variables.instance.table="tcontent">
 	
 	<cfreturn this />
 </cffunction>
@@ -143,12 +146,6 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cffunction name="setFeedManager">
 	<cfargument name="feedManager">
 	<cfset variables.feedManager=arguments.feedManager>
-	<cfreturn this>
-</cffunction>
-
-<cffunction name="setConfigBean">
-	<cfargument name="configBean">
-	<cfset variables.configBean=arguments.configBean>
 	<cfreturn this>
 </cffunction>
 
@@ -168,7 +165,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		
 		<cfset setAdvancedParams(arguments.feed) />
 	</cfif>
-		
+	
 	<cfreturn this />
 </cffunction>
 
@@ -214,14 +211,6 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	    	<cfset variables.instance.categoryID = listAppend(variables.instance.categoryID,trim(i)) />
 	    </cfif> 
 	    </cfloop>
-	</cfif>
-	<cfreturn this>
-</cffunction>
-
-<cffunction name="setNextN" access="public" output="false">
-	<cfargument name="NextN" type="any" />
-	<cfif isNumeric(arguments.nextN)>
-	<cfset variables.instance.NextN = arguments.NextN />
 	</cfif>
 	<cfreturn this>
 </cffunction>
@@ -282,6 +271,16 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfreturn this>
 </cffunction>
 
+<cffunction name="getImageSize" output="false" access="public">
+	<cfif variables.instance.imageSize eq "Custom"
+	and variables.instance.ImageHeight eq "AUTO" 
+	and variables.instance.ImageWidth eq "AUTO">
+  	  <cfreturn "small" />
+	<cfelse>
+		<cfreturn variables.instance.imageSize>
+	</cfif>
+</cffunction>
+
 <cffunction name="setImageHeight" output="false" access="public">
     <cfargument name="ImageHeight" required="true">
 	<cfif isNumeric(arguments.ImageHeight)>
@@ -314,22 +313,21 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	</cfif>
 </cffunction>
 
-<cffunction name="setAdvancedParams" access="public" output="false">
+<cffunction name="setParams" access="public" output="false">
 	<cfargument name="params" type="any" required="true">
 		
 	<cfset var rows=0/>
 	<cfset var I = 0 />
 		
 	<cfif isquery(arguments.params)>
-			
-		<cfset variables.instance.advancedParams=arguments.params />
+		<cfset variables.instance.params=arguments.params />
 			
 	<cfelseif isdefined('arguments.params.param')>
 	
-		<cfset clearAdvancedParams() />
+		<cfset clearParams() />
 		<cfloop from="1" to="#listLen(arguments.params.param)#" index="i">
 			
-			<cfset addAdvancedParam(
+			<cfset addParam(
 					listFirst(evaluate('arguments.params.paramField#i#'),'^'),
 					evaluate('arguments.params.paramRelationship#i#'),
 					evaluate('arguments.params.paramCriteria#i#'),
@@ -343,42 +341,9 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfreturn this>
 </cffunction>
 
-
-<cffunction name="addAdvancedParam" access="public" output="false">
-	<cfargument name="field" type="string" required="true" default="">
-	<cfargument name="relationship" type="string" default="and" required="true">
-	<cfargument name="criteria" type="string" required="true" default="">
-	<cfargument name="condition" type="string" default="EQUALS" required="true">
-	<cfargument name="datatype" type="string"  default="varchar" required="true">
-	
-	<cfset var rows=1/>
-		
-	<cfset queryAddRow(variables.instance.advancedParams,1)/>
-	<cfset rows = variables.instance.advancedParams.recordcount />
-	<cfset querysetcell(variables.instance.advancedParams,"feedid",variables.instance.feedID,rows)/>
-	<cfset querysetcell(variables.instance.advancedParams,"param",rows,rows)/>
-	<cfset querysetcell(variables.instance.advancedParams,"field",arguments.field,rows)/>
-	<cfset querysetcell(variables.instance.advancedParams,"relationship",arguments.relationship,rows)/>
-	<cfset querysetcell(variables.instance.advancedParams,"criteria",arguments.criteria,rows)/>
-	<cfset querysetcell(variables.instance.advancedParams,"condition",arguments.condition,rows)/>
-	<cfset querysetcell(variables.instance.advancedParams,"dataType",arguments.datatype,rows)/>
-	<cfreturn this>
-</cffunction>
-
-<cffunction name="addParam" access="public" output="false" hint="This is the same as addAdvancedParam.">
-	<cfargument name="field" type="string" required="true" default="">
-	<cfargument name="relationship" type="string" default="and" required="true">
-	<cfargument name="criteria" type="string" required="true" default="">
-	<cfargument name="condition" type="string" default="EQUALS" required="true">
-	<cfargument name="datatype" type="string"  default="varchar" required="true">
-	<cfset addAdvancedParam(argumentcollection=arguments)>
-	<cfreturn this>
-</cffunction>
-
-
-<cffunction name="clearAdvancedParams" output="false">
-	<cfset variables.instance.advancedParams=queryNew("feedID,param,relationship,field,condition,criteria,dataType","varchar,integer,varchar,varchar,varchar,varchar,varchar" )  />
-	<cfreturn this>
+<cffunction name="setAdvancedParams" output="false">
+	<cfargument name="params" type="any" required="true">
+	<cfreturn setParams(argumentCollection=arguments)>
 </cffunction>
 
 <cffunction name="renderName" returntype="String" access="public" output="false">	
@@ -439,7 +404,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfargument name="compactDisplay" type="any" required="true" default="false"/>
 	<cfset var returnStr="">
 	
-	<cfset returnStr= "#variables.configBean.getContext()#/admin/?fuseaction=cFeed.edit&feedID=#variables.instance.feedID#&siteid=#variables.instance.siteID#&type=#variables.instance.type#&compactDisplay=#arguments.compactdisplay#" >
+	<cfset returnStr= "#variables.configBean.getContext()#/admin/?muraAction=cFeed.edit&feedID=#variables.instance.feedID#&siteid=#variables.instance.siteID#&type=#variables.instance.type#&compactDisplay=#arguments.compactdisplay#" >
 	
 	<cfreturn returnStr>
 </cffunction> 
@@ -472,7 +437,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 </cffunction>
 
 <cffunction name="getAvailableDisplayList" output="false">
-	<cfset var returnList="Date,Title,Image,Summary,ReadMore,Credits,Comments,Tags,Rating">
+	<cfset var returnList="Date,Title,Image,Summary,Body,ReadMore,Credits,Comments,Tags,Rating">
 	<cfset var i=0>
 	<cfset var finder=0>
 	<cfset var rsExtend=variables.configBean.getClassExtensionManager().getExtendedAttributeList(variables.instance.siteid,"tcontent")>

@@ -54,23 +54,24 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cfset variables.instance.baseKeyField=""/>
 <cfset variables.instance.dataTable="tclassextenddata"/>
 <cfset variables.instance.isActive=1/>
+<cfset variables.instance.hasSummary=1/>
+<cfset variables.instance.hasBody=1/>
+<cfset variables.instance.isActive=1/>
 <cfset variables.instance.sets=""/>
 <cfset variables.instance.isNew=1/>
 <cfset variables.instance.errors=structnew() />
-
+<cfset variables.contentRenderer="" />
 
 <cffunction name="init" returntype="any" output="false" access="public">
 	<cfargument name="configBean">
-	<cfargument name="contentRenderer">
 	
 	<cfset variables.configBean=arguments.configBean />
-	<cfset variables.contentRenderer=arguments.contentRenderer />
 	<cfset variables.classExtensionManager=variables.configBean.getClassExtensionManager()>
 	<cfreturn this />
 </cffunction>
 
 <cffunction name="getExtendSetBean" returnType="any">
-<cfset var extendSetBean=createObject("component","mura.extend.extendSet").init(variables.configBean,variables.contentRenderer) />
+<cfset var extendSetBean=createObject("component","mura.extend.extendSet").init(variables.configBean,getContentRenderer()) />
 <cfset extendSetBean.setSubTypeID(getSubTypeID()) />
 <cfset extendSetBean.setSiteID(getSiteID()) />
 <cfreturn extendSetBean />
@@ -79,7 +80,9 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cffunction name="load">
 	<cfset var rs=""/>
 		<cfquery name="rs" datasource="#variables.configBean.getReadOnlyDatasource()#" username="#variables.configBean.getReadOnlyDbUsername()#" password="#variables.configBean.getReadOnlyDbPassword()#">
-		select * from tclassextend 
+		select subtypeid,siteID,baseTable,baseKeyField,dataTable,type,subtype,
+		isActive,notes,lastUpdate,dateCreated,lastUpdateBy,hasSummary,hasBody 
+		from tclassextend 
 		where subTypeID=<cfqueryparam cfsqltype="cf_sql_varchar"  value="#getsubtypeID()#">
 		or (
 			siteid=<cfqueryparam cfsqltype="cf_sql_varchar"  value="#getSiteID()#">
@@ -111,6 +114,8 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 			<cfset setDataTable(arguments.data.DataTable) />
 			<cfset setbaseKeyField(arguments.data.baseKeyField) />
 			<cfset setIsActive(arguments.data.isActive) />
+			<cfset setHasSummary(arguments.data.hasSummary) />
+			<cfset setHasBody(arguments.data.hasBody) />
 			
 		<cfelseif isStruct(arguments.data)>
 		
@@ -222,6 +227,30 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfreturn this>
 </cffunction>
 
+<cffunction name="getHasSummary" returntype="numeric" access="public" output="false">
+	<cfreturn variables.instance.hasSummary />
+</cffunction>
+
+<cffunction name="setHasSummary" access="public" output="false">
+	<cfargument name="hasSummary"/>
+	<cfif isNumeric(arguments.hasSummary)>
+		<cfset variables.instance.hasSummary = arguments.hasSummary />
+	</cfif>
+	<cfreturn this>
+</cffunction>
+
+<cffunction name="getHasBody" returntype="numeric" access="public" output="false">
+	<cfreturn variables.instance.hasBody />
+</cffunction>
+
+<cffunction name="setHasBody" access="public" output="false">
+	<cfargument name="hasBody"/>
+	<cfif isNumeric(arguments.hasBody)>
+		<cfset variables.instance.hasBody = arguments.hasBody />
+	</cfif>
+	<cfreturn this>
+</cffunction>
+
 <cffunction name="getIsNew" output="false">
 	<cfreturn variables.instance.isNew>
 </cffunction>
@@ -314,7 +343,9 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		baseTable = <cfqueryparam cfsqltype="cf_sql_varchar" null="#iif(getBaseTable() neq '',de('no'),de('yes'))#" value="#getBaseTable()#">,
 		baseKeyField = <cfqueryparam cfsqltype="cf_sql_varchar" null="#iif(getbaseKeyField() neq '',de('no'),de('yes'))#" value="#getbaseKeyField()#">,
 		dataTable=<cfqueryparam cfsqltype="cf_sql_varchar" null="#iif(getDataTable() neq '',de('no'),de('yes'))#" value="#getDataTable()#">,
-		isActive = #getIsActive()#
+		isActive = #getIsActive()#,
+		hasSummary = #getHasSummary()#,
+		hasBody = #getHasBody()#
 		where subTypeID=<cfqueryparam cfsqltype="cf_sql_varchar"  value="#getSubTypeID()#">
 		</cfquery>
 		
@@ -333,7 +364,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfelse>
 	
 		<cfquery datasource="#variables.configBean.getDatasource()#" username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
-		Insert into tclassextend (subTypeID,siteID,type,subType,baseTable,baseKeyField,dataTable,isActive) 
+		Insert into tclassextend (subTypeID,siteID,type,subType,baseTable,baseKeyField,dataTable,isActive,hasSummary,hasBody) 
 		values(
 		<cfqueryparam cfsqltype="cf_sql_varchar"  value="#getsubTypeID()#">,
 		<cfqueryparam cfsqltype="cf_sql_varchar" null="#iif(getSiteID() neq '',de('no'),de('yes'))#" value="#getSiteID()#">,
@@ -342,7 +373,9 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<cfqueryparam cfsqltype="cf_sql_varchar" null="#iif(getBaseTable() neq '',de('no'),de('yes'))#" value="#getBaseTable()#">,
 		<cfqueryparam cfsqltype="cf_sql_varchar" null="#iif(getbaseKeyField() neq '',de('no'),de('yes'))#" value="#getbaseKeyField()#">,
 		<cfqueryparam cfsqltype="cf_sql_varchar" null="#iif(getDataTable() neq '',de('no'),de('yes'))#" value="#getDataTable()#">,
-		#getIsActive()#)
+		#getIsActive()#,
+		#getHasSummary()#,
+		#getHasBody()#)
 		</cfquery>
 		<!---
 		<cfset extendSetBean=getExtendSetBean() />
@@ -553,6 +586,22 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cfelse>
 	<cfreturn getType() />
 </cfif>
+</cffunction>
+
+<cffunction name="getContentRenderer" output="false">
+	<cfif not isObject(variables.contentRenderer)>
+		<cfif structKeyExists(request,"servletEvent")>
+			<cfset variables.contentRenderer=request.servletEvent.getContentRenderer()>
+		<cfelseif structKeyExists(request,"event")>
+			<cfset variables.contentRenderer=request.event.getContentRenderer()>
+		<cfelseif len(getSiteID())>
+			<cfset variables.contentRenderer=getBean("$").init(getSiteID()).getContentRenderer()>
+		<cfelse>
+			<cfset variables.contentRenderer=getBean("contentRenderer")>
+		</cfif>
+	</cfif>
+
+	<cfreturn variables.contentRenderer>
 </cffunction>
 
 </cfcomponent>

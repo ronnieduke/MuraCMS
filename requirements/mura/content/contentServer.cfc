@@ -46,18 +46,13 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 --->
 <cfcomponent extends="mura.cfobject">
 
-<cffunction name="init" output="false" returntype="any">
-<cfset variables.Mura=createObject("component","mura.Mura").init()>
-<cfreturn this>
-</cffunction>
-
 <cffunction name="forcePathDirectoryStructure" output="false" returntype="any" access="remote">
 <cfargument name="cgi_path">
 <cfargument name="siteID">
 <cfset var qstring="">
 <cfset var contentRenderer=application.settingsManager.getSite(arguments.siteID).getContentRenderer()>
 <cfset var indexFileLen=0>
-<cfset var last=listLast(cgi_path,"/") >
+<cfset var last=listLast(arguments.cgi_path,"/") >
 <cfset var indexFile="" >	
 
 <cfif find(".",last)>
@@ -66,7 +61,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 
 <cfset indexFileLen=len(indexFile)>
 
-<cfif len(cgi_path) and right(cgi_path,1) neq "/"  and (not indexFileLen or indexFileLen and (right(cgi_path,indexFileLen) neq indexFile))>
+<cfif len(arguments.cgi_path) and right(arguments.cgi_path,1) neq "/"  and (not indexFileLen or indexFileLen and (right(cgi_path,indexFileLen) neq indexFile))>
 	<cfif len(cgi.query_string)>
 	<cfset qstring="?" & cgi.query_string>
 	<cfelse>
@@ -77,13 +72,45 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 </cffunction>
 
 <cffunction name="setCGIPath" output="false" returntype="any" access="remote">
+	<cfargument name="siteID"/>
 	<cfset var cgi_path="">
 	<cfset var parsed_path_info = cgi.path_info>
+	
+	<cfscript>
+	// If the cgi.path_info was empty then double check other cgi variable
+	if (not len(parsed_path_info)){
+		// iis6 1/ IIRF (Ionics Isapi Rewrite Filter)
+		if (structKeyExists(cgi,"http_x_rewrite_url") and len(cgi.http_x_rewrite_url)){ 
+			parsed_path_info = listFirst(cgi.http_x_rewrite_url,'?'); 
+		} 
+		// iis7 rewrite default
+		else if (structKeyExists(cgi,"http_x_original_url") and len(cgi.http_x_original_url)){ 
+			parsed_path_info = listFirst(cgi.http_x_original_url,"?");
+		} 
+		// apache default
+		else if (structKeyExists(cgi,"request_uri") and len(cgi.request_uri)){ 
+			parsed_path_info = listFirst(cgi.request_uri,'?'); 
+		} 
+		// apache fallback
+		else if (structKeyExists(cgi,"redirect_url") and len(cgi.redirect_url)){ 
+			parsed_path_info = listFirst(cgi.redirect_url,'?');
+		} 
+	}
+	</cfscript>
+	<cfif not len(parsed_path_info) and isDefined("url.path")>
+		<cfset parsed_path_info = url.path>
+	</cfif>
 	<cfif len(getContextRoot()) and getContextRoot() NEQ "/">
 		<cfset parsed_path_info = replace(parsed_path_info,getContextRoot(),"")/>
 	</cfif>
 	<cfif len(application.configBean.getContext())>
 		<cfset parsed_path_info = replace(parsed_path_info,application.configBean.getContext(),"")/>
+	</cfif>
+	<cfif listFirst(parsed_path_info,"/") eq arguments.siteID>
+		<cfset parsed_path_info=listRest(parsed_path_info,"/")>
+	</cfif>
+	<cfif listFirst(parsed_path_info,"/") eq "index.cfm">
+		<cfset parsed_path_info=listRest(parsed_path_info,"/")>
 	</cfif>
 	<cfif parsed_path_info eq cgi.script_name>
 		<cfset cgi_path=""/>
@@ -125,7 +152,11 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfset site=application.settingsManager.getSite(rsSites.siteID)>
 	<cftry>
 	<cfif site.isValidDomain(domain:checkDomain, mode:"partial")>
-		<cflocation addtoken="no" url="http://#application.settingsManager.getSite(rsSites.siteID).getDomain()##application.configBean.getContext()#">
+		<cfif arguments.isAdmin>
+			<cfreturn rsSites.siteid>
+		<cfelse>
+			<cflocation addtoken="no" url="http://#application.settingsManager.getSite(rsSites.siteID).getDomain()##application.configBean.getContext()#">
+		</cfif>
 	</cfif>
 	<cfcatch></cfcatch>
 	</cftry>
@@ -215,7 +246,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		
 		<cfset parseCustomURLVars(request.servletEvent)>
 		
-		<cfreturn variables.Mura.doRequest(request.servletEvent)>
+		<cfreturn doRequest(request.servletEvent)>
 		
 	<cfelse>
 		<cfset redirect()>
@@ -228,10 +259,9 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfset var cgi_path="">
 	<cfparam name="url.path" default="" />
 	
-	<cfset cgi_path=setCGIPath()>
-	
 	<cfset siteID = listGetAt(cgi.script_name,listLen(cgi.script_name,"/")-1,"/") />
-	
+	<cfset cgi_path=setCGIPath(siteId)>
+
 	<cfset forcePathDirectoryStructure(cgi_path,siteID)>
 	
 	<cfif not len(cgi.PATH_INFO)>
@@ -255,7 +285,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	
 	<cfparam name="url.path" default="" />
 	
-	<cfset cgi_path=setCGIPath()>
+	<cfset cgi_path=setCGIPath(siteId)>
 	<cfset forcePathDirectoryStructure(cgi_path,siteID)>
 	
 	<cfset url.path="#application.configBean.getStub()#/#siteID#/#url.path#" />
@@ -335,22 +365,27 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cffunction name="renderFilename" output="true" access="public">
 	<cfargument name="filename" default="">
 	<cfargument name="validateDomain" default="true">
+	<cfargument name="parseURL" default="true">
 	<cfset var fileoutput="">
  
 	<cfset request.siteid = bindToDomain()>
 	<cfset request.servletEvent = createObject("component","mura.servletEvent").init() />
 	<cfset request.servletEvent.setValue("muraValidateDomain",arguments.validateDomain)>
 	<cfset request.servletEvent.setValue("currentfilename",arguments.filename)>
-	<cfset parseCustomURLVars(request.servletEvent)>
-	<cfset fileOutput=variables.Mura.doRequest(request.servletEvent)>	
+	<cfif arguments.parseURL>
+		<cfset parseCustomURLVars(request.servletEvent)>
+	</cfif>
+	<cfset fileOutput=doRequest(request.servletEvent)>	
 	<cfoutput>#fileOutput#</cfoutput>
 	<cfabort>
 
 </cffunction>
 
 <cffunction name="render404" output="true" access="public">
-	<cfheader statuscode="404" statustext="Content Not Found" /> 
-	<cfset renderFilename("404")> 
+	<cfheader statuscode="404" statustext="Content Not Found" />
+	<!--- Must reset the linkservID to prevent recursive 404s --->
+	<cfset request.linkServID=""> 
+	<cfset renderFilename("404",true,false)> 
 </cffunction>
 
 <cffunction name="parseCustomURLVars" output="false">
@@ -433,8 +468,85 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<cfelse>	
 			<cfset pageContent = application.contentServer.parseURLRoot()>
 		</cfif>
-		<cfoutput>#pageContent#</cfoutput>
+		<cfreturn pageContent>
 	</cfif> 
+	<cfreturn "">
+</cffunction>
+
+<cffunction name="doRequest" output="false" returntype="any">
+<cfargument name="event">
+	<cfset var response=""/>
+	<cfset var servlet = "" />
+	<cfset var localHandler=""/>
+	<cfset var previewData=""/>
+
+	<cfif fileExists(expandPath("/#application.configBean.getWebRootMap()#/#arguments.event.getValue('siteid')#/includes/servlet.cfc"))>
+		<cfset servlet=createObject("component","#application.configBean.getWebRootMap()#.#arguments.event.getValue('siteid')#.includes.servlet").init(arguments.event)>
+	<cfelse>
+		<cfset arguments.event.getHandler("standardSetContentRenderer").handle(arguments.event)>
+	</cfif>
+	
+	<cfset request.muraFrontEndRequest=true>
+
+	<cfif structKeyExists(url,"changesetID")>
+		<cfset getBean('changesetManager').setSessionPreviewData(url.changesetID)>
+	</cfif>
+	
+	<cfset previewData=getCurrentUser().getValue("ChangesetPreviewData")>
+	<cfset request.muraChangesetPreview=isStruct(previewData) and previewData.siteID eq arguments.event.getValue("siteID")>
+	
+	<cfif request.muraChangesetPreview>
+		<cfset request.nocache=1>
+	</cfif>
+	
+	<cfif fileExists(expandPath("/#application.configBean.getWebRootMap()#") & "/#arguments.event.getValue('siteid')#/includes/eventHandler.cfc")>
+		<cfset localHandler=createObject("component","#application.configBean.getWebRootMap()#.#arguments.event.getValue('siteid')#.includes.eventHandler").init()>
+		<cfset localHandler._objectName=getMetaData(localHandler).name>
+	</cfif>
+
+	<cfset arguments.event.setValue("localHandler",localHandler)/>
+	
+	<cfset application.pluginManager.announceEvent('onSiteRequestStart',arguments.event)/>
+
+	<cfif isdefined("servlet.onRequestStart")>
+		<cfset servlet.onRequestStart()>
+	</cfif>
+	
+	<cfif isdefined("servlet.doRequest")>
+		<cfset response=servlet.doRequest()>
+	<cfelse>
+		<cfset arguments.event.getHandler("standardSetContent").handle(arguments.event)>
+	
+		<cfset arguments.event.getValidator("standardWrongDomain").validate(arguments.event)> 
+		
+		<cfset arguments.event.getValidator("standardTrackSession").validate(arguments.event)>
+		
+		<cfset arguments.event.getHandler("standardSetPermissions").handle(arguments.event)>
+		
+		<cfset arguments.event.getHandler("standardSetIsOnDisplay").handle(arguments.event)>
+		
+		<cfset arguments.event.getHandler("standardDoActions").handle(arguments.event)>
+		
+		<cfset arguments.event.getValidator("standardRequireLogin").validate(arguments.event)>
+		
+		<cfset arguments.event.getHandler("standardSetLocale").handle(arguments.event)>
+		
+		<cfset arguments.event.getValidator("standardMobile").validate(arguments.event)>
+
+	 	<cfset arguments.event.getHandler("standardDoResponse").handle(arguments.event)>
+		
+		<cfset response=arguments.event.getValue("__MuraResponse__")>
+	</cfif>
+
+	<cfif isdefined("servlet.onRequestEnd")>
+		<cfset servlet.onRequestEnd()>
+	</cfif>
+
+	<cfset application.pluginManager.announceEvent('onSiteRequestEnd',arguments.event)/>
+	<cfif isDefined("session.mura.showTrace") and session.mura.showTrace and listFindNoCase(session.mura.memberships,"S2IsPrivate")>
+		<cfset response=replaceNoCase(response,"</html>","#application.utility.dumpTrace()#</html>")>
+	</cfif>
+	<cfreturn response>
 </cffunction>
 
 </cfcomponent>

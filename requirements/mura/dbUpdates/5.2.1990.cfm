@@ -1,22 +1,27 @@
-<cfset doUpdate=false>
+<cfset variables.DOUPDATE=false>
 
 <cftry>
 <cfquery name="rsCheck" datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
 select parentid from tcontentcomments  where 0=1
 </cfquery>
 <cfcatch>
-<cfset doUpdate=true>
+<cfset variables.DOUPDATE=true>
 </cfcatch>
 </cftry>
 
-<cfif doUpdate>
+<cfif variables.DOUPDATE>
 <cfswitch expression="#getDbType()#">
 <cfcase value="mssql">
 	<cfquery name="MSSQLversion" datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
 		EXEC sp_MSgetversion
 	</cfquery>
 	
-	<cfset MSSQLversion=left(MSSQLversion.CHARACTER_VALUE,1)>
+	<cftry>
+		<cfset MSSQLversion=left(MSSQLversion.CHARACTER_VALUE,1)>
+		<cfcatch>
+			<cfset MSSQLversion=mid(MSSQLversion.COMPUTED_COLUMN_1,1,find(".",MSSQLversion.COMPUTED_COLUMN_1)-1)>
+		</cfcatch>
+	</cftry>
 
 	<cfif MSSQLversion neq 8>
 		<cfset MSSQLlob="[nvarchar](max)">
@@ -62,18 +67,18 @@ select parentid from tcontentcomments  where 0=1
 </cfquery>
 </cfif>
 
-<cfset doUpdate=false>
+<cfset variables.DOUPDATE=false>
 
 <cftry>
 <cfquery name="rsCheck" datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
 select tagline from tsettings  where 0=1
 </cfquery>
 <cfcatch>
-<cfset doUpdate=true>
+<cfset variables.DOUPDATE=true>
 </cfcatch>
 </cftry>
 
-<cfif doUpdate>
+<cfif variables.DOUPDATE>
 <cfswitch expression="#getDbType()#">
 <cfcase value="mssql">
 	<cfquery datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
@@ -94,25 +99,30 @@ select tagline from tsettings  where 0=1
 </cfif>
 
 
-<cfset doUpdate=false>
+<cfset variables.DOUPDATE=false>
 
 <cftry>
 <cfquery name="rsCheck" datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
 select params from tcontentobjects  where 0=1
 </cfquery>
 <cfcatch>
-<cfset doUpdate=true>
+<cfset variables.DOUPDATE=true>
 </cfcatch>
 </cftry>
 
-<cfif doUpdate>
+<cfif variables.DOUPDATE>
 <cfswitch expression="#getDbType()#">
 <cfcase value="mssql">
 	<cfquery name="MSSQLversion" datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
 		EXEC sp_MSgetversion
 	</cfquery>
 	
-	<cfset MSSQLversion=left(MSSQLversion.CHARACTER_VALUE,1)>
+	<cftry>
+		<cfset MSSQLversion=left(MSSQLversion.CHARACTER_VALUE,1)>
+		<cfcatch>
+			<cfset MSSQLversion=mid(MSSQLversion.COMPUTED_COLUMN_1,1,find(".",MSSQLversion.COMPUTED_COLUMN_1)-1)>
+		</cfcatch>
+	</cftry>
 
 	<cfif MSSQLversion gt 8>
 		<cfset MSSQLlob="[nvarchar](max)">
@@ -175,11 +185,11 @@ select params from tcontentobjects  where 0=1
 select remotePubDate from tcontentcategories  where 0=1
 </cfquery>
 <cfcatch>
-<cfset doUpdate=true>
+<cfset variables.DOUPDATE=true>
 </cfcatch>
 </cftry>
 
-<cfif doUpdate>
+<cfif variables.DOUPDATE>
 <cfswitch expression="#getDbType()#">
 <cfcase value="mssql">
 	<cfquery datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
@@ -199,18 +209,18 @@ select remotePubDate from tcontentcategories  where 0=1
 </cfswitch>
 </cfif>
 
-<cfset doUpdate=false>
+<cfset variables.DOUPDATE=false>
 
 <cftry>
 <cfquery name="rsCheck" datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
 select remotePubDate from tcontentfeeds  where 0=1
 </cfquery>
 <cfcatch>
-<cfset doUpdate=true>
+<cfset variables.DOUPDATE=true>
 </cfcatch>
 </cftry>
 
-<cfif doUpdate>
+<cfif variables.DOUPDATE>
 <cfswitch expression="#getDbType()#">
 <cfcase value="mssql">
 	<cfquery datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">

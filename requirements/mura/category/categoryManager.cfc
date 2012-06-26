@@ -229,7 +229,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfargument name="data" type="struct" default="#structnew()#"/>		
 	
 	<cfset var categoryBean=getBean("categoryBean") />
-	<cfset var pluginEvent = getBean("category").set(arguments.data) />
+	<cfset var pluginEvent = createObject("component","mura.event").init(arguments.data) />
 	<cfset var parentBean="">
 	<cfset categoryBean.set(arguments.data) />
 	<cfset categoryBean.validate()>
@@ -318,6 +318,10 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfset var cacheFactory="">
 	<cfset var bean=arguments.categoryBean>	
 	
+	<cfif not len(arguments.siteID) and isdefined("session.siteID")>
+		<cfset arguments.siteID=session.siteID>
+	</cfif>
+	
 	<cfif not len(arguments.categoryID) and len(arguments.siteID)>
 		<cfif len(arguments.name)>
 			<cfreturn readByName(arguments.name, arguments.siteID, bean) />
@@ -327,7 +331,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 			<cfreturn readByFilename(arguments.filename, arguments.siteID, bean) />
 		</cfif>
 	</cfif>
-	
+
 	<cfset key= "category" & arguments.siteid & arguments.categoryID />
 	<cfset site=variables.settingsManager.getSite(arguments.siteid)/>
 	<cfset cacheFactory=site.getCacheFactory(name="data")>			
@@ -342,11 +346,20 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 			</cfif>
 			<cfreturn bean/>
 		<cfelse>
-			<cfif not isObject(bean)>
-				<cfset bean=variables.DAO.getBean("category")/>
-			</cfif>
-			<cfset bean.setAllValues( structCopy(cacheFactory.get( key )) )>
-			<cfreturn bean />
+			<cftry>
+				<cfif not isObject(bean)>
+					<cfset bean=variables.DAO.getBean("category")/>
+				</cfif>
+				<cfset bean.setAllValues( structCopy(cacheFactory.get( key )) )>
+				<cfreturn bean />
+				<cfcatch>
+					<cfset bean=variables.DAO.read(arguments.categoryID,bean)>
+					<cfif not bean.getIsNew()>
+						<cfset cacheFactory.get( key, structCopy(bean.getAllValues()) ) />
+					</cfif>
+					<cfreturn bean/>
+				</cfcatch>
+			</cftry>
 		</cfif>
 	<cfelse>
 		<cfreturn variables.DAO.read(arguments.categoryID,bean) />
@@ -368,16 +381,25 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<!--- otherwise grab it from the cache --->
 		<cfif NOT cacheFactory.has( key )>
 			<cfset bean=variables.DAO.readByName(arguments.name,arguments.siteID,bean) >
-			<cfif not bean.getIsNew()>
+			<cfif not isArray(bean) and not bean.getIsNew()>
 				<cfset cacheFactory.get( key, structCopy(bean.getAllValues()) ) />
 			</cfif>
 			<cfreturn bean/>
 		<cfelse>
-			<cfif not isObject(bean)>
-				<cfset bean=variables.DAO.getBean("category")/>
-			</cfif>
-			<cfset bean.setAllValues( structCopy(cacheFactory.get( key )) )>
-			<cfreturn bean />
+			<cftry>
+				<cfif not isObject(bean)>
+					<cfset bean=variables.DAO.getBean("category")/>
+				</cfif>
+				<cfset bean.setAllValues( structCopy(cacheFactory.get( key )) )>
+				<cfreturn bean />
+				<cfcatch>
+					<cfset bean=variables.DAO.readByName(arguments.name,arguments.siteID,bean) >
+					<cfif not isArray(bean) and not bean.getIsNew()>
+						<cfset cacheFactory.get( key, structCopy(bean.getAllValues()) ) />
+					</cfif>
+					<cfreturn bean/>
+				</cfcatch>
+			</cftry>
 		</cfif>
 	<cfelse>
 		<cfreturn variables.DAO.readByName(arguments.name,arguments.siteID,bean) />
@@ -421,16 +443,25 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<!--- otherwise grab it from the cache --->
 		<cfif NOT cacheFactory.has( key )>
 			<cfset bean=variables.DAO.readByFilename(arguments.filename,arguments.siteID,bean) >
-			<cfif not bean.getIsNew()>
+			<cfif not isArray(bean) and not bean.getIsNew()>
 				<cfset cacheFactory.get( key, structCopy(bean.getAllValues()) ) />
 			</cfif>
 			<cfreturn bean/>
 		<cfelse>
-			<cfif not isObject(bean)>
-				<cfset bean=variables.DAO.getBean("category")/>
-			</cfif>
-			<cfset bean.setAllValues( structCopy(cacheFactory.get( key )) )>
-			<cfreturn bean />
+			<cftry>
+				<cfif not isObject(bean)>
+					<cfset bean=variables.DAO.getBean("category")/>
+				</cfif>
+				<cfset bean.setAllValues( structCopy(cacheFactory.get( key )) )>
+				<cfreturn bean />
+				<cfcatch>
+					<cfset bean=variables.DAO.readByFilename(arguments.filename,arguments.siteID,bean) >
+					<cfif not isArray(bean) and not bean.getIsNew()>
+						<cfset cacheFactory.get( key, structCopy(bean.getAllValues()) ) />
+					</cfif>
+					<cfreturn bean/>
+				</cfcatch>
+			</cftry>
 		</cfif>
 	<cfelse>
 		<cfreturn variables.DAO.readByFilename(arguments.filename,arguments.siteID,bean) />
@@ -452,16 +483,25 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<!--- otherwise grab it from the cache --->
 		<cfif NOT cacheFactory.has( key )>
 			<cfset bean=variables.DAO.readByRemoteID(arguments.remoteID,arguments.siteID,bean) >
-			<cfif not bean.getIsNew()>
+			<cfif not isArray(bean) and not bean.getIsNew()>
 				<cfset cacheFactory.get( key, structCopy(bean.getAllValues()) ) />
 			</cfif>
 			<cfreturn bean/>
 		<cfelse>
-			<cfif not isObject(bean)>
-				<cfset bean=variables.DAO.getBean("category")/>
-			</cfif>
-			<cfset bean.setAllValues( structCopy(cacheFactory.get( key )) )>
-			<cfreturn bean />
+			<cftry>
+				<cfif not isObject(bean)>
+					<cfset bean=variables.DAO.getBean("category")/>
+				</cfif>
+				<cfset bean.setAllValues( structCopy(cacheFactory.get( key )) )>
+				<cfreturn bean />
+				<cfcatch>
+					<cfset bean=variables.DAO.readByRemoteID(arguments.remoteID,arguments.siteID,bean) >
+					<cfif not isArray(bean) and not bean.getIsNew()>
+						<cfset cacheFactory.get( key, structCopy(bean.getAllValues()) ) />
+					</cfif>
+					<cfreturn bean/>
+				</cfcatch>
+			</cftry>
 		</cfif>
 	<cfelse>
 		<cfreturn variables.DAO.readByRemoteID(arguments.remoteID,arguments.siteID,bean) />

@@ -50,6 +50,8 @@
 	var _dataSets		= {};
 	var _formStatus		= {};
 	var _selected		= "";
+	
+	var _ckeditor		= "";
 
 	var _list			= {};
 
@@ -197,6 +199,11 @@
 			var templateName	= "field-" + fieldData.fieldtype.fieldtype;
 			var $pointer		= jQuery('<div class="pointer"></div>');
 
+			if(_ckeditor == true ) {
+				var instance = CKEDITOR.instances['field_textblock'];
+				instance.destroy();
+				_ckeditor = false;
+			}
 
 			jQuery("#mura-tb-field-empty").hide();
 			$_field.hide();
@@ -279,7 +286,7 @@
 
 			jQuery(".tb-label").keyup(function() {
 				var val = jQuery(this).val();
-				var fval = val.replace(/[^A-Za-z]/g,"").toLowerCase();
+				var fval = val.replace(/[^A-Za-z|_]/g,"").toLowerCase();
 
 				jQuery("#tb-name").val( fval );
 				jQuery("#tb-name").trigger('change');
@@ -291,6 +298,20 @@
 			jQuery("#ui-tabs").tabs();
 			jQuery("#ui-tabs").tabs('select',0);
 
+			if(fieldData.fieldtype.fieldtype == "textblock") {
+				jQuery('#field_textblock').ckeditor( {toolbar: 'Basic', customConfig: 'config.js.cfm'},onCKEditorChange );
+				_ckeditor = true;
+			}
+		}
+		
+		function onCKEditorChange() {
+			var instance = CKEDITOR.instances['field_textblock'];
+			var fieldData = _formData.fields[_currentFieldID];
+
+			instance.on("change",
+				function(e) {
+					fieldData.value = jQuery('#field_textblock').val(); 
+				});
 		}
 
 		function doDeleteField() {
@@ -879,7 +900,7 @@
 			data.formid = _formData.formid;
 			
 			jQuery.ajax({
-				url: settings.url + "?fuseaction=cform.getfield&i=" + iefix,
+				url: settings.url + "?muraAction=cform.getfield&i=" + iefix,
 				type: 'POST',
 				data: data,
 				cache: false,
@@ -899,7 +920,7 @@
 			data.fieldType = template;
 
 			jQuery.ajax({
-				url: settings.url + "?fuseaction=cform.getfieldtemplate&i=" + iefix,
+				url: settings.url + "?muraAction=cform.getfieldtemplate&i=" + iefix,
 				type: 'POST',
 				data: data,
 				cache: false,
@@ -923,7 +944,7 @@
 			data.dialog = template;
 
 			jQuery.ajax({
-				url: settings.url + "?fuseaction=cform.getdialog&i=" + iefix,
+				url: settings.url + "?muraAction=cform.getdialog&i=" + iefix,
 				type: 'POST',
 				data: data,
 				cache: false,
@@ -946,7 +967,7 @@
 			data.fieldID = _currentFieldID;
 
 			jQuery.ajax({
-				url: settings.url + "?fuseaction=cform.getdataset&i=" + iefix,
+				url: settings.url + "?muraAction=cform.getdataset&i=" + iefix,
 				type: 'POST',
 				data: data,
 				cache: false,

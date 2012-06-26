@@ -44,7 +44,7 @@ For clarity, if you create a modified version of Mura CMS, you are not obligated
 modified version; it is your choice whether to do so, or to make such modified version available under the GNU General Public License 
 version 2 without this exception.  You may, if you choose, apply this exception to your own modified versions of Mura CMS.
 --->
-<cfsavecontent variable="servicesXML"><cfoutput><beans>
+<cfsavecontent variable="variables.servicesXML"><cfoutput><beans>
 		<bean id="utility" <cfif application.cfversion neq 7>class="mura.utility"<cfelse>class="mura.utilityCF7"</cfif> singleton="true" >
 			<constructor-arg name="configBean"><ref bean="configBean" /></constructor-arg>
 			<constructor-arg name="fileWriter"><ref bean="fileWriter" /></constructor-arg>
@@ -101,6 +101,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 			<constructor-arg name="contentManager"><ref bean="contentManager" /></constructor-arg>
 			<constructor-arg name="utility"><ref bean="utility" /></constructor-arg>
 			<constructor-arg name="fileWriter"><ref bean="fileWriter" /></constructor-arg>
+			<constructor-arg name="contentServer"><ref bean="contentServer" /></constructor-arg>
 		</bean>
 		<bean id="fileManager" class="mura.content.file.fileManager" singleton="true" >
 			<constructor-arg name="fileDAO"><ref bean="fileDAO" /></constructor-arg>
@@ -386,9 +387,8 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 			<constructor-arg name="sessionTrackingDAO"><ref bean="sessionTrackingDAO" /></constructor-arg>
 			<constructor-arg name="sessionTrackingGateway"><ref bean="sessionTrackingGateway" /></constructor-arg>
 		</bean>
-		<bean id="sessionTrackingDAO" <cfif application.cfversion eq 7>class="mura.user.sessionTracking.sessionTrackingDAOCF7"<cfelse>class="mura.user.sessionTracking.sessionTrackingDAO"</cfif> singleton="true">
+		<bean id="sessionTrackingDAO" class="mura.user.sessionTracking.sessionTrackingDAO" singleton="true">
 			<constructor-arg name="configBean"><ref bean="configBean" /></constructor-arg>
-			<constructor-arg name="settingsManager"><ref bean="settingsManager" /></constructor-arg>
 		</bean>
 		<bean id="sessionTrackingGateway" class="mura.user.sessionTracking.sessionTrackingGateway" singleton="true">
 			<constructor-arg name="configBean"><ref bean="configBean" /></constructor-arg>

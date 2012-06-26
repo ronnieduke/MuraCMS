@@ -84,8 +84,9 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<cfset var importWDDX = "" />
 		
 		<cfset variables.Bundle	= variables.unpackPath />
- 
 
+		<cfsetting requestTimeout = "7200">
+		
 		<cfif fileExists( arguments.BundleFile )>
 			<cfif application.settingsManager.isBundle(arguments.BundleFile)>
 				<cfset variables.zipTool.Extract(zipFilePath="#arguments.BundleFile#",extractPath=variables.unpackPath, overwriteFiles=true)>
@@ -164,6 +165,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<cfset var deleteList =	"" />
 		<cfset var rstfiles=getValue("rstfiles")>
 		<cfset var rscheck="">
+		<cfset var started=false>
 		
 		<!---<cfset var moduleIDSQLlist="" />--->
 		<cfset var i="" />
@@ -186,16 +188,21 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 			<cfquery name="rsInActivefiles" datasource="#arguments.dsn#">
 				select fileID,fileExt from tfiles  
 				where siteid = <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#"/> 
+				and moduleid in ('00000000000000000000000000000000000','00000000000000000000000000000000003'<cfif len(arguments.moduleID)>,<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.moduleID#" list="true"></cfif><cfif arguments.includeUsers>,'00000000000000000000000000000000008'</cfif>)
 				and (
-					
-					moduleid in ('00000000000000000000000000000000000','00000000000000000000000000000000003'<cfif len(arguments.moduleID)>,<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.moduleID#" list="true"></cfif><cfif arguments.includeUsers>,'00000000000000000000000000000000008'</cfif>)
 							
-					<cfif not arguments.includeVersionHistory>
-						or fileID not in (<cfqueryparam cfsqltype="cf_sql_varchar" value="#valueList(rstfiles.fileID)#" list="true">)				
+					<cfif not arguments.includeVersionHistory and rstfiles.recordcount>
+						fileID not in (<cfqueryparam cfsqltype="cf_sql_varchar" value="#valueList(rstfiles.fileID)#" list="true">)				
+						<cfset started=true>
 					</cfif>
 							
 					<cfif not arguments.includeTrash>
-						or deleted=1
+						<cfif started>or</cfif> deleted=1
+						<cfset started=true>
+					</cfif>
+
+					<cfif not started>
+						1=1
 					</cfif>
 				)	
 				
@@ -205,7 +212,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 			</cfquery>
 			
 			<cfloop query="rsInActivefiles">
-				<cfdirectory action="list" name="rscheck" directory="#variables.configBean.getValue('filedir')##variables.fileDelim#cache#variables.fileDelim#file#variables.fileDelim#" filter="#rsInActivefiles.fileID#*">
+				<cfdirectory action="list" name="rscheck" directory="#variables.configBean.getValue('filedir')##variables.fileDelim##arguments.siteid##variables.fileDelim#cache#variables.fileDelim#file#variables.fileDelim#" filter="#rsInActivefiles.fileID#*">
 								
 				<cfif rscheck.recordcount>
 					<cfloop query="rscheck">
@@ -214,7 +221,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 				</cfif>
 						
 			</cfloop>
-				
+
 			<cfif variables.configBean.getValue('assetdir') neq variables.configBean.getValue('webroot')>
 				<cfset zipDir = variables.configBean.getValue('assetdir') & variables.fileDelim & arguments.siteID />
 				<cffile action="write" file="#zipDir##variables.fileDelim#blank.txt" output="empty file" />  
@@ -455,6 +462,8 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<cfset var rstadplacementcategories="">
 		<cfset var rstformresponsepackets="">
 		<cfset var rsCleanDir="">
+
+		<cfsetting requestTimeout = "7200">
 		
 		<cfif len(arguments.saveFileDir) and listFind("/,\",arguments.saveFileDir)>
 			<cfset arguments.saveFileDir="">
@@ -1067,7 +1076,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 				and tclassextenddata.attributeID in (select attributeID from tclassextendattributes
 					where siteID=<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#"/>)
 
-				union 
+				union all
 
 				select tclassextenddata.baseID, tclassextenddata.attributeID, tclassextenddata.attributeValue, 
 				tclassextenddata.siteID, tclassextenddata.stringvalue, tclassextenddata.numericvalue, tclassextenddata.datetimevalue, tclassextenddata.remoteID from tclassextenddata 
@@ -1075,7 +1084,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 				inner join tclassextendsets on (tclassextendattributes.extendsetid=tclassextendsets.extendsetid)
 				inner join tclassextend on (tclassextendsets.subtypeid=tclassextend.subtypeid)
 				where tclassextenddata.siteid = <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#"/>
-				and tclassextend.type='Site'
+				and tclassextend.type in ('Site','Custom')
 
 			</cfquery>
 		

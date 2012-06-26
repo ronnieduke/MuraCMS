@@ -46,10 +46,10 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 --->
 
 <cfsilent>
-	<cfquery datasource="#application.configBean.getDatasource(mode='readOnly')#" username="#application.configBean.getDBUsername(mode='readOnly')#" password="#application.configBean.getDBPassword(mode='readOnly')#" name="rslist">
+	<cfquery datasource="#application.configBean.getDatasource(mode='readOnly')#" username="#application.configBean.getDBUsername(mode='readOnly')#" password="#application.configBean.getDBPassword(mode='readOnly')#" name="variables.rslist">
 	select mlid, name, ispurge, description 
 	from tmailinglist 
-	where siteid=<cfqueryparam cfsqltype="cf_sql_varchar" value="#$.event('siteID')#">
+	where siteid=<cfqueryparam cfsqltype="cf_sql_varchar" value="#variables.$.event('siteID')#">
 	and 
 	<cfif isValid('UUID',arguments.objectID)>
 	mlid
@@ -60,66 +60,74 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	</cfquery>
 </cfsilent>
 <cfoutput>
-<div class="svMailingList" id="#createCSSID(rsList.name)#">
-	<#$.getHeaderTag('subHead1')#>#rslist.name#</#$.getHeaderTag('subHead1')#>
+<div class="svMailingList well" id="#createCSSID(variables.rslist.name)#">
+	<#variables.$.getHeaderTag('subHead1')#>#variables.rslist.name#</#variables.$.getHeaderTag('subHead1')#>
 	
-	<cfif $.event('doaction') eq 'unsubscribe'>
-		<cfif $.event("passedProtect")>
-			<p class="success">#$.rbKey('mailinglist.youhaveunsubscribed')#</p>
+	<cfif variables.$.event('doaction') eq 'unsubscribe'>
+		<cfif variables.$.event("passedProtect")>
+			<p class="success">#variables.$.rbKey('mailinglist.youhaveunsubscribed')#</p>
 		<cfelse>
-			<p class="error">#$.rbKey('captcha.spam')#</p>
+			<p class="error">#variables.$.rbKey('captcha.spam')#</p>
 		</cfif>
-	<cfelseif $.event('doaction') eq 'subscribe' and rslist.isPurge neq 1>
-		<cfif $.event("passedProtect")>
-			<p class="success">#$.rbKey('mailinglist.youhavesubscribed')#</p>
+	<cfelseif variables.$.event('doaction') eq 'subscribe' and variables.rslist.isPurge neq 1>
+		<cfif variables.$.event("passedProtect")>
+			<p class="success">#variables.$.rbKey('mailinglist.youhavesubscribed')#</p>
 		<cfelse>
-			<p class="error">#$.rbKey('captcha.spam')#</p>
+			<p class="error">#variables.$.rbKey('captcha.spam')#</p>
 		</cfif>
-	<cfelseif $.event('doaction') eq 'subscribe' and rslist.isPurge eq 1>
-		<cfif $.event("passedProtect")>
-			<p class="success">#$.rbKey('mailinglist.emailremoved')#</p>
+	<cfelseif variables.$.event('doaction') eq 'subscribe' and variables.rslist.isPurge eq 1>
+		<cfif variables.$.event("passedProtect")>
+			<p class="success">#variables.$.rbKey('mailinglist.emailremoved')#</p>
 		<cfelse>
-			<p class="error">#$.rbKey('captcha.spam')#</p>
+			<p class="error">#variables.$.rbKey('captcha.spam')#</p>
 		</cfif>	
 	<cfelse>
-	<cfif #rslist.description# neq ''><p class="description">#rslist.description#</p></cfif>
+	<cfif #variables.rslist.description# neq ''><p class="description">#variables.rslist.description#</p></cfif>
 	<form name="frmMailingList" action="?nocache=1" method="post" onsubmit="return validate(this);" class="clearfix" novalidate="novalidate" >
 		<fieldset>
-			<legend>#$.rbKey('mailinglist.yourinfo')#</legend>
+			<legend>#variables.$.rbKey('mailinglist.yourinfo')#</legend>
 			<ol>
-			<cfif rslist.isPurge neq 1>
-				<li class="req">
-					<label for="txtNameFirst">#$.rbKey('mailinglist.fname')#<ins> (required)</ins></label>
-					<input type="text" id="txtNameFirst" class="text" name="fname" maxlength="50" required="true" message="#HTMLEditFormat($.rbKey('mailinglist.fnamerequired'))#"/>
+			<cfif variables.rslist.isPurge neq 1>
+				<li class="req control-group">
+					<label for="txtNameFirst" class="control-label">#variables.$.rbKey('mailinglist.fname')#<ins> (required)</ins></label>
+					<div class="controls">
+					<input type="text" id="txtNameFirst" class="text input-med" name="fname" maxlength="50" required="true" message="#HTMLEditFormat(variables.$.rbKey('mailinglist.fnamerequired'))#"/>
+					</div>
 				</li>
-				<li class="req">
-					<label for="txtNameLast">#$.rbKey('mailinglist.lname')#<ins> (#$.rbKey('mailinglist.required')#)</ins></label>
-					<input type="text" id="txtNameLast" class="text" name="lname" maxlength="50" required="true" message="#HTMLEditFormat($.rbKey('mailinglist.lnamerequired'))#"/>
+				<li class="req control-group">
+					<label for="txtNameLast" class="control-label">#variables.$.rbKey('mailinglist.lname')#<ins> (#variables.$.rbKey('mailinglist.required')#)</ins></label>
+					<div class="controls">
+					<input type="text" id="txtNameLast" class="text" name="lname" maxlength="50" required="true" message="#HTMLEditFormat(variables.$.rbKey('mailinglist.lnamerequired'))#"/>
+					</div>
 				</li>
-				<li>
-					<label for="txtCompany">#$.rbKey('mailinglist.company')#</label>
+				<li class="control-group">
+					<label for="txtCompany" class="control-label">#variables.$.rbKey('mailinglist.company')#</label>
+					<div class="controls">
 					<input type="text" id="txtCompany" class="text" maxlength="50" name="company" />
+					</div>
 				</li>
 			</cfif>
-				<li class="req">
-					<label for="txtEmail">#$.rbKey('mailinglist.email')#<ins> (#$.rbKey('mailinglist.required')#)</ins></label>
-					<input type="text" id="txtEmail" class="text" name="email" maxlength="50" required="true" validate="email" message="#HTMLEditFormat($.rbKey('mailinglist.emailvalidate'))#"/>
+				<li class="req control-group">
+					<label for="txtEmail" class="control-label">#variables.$.rbKey('mailinglist.email')#<ins> (#variables.$.rbKey('mailinglist.required')#)</ins></label>
+					<div class="controls">
+					<input type="text" id="txtEmail" class="text" name="email" maxlength="50" required="true" validate="email" message="#HTMLEditFormat(variables.$.rbKey('mailinglist.emailvalidate'))#"/>
+					</div>
 				</li>
 			</ol>
 		</fieldset>
 		<div class="buttons">
-			<input type="hidden" name="linkServID" value="#$.content('contentID')#" />
-			<input type="hidden" name="mlid" value="#rslist.mlid#"><input type="hidden" name="siteid" value="#$.event('siteID')#" />
-			<cfif rslist.isPurge eq 0>
+			<input type="hidden" name="linkServID" value="#variables.$.content('contentID')#" />
+			<input type="hidden" name="mlid" value="#variables.rslist.mlid#"><input type="hidden" name="siteid" value="#variables.$.event('siteID')#" />
+			<cfif variables.rslist.isPurge eq 0>
 			<input type="hidden" name="doaction" value="subscribe" checked="checked" />
 			<input type="hidden" name="isVerified" value="1" />
-			<input type="submit" class="submit" value="#HTMLEditFormat($.rbKey('mailinglist.subscribe'))#" />
+			<input type="submit" class="submit btn" value="#HTMLEditFormat(variables.$.rbKey('mailinglist.subscribe'))#" />
 			<cfelse>
 			<input type="hidden" name="doaction" value="subscribe"  />
 			<input type="hidden" name="isVerified" value="1"  />
-			<input type="submit" class="submit" value="#HTMLEditFormat($.rbKey('mailinglist.unsubscribe'))#" />
+			<input type="submit" class="submit btn" value="#HTMLEditFormat(variables.$.rbKey('mailinglist.unsubscribe'))#" />
 			</cfif>
-				#$.dspObject_Include(thefile='dsp_form_protect.cfm')#
+				#variables.$.dspObject_Include(thefile='dsp_form_protect.cfm')#
 		</div>
 	</form>
 	</cfif>

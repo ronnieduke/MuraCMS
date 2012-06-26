@@ -48,7 +48,7 @@ to your own modified versions of Mura CMS.
 <!--- settings --->
 <cfset message = "" />
 <!--- get settings path --->
-<cfset settingsPath = baseDir & "/config/settings.ini.cfm" />
+<cfset settingsPath = variables.baseDir & "/config/settings.ini.cfm" />
  
 <!--- load settings into iniFile instance --->
 <cfset settingsini=createobject("component","mura.IniFile").init(settingsPath)>
@@ -282,7 +282,12 @@ to your own modified versions of Mura CMS.
 								EXEC sp_MSgetversion
 								</cfquery>
 
-								<cfset MSSQLversion=left(MSSQLversion.CHARACTER_VALUE,1)>
+								<cftry>
+									<cfset MSSQLversion=left(MSSQLversion.CHARACTER_VALUE,1)>
+									<cfcatch>
+										<cfset MSSQLversion=mid(MSSQLversion.COMPUTED_COLUMN_1,1,find(".",MSSQLversion.COMPUTED_COLUMN_1)-1)>
+									</cfcatch>
+								</cftry>								
 								
 								<cfset sql = REReplaceNoCase( sql, "\nGO", ";", "ALL") />
 								<cfset aSql = ListToArray(sql, ';')>
@@ -560,7 +565,7 @@ to your own modified versions of Mura CMS.
 </head>
 </cfoutput>
 <body id="cSetUp" >
-<div id="header"><a id="blueRiverLink" href="http://blueriver.com" target="_blank" title="mura by blueRiver"></a><p id="version">Version 5.5</p><h1>Mura CMS</h1></div>
+<div id="header"><a id="blueRiverLink" href="http://blueriver.com" target="_blank" title="mura by blueRiver"></a><p id="version">Version 5.6</p><h1>Mura CMS</h1></div>
 
 <div id="content">
 <h2>Mura Set Up</h2>
@@ -696,12 +701,12 @@ if (server.ColdFusion.ProductName CONTAINS "Railo"){
 	</dd>
 	<!--- <cfdump var="#form.production_siteidinurls#"> --->
 	<dt><a href="" class="tooltip">Use SiteIDs in URLs<span>When SiteIDs are not in URLs you must ensure that each site has it's own unique domain.</span></a></dt>
-	<dd><input type="radio" name="siteidinurls" value="1" id="siteidinurls_on"<cfif yesNoFormat(form.production_siteidinurls)> checked</cfif>> Yes 
-	    <input type="radio" name="siteidinurls" value="0" id="siteidinurls_off"<cfif not yesNoFormat(form.production_siteidinurls)> checked</cfif>> No      
+	<dd><input type="radio" name="production_siteidinurls" value="1" id="siteidinurls_on"<cfif yesNoFormat(form.production_siteidinurls)> checked</cfif>> Yes 
+	    <input type="radio" name="production_siteidinurls" value="0" id="siteidinurls_off"<cfif not yesNoFormat(form.production_siteidinurls)> checked</cfif>> No      
 	</dd>
 	<dt><a href="" class="tooltip">Use "index.cfm" in URLS<span>If set to "No" you must ensure that you have properly configured your webserver's URL rewriting. Toggling this alone will not remove index.cfm from yoru URLs.</span></a></dt>
-	<dd><input type="radio" class="radio" name="indexfileinurls" value="1" id="indexfileinurls_on"<cfif yesNoFormat(form.production_indexfileinurls)> checked</cfif>> Yes 
-	    <input type="radio" class="radio" name="indexfileinurls" value="0" id="indexfileinurls_off"<cfif not yesNoFormat(form.production_indexfileinurls)> checked</cfif>> No      
+	<dd><input type="radio" class="radio" name="production_indexfileinurls" value="1" id="indexfileinurls_on"<cfif yesNoFormat(form.production_indexfileinurls)> checked</cfif>> Yes 
+	    <input type="radio" class="radio" name="production_indexfileinurls" value="0" id="indexfileinurls_off"<cfif not yesNoFormat(form.production_indexfileinurls)> checked</cfif>> No      
 	</dd>
 	</dl>
 

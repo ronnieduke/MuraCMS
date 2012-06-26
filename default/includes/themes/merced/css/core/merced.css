@@ -1,3 +1,5 @@
+/* @override http://localhost:8500/theme-dev/bootstrap/includes/themes/merced/css/core/merced.css */
+
 /*
 Theme:  Merced (HTML 5)
 Author: Blue River Interactive Group
@@ -912,11 +914,7 @@ a.boxItemHeader { /* Link of items inside dragable boxes */
 	padding: 0;
 	line-height: inherit;
 	}
-
-.home aside .svIndex span.readMore a {
-	display: none;
-	}
-
+	
 /* @end Home Promo Feeds
 -------------------------------- */
 

@@ -71,7 +71,12 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 			<cfif NOT cacheFactory.has( key )>
 				<cfreturn cacheFactory.get( key, buildGroupPermVerdict(arguments.contentID,arguments.groupID,arguments.type,arguments.siteid)  ) />
 			<cfelse>
-				<cfreturn cacheFactory.get( key ) />
+				<cftry>
+					<cfreturn cacheFactory.get( key ) />
+					<cfcatch>
+						<cfreturn cacheFactory.get( key, buildGroupPermVerdict(arguments.contentID,arguments.groupID,arguments.type,arguments.siteid)  ) />
+					</cfcatch>
+				</cftry>
 			</cfif>
 		<cfelse>
 			<cfreturn buildGroupPermVerdict(arguments.contentID,arguments.groupID,arguments.type,arguments.siteid)/>
@@ -137,12 +142,18 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 			<cfif NOT cacheFactory.has( key )>
 				<cfset rsPermited=getPermVerdictQuery(arguments.contentID,arguments.type,arguments.siteid) />
 				<cfset cacheFactory.get( key, rsPermited.recordcount  ) />
-			<cfelse>		
-				<cfif cacheFactory.get( key ) >
-					<cfset rsPermited=getPermVerdictQuery(arguments.contentID,arguments.type,arguments.siteid) />
-				<cfelse>
-					<cfreturn perm />	
-				</cfif>
+			<cfelse>	
+				<cftry>	
+					<cfif cacheFactory.get( key ) >
+						<cfset rsPermited=getPermVerdictQuery(arguments.contentID,arguments.type,arguments.siteid) />
+					<cfelse>
+						<cfreturn perm />	
+					</cfif>
+					<cfcatch>
+						<cfset rsPermited=getPermVerdictQuery(arguments.contentID,arguments.type,arguments.siteid) />
+					<cfset cacheFactory.get( key, rsPermited.recordcount  ) />
+					</cfcatch>
+				</cftry>
 			</cfif>
 		<cfelse>
 			<cfset rsPermited=getPermVerdictQuery(arguments.contentID,arguments.type,arguments.siteid) />
@@ -188,6 +199,8 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 				<cfset verdict='editor'>
 			<cfelseif getpermverdict(arguments.contentid,'author',arguments.siteid)>
 				<cfset verdict='author'>
+			<cfelseif getpermverdict(arguments.contentid,'read',arguments.siteid)>
+				<cfset verdict='read'>
 			<cfelseif getpermverdict(arguments.contentid,'deny',arguments.siteid)>
 				<cfset verdict='deny'>
 			</cfif>
@@ -229,7 +242,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<cfif verdict neq 'none'><cfbreak></cfif>
 		</cfloop>
 		
-		<cfif verdict eq 'deny' or verdict eq 'read' or verdict eq ''>
+		<cfif verdict eq 'deny' or verdict eq ''>
 		<cfset verdict='none'>
 		</cfif>
 		
@@ -269,17 +282,21 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 				<cfif site.getCache()>
 					<!--- check to see if it is cached. if not then pass in the context --->
 					<!--- otherwise grab it from the cache --->		
-					<cfif NOT cacheFactory.has( key )>
-						
+					<cfif NOT cacheFactory.has( key )>				
 						<cfset rsgroups=getModulePermQuery(arguments.moduleID,arguments.siteid) />
 						<cfset cacheFactory.get( key, rsgroups.recordcount  ) />
 					<cfelse>
-							
-						<cfif cacheFactory.get( key ) >
-							<cfset rsgroups=getModulePermQuery(arguments.moduleID,arguments.siteid) />
-						<cfelse>
-							<cfreturn Verdict />	
-						</cfif>
+						<cftry>
+							<cfif cacheFactory.get( key ) >
+								<cfset rsgroups=getModulePermQuery(arguments.moduleID,arguments.siteid) />
+							<cfelse>
+								<cfreturn Verdict />	
+							</cfif>
+							<cfcatch>
+								<cfset rsgroups=getModulePermQuery(arguments.moduleID,arguments.siteid) />
+								<cfset cacheFactory.get( key, rsgroups.recordcount  ) />
+							</cfcatch>
+						</cftry>
 					</cfif>
 				<cfelse><
 					<cfset rsgroups=getModulePermQuery(arguments.moduleID,arguments.siteid) />
@@ -486,7 +503,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 
 </cfloop>
 
-	<cfset variables.settingsManager.getSite(arguments.data.siteid).purgeCache()>
+	<cfset variables.settingsManager.getSite(arguments.data.siteid).purgeCache(name="output")>
 </cffunction>
 
 <cffunction name="updateGroup" returntype="void" access="public" output="true">
@@ -502,26 +519,24 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	</cfquery>
 	
 	<cfloop query="rsContentlist">
-	<cfif isdefined('arguments.data.p#replacelist(rsContentlist.contentid,"-","")#')
-	 and 
-	 (evaluate("arguments.data.p#replacelist(rsContentlist.contentid,"-","")#") eq 'Editor' 
-	 	or evaluate("arguments.data.p#replacelist(rsContentlist.contentid,"-","")#") eq 'Author'  
-		or evaluate("arguments.data.p#replacelist(rsContentlist.contentid,"-","")#") eq 'Module')>
-	
-	<cfquery datasource="#variables.configBean.getDatasource()#" username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
-	Insert Into tpermissions  (ContentID,GroupID,Type,siteid)
-	values(
-	<cfqueryparam cfsqltype="cf_sql_varchar" value="#rsContentlist.ContentID#"/>,
-	<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.data.groupid#"/>,
-	<cfqueryparam cfsqltype="cf_sql_varchar" value="#evaluate("form.p#replacelist(rsContentlist.contentid,"-","")#")#"/>,
-	<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.data.siteid#"/>
-	)</cfquery>
-	
-	</cfif>
+		<cfif isdefined('arguments.data.p#replacelist(rsContentlist.contentid,"-","")#')
+		 and 
+		 (evaluate("arguments.data.p#replacelist(rsContentlist.contentid,"-","")#") eq 'Editor' 
+		 	or evaluate("arguments.data.p#replacelist(rsContentlist.contentid,"-","")#") eq 'Author'  
+			or evaluate("arguments.data.p#replacelist(rsContentlist.contentid,"-","")#") eq 'Module')>
+		
+			<cfquery datasource="#variables.configBean.getDatasource()#" username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
+			Insert Into tpermissions  (ContentID,GroupID,Type,siteid)
+			values(
+			<cfqueryparam cfsqltype="cf_sql_varchar" value="#rsContentlist.ContentID#"/>,
+			<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.data.groupid#"/>,
+			<cfqueryparam cfsqltype="cf_sql_varchar" value="#evaluate("form.p#replacelist(rsContentlist.contentid,"-","")#")#"/>,
+			<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.data.siteid#"/>
+			)</cfquery>
+		
+		</cfif>
 
-	
-</cfloop>
-
+	</cfloop>
 
 	<cfset variables.settingsManager.getSite(arguments.data.siteid).purgeCache()>
 	
@@ -592,22 +607,25 @@ username="#variables.configBean.getDBUsername()#" password="#variables.configBea
 	Delete From tpermissions where contentid= <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.data.contentID#"/> and siteid= <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.data.siteid#"/>
 	</cfquery>
 	
-	
 	<cfloop list="#arguments.data.groupid#" index="I">
 
-	<cfquery datasource="#variables.configBean.getDatasource()#"
-	username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
-	Insert Into tpermissions  (ContentID,GroupID,Type,siteid)
-	values(
-	<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.data.contentID#"/>,
-	<cfqueryparam cfsqltype="cf_sql_varchar" value="#I#"/>,
-	'module',
-	<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.data.siteid#"/>
-	)</cfquery>
-	
-	<cfset variables.settingsManager.getSite(arguments.data.siteid).purgeCache()>
+		<cfquery datasource="#variables.configBean.getDatasource()#"
+		username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
+		Insert Into tpermissions  (ContentID,GroupID,Type,siteid)
+		values(
+		<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.data.contentID#"/>,
+		<cfqueryparam cfsqltype="cf_sql_varchar" value="#I#"/>,
+		'module',
+		<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.data.siteid#"/>
+		)</cfquery>
 
-</cfloop>
+		<cfquery name="rs" datasource="#variables.configBean.getDatasource()#" username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
+	 		select * from tpermissions where groupid='#arguments.data.groupid#'
+		</cfquery>
+
+	</cfloop>
+
+	<cfset variables.settingsManager.getSite(arguments.data.siteid).purgeCache(name="output")>
 
 </cffunction>
 

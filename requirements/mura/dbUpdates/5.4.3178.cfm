@@ -2,18 +2,18 @@
 
 	<cfcase value="mssql">		
 
-		<cfset runDBUpdate=false/>
+		<cfset variables.RUNDBUPDATE=false/>
 
 		<cftry>
 			<cfquery datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
 				SELECT TOP 1 changesetID AS CheckIfTableExists FROM tchangesets
 			</cfquery>
 			<cfcatch>
-				<cfset runDBUpdate = true />
+				<cfset variables.RUNDBUPDATE = true />
 			</cfcatch>
 		</cftry>
 			
-		<cfif runDBUpdate>
+		<cfif variables.RUNDBUPDATE>
 		
 		<cftransaction>
 		
@@ -21,7 +21,12 @@
 				EXEC sp_MSgetversion
 			</cfquery>
 				
-			<cfset MSSQLversion = left(MSSQLversion.CHARACTER_VALUE,1) >
+			<cftry>
+				<cfset MSSQLversion=left(MSSQLversion.CHARACTER_VALUE,1)>
+				<cfcatch>
+					<cfset MSSQLversion=mid(MSSQLversion.COMPUTED_COLUMN_1,1,find(".",MSSQLversion.COMPUTED_COLUMN_1)-1)>
+				</cfcatch>
+			</cftry>
 			
 			<cfif MSSQLversion neq 8>
 				<cfset MSSQLlob="[nvarchar](max) NULL">
@@ -80,20 +85,9 @@
 	
 	</cfcase>
 	<cfcase value="mysql">
-		<cfset runDBUpdate=false/>
-		<cftry>
-			<cfquery datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
-				select changesetID as CheckIfTableExists from tchangesets limit 1
-			</cfquery>
-			<cfcatch>
-				<cfset runDBUpdate=true/>
-			</cfcatch>
-		</cftry>
-		
-		<cfif runDBUpdate>
-			<cftry>
-				<cftransaction>
-					<cfquery datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
+		<cftransaction>
+			<cfif not dbUtility.setTable('tchangesets').tableExists()>
+				<cfquery datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
 					CREATE TABLE `tchangesets` (
 					  `changesetID` char(35),
 					  `siteID` varchar(25),
@@ -113,61 +107,32 @@
 					  key `IX_tchangesets_publishDate` (`publishDate`),
 					  key `IX_tchangesets_remoteID` (`remoteID`)
 					) ENGINE=#variables.instance.MYSQLEngine# DEFAULT CHARSET=utf8
-					</cfquery>
-					
-					<cfquery datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
+				</cfquery>
+			</cfif>
+
+			<cfif not dbUtility.setTable('tcontent').columnExists('changesetID')>
+				<cfquery datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
 					ALTER TABLE tcontent ADD COLUMN changesetID char(35) default NULL
-					</cfquery>
-					
-					<cfquery datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
+				</cfquery>
+						
+				<cfquery datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
 					CREATE INDEX IX_tcontent_changesetID ON tcontent (changesetID)
-					</cfquery>
-				</cftransaction>
-				<cfcatch>
-					<cftransaction>
-						<cfquery datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
-						CREATE TABLE `tchangesets` (
-						  `changesetID` char(35) ,
-						  `siteID` varchar(25),
-						  `name` varchar(100),
-						  `description` longtext,
-						  `created` datetime,
-						  `publishDate` datetime,
-						  `published` tinyint(3),
-						  `lastUpdate` datetime,
-						  `lastUpdateBy` varchar(50),
-						  `lastUpdateByID` char(35),
-						  `remoteID` varchar(255),
-						  `remotePubDate` datetime,
-						  `remoteSourceURL` varchar(255),
-						  PRIMARY KEY  (`changesetID`)
-						) 
-						</cfquery>
-						
-						<cfquery datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
-						ALTER TABLE tcontent ADD COLUMN changesetID char(35) default NULL
-						</cfquery>
-						
-						<cfquery datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
-						CREATE INDEX IX_tcontent_changesetID ON tcontent (changesetID)
-						</cfquery>
-					</cftransaction>
-				</cfcatch>
-			</cftry>
-		</cfif>
+				</cfquery>
+			</cfif>
+		</cftransaction>	
 	</cfcase>
 	<cfcase value="oracle">
-		<cfset runDBUpdate=false/>
+		<cfset variables.RUNDBUPDATE=false/>
 		<cftry>
 			<cfquery datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
 				select * from (select changesetID as CheckIfTableExists from tchangesets) where ROWNUM <=1
 			</cfquery>
 			<cfcatch>
-				<cfset runDBUpdate=true/>
+				<cfset variables.RUNDBUPDATE=true/>
 			</cfcatch>
 		</cftry>
 		
-		<cfif runDBUpdate>
+		<cfif variables.RUNDBUPDATE>
 			<cftransaction>
 			<cfquery datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
 			CREATE TABLE "TCHANGESETS" (
@@ -388,18 +353,18 @@ update tsettings set hasChangesets=0
 
 </cfif>
 
-<cfset doUpdate=false>
+<cfset variables.DOUPDATE=false>
 
 <cftry>
 <cfquery name="rsCheck" datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
 select urltitle from tcontentcategories  where 0=1
 </cfquery>
 <cfcatch>
-<cfset doUpdate=true>
+<cfset variables.DOUPDATE=true>
 </cfcatch>
 </cftry>
 
-<cfif doUpdate>
+<cfif variables.DOUPDATE>
 <cfswitch expression="#getDbType()#">
 <cfcase value="mssql">
 	<cfquery datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">

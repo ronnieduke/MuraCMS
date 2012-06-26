@@ -50,10 +50,8 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 
 <cffunction name="init" returntype="any" output="false" access="public">
 	<cfargument name="configBean">
-	<cfargument name="contentRenderer">
 	
 	<cfset variables.configBean=arguments.configBean />
-	<cfset variables.contentRenderer=arguments.contentRenderer />
 	
 	<cfreturn this />
 </cffunction>
@@ -102,18 +100,13 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfset variables.definitionsQuery="">
 </cffunction>
 
-<cffunction name="setContentRenderer" access="public" returntype="void">
-<cfargument name="contentRenderer">
-<cfset variables.contentRenderer=arguments.contentRenderer />
-</cffunction>
-
 <cffunction name="setConfigBean" access="public" returntype="void">
 <cfargument name="configBean">
 <cfset variables.configBean=arguments.configBean />
 </cffunction>
 
 <cffunction name="getSubTypeBean" returnType="any">
-<cfset var subtype=createObject("component","mura.extend.extendSubType").init(variables.configBean,variables.contentRenderer) />
+<cfset var subtype=createObject("component","mura.extend.extendSubType").init(variables.configBean) />
 <cfreturn subtype />
 </cffunction>
 
@@ -1187,6 +1180,8 @@ and tclassextendattributes.type='File'
 	<cfset destSubType.setBaseTable(sourceSubType.getBaseTable())>
 	<cfset destSubType.setBaseKeyField(sourceSubType.getBaseKeyField())>
 	<cfset destSubType.setIsActive(sourceSubType.getIsActive())>
+	<cfset destSubType.setHasSummary(sourceSubType.getHasSummary())>
+	<cfset destSubType.setHasBody(sourceSubType.getHasBody())>
 	
 	<cfset destSubType.save()>
 	
@@ -1301,8 +1296,9 @@ and tclassextendattributes.type='File'
 				}
 							
 				if(extendSet.getIsNew()){
-					      		extendSet.save();
-					    }
+					extendSet.setOrderNo(extset);
+					extendSet.save();
+				}
 
 				for(at=1;at lte arraylen(extendSetXML.xmlChildren); at=at+1){
 					      		
@@ -1325,6 +1321,7 @@ and tclassextendattributes.type='File'
 							}
 						}
 
+						attribute.setOrderNo(at);
 						attribute.save();
 					}			
 				}

@@ -204,7 +204,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 				and type in ('Portal','Page','Calendar','Gallery','File','Link','Component','Form')
 			</cfcase>
 			<cfcase value="urltitle">
-				and urltitle = <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.fieldValue#"/> 
+				and urltitle like <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.fieldValue#"/> 
 				and type in ('Portal','Page','Calendar','Gallery','File','Link')
 			</cfcase>
 			<cfcase value="remoteID">
@@ -433,7 +433,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 			<cfset versionLink='http://#listFirst(cgi.http_host,":")##variables.configBean.getServerPort()##variables.configBean.getContext()#/?contentID=#arguments.contentBean.getContentID()#&previewID=#arguments.contentBean.getContentHistID()#'>
 		</cfif>
 	<cfelse>
-		<cfset versionLink='http://#listFirst(cgi.http_host,":")##variables.configBean.getServerPort()##variables.configBean.getContext()#/admin/index.cfm?fuseaction=cArch.edit&parentid=#arguments.data.parentid#&&topid=#arguments.data.topid#&siteid=#arguments.data.siteid#&contentid=#arguments.contentBean.getcontentid()#&contenthistid=#arguments.contentBean.getcontenthistid()#&moduleid=#arguments.data.moduleid#&type=#arguments.data.type#&ptype=#arguments.data.ptype#'>
+		<cfset versionLink='http://#listFirst(cgi.http_host,":")##variables.configBean.getServerPort()##variables.configBean.getContext()#/admin/index.cfm?muraAction=cArch.edit&parentid=#arguments.data.parentid#&&topid=#arguments.data.topid#&siteid=#arguments.data.siteid#&contentid=#arguments.contentBean.getcontentid()#&contenthistid=#arguments.contentBean.getcontenthistid()#&moduleid=#arguments.data.moduleid#&type=#arguments.data.type#&ptype=#arguments.data.ptype#'>
 	</cfif>
 	
 	<cfquery datasource="#variables.configBean.getDatasource()#"  username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
@@ -444,7 +444,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		)
 	</cfquery>
 	</cfif>
-	<cfset historyLink='http://#listFirst(cgi.http_host,":")##variables.configBean.getServerPort()##variables.configBean.getContext()#/admin/index.cfm?fuseaction=cArch.hist&parentid=#arguments.data.parentid#&&topid=#arguments.data.topid#&siteid=#arguments.data.siteid#&contentid=#arguments.contentBean.getcontentid()#&moduleid=#arguments.data.moduleid#&type=#arguments.data.type#'>
+	<cfset historyLink='http://#listFirst(cgi.http_host,":")##variables.configBean.getServerPort()##variables.configBean.getContext()#/admin/index.cfm?muraAction=cArch.hist&parentid=#arguments.data.parentid#&&topid=#arguments.data.topid#&siteid=#arguments.data.siteid#&contentid=#arguments.contentBean.getcontentid()#&moduleid=#arguments.data.moduleid#&type=#arguments.data.type#'>
 	
 	<cfquery datasource="#variables.configBean.getDatasource()#"  username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
 		insert into tredirects (redirectID,URL,created) values(
@@ -529,7 +529,8 @@ http://#listFirst(cgi.http_host,":")##variables.configBean.getServerPort()##vari
 
 <cffunction name="formatFilename" returntype="any" output="false" access="public">
 	<cfargument name="filename" type="any" />
-	
+	<cfset var wordDelim=variables.configBean.getURLTitleDelim()>
+
 	<!--- replace some latin based unicode chars with allowable chars --->
 	<cfset arguments.filename=removeUnicode(arguments.filename) />
 	
@@ -537,7 +538,7 @@ http://#listFirst(cgi.http_host,":")##variables.configBean.getServerPort()##vari
 	<cfset arguments.filename=rereplace(arguments.filename," ","svphsv","ALL") />
 	
 	<!--- temporarily escape "-" used for word separation --->
-	<cfset arguments.filename=rereplace(arguments.filename,"-","svphsv","ALL") />
+	<cfset arguments.filename=rereplace(arguments.filename,"\#wordDelim#","svphsv","ALL") />
 	
 	<!--- remove all punctuation --->
 	<cfset arguments.filename=rereplace(arguments.filename,"[[:punct:]]","","ALL") />
@@ -546,11 +547,11 @@ http://#listFirst(cgi.http_host,":")##variables.configBean.getServerPort()##vari
 	<cfset arguments.filename=urlEncodedFormat(arguments.filename) />
 	
 	<!---  put word separators " "  and "-" back in --->
-	<cfset arguments.filename=rereplace(arguments.filename,"svphsv","-","ALL") />
+	<cfset arguments.filename=rereplace(arguments.filename,"svphsv",wordDelim,"ALL") />
 	
 	<!--- remove an non alphanumeric chars (most likely %) --->
-	<cfset arguments.filename=lcase(rereplace(arguments.filename,"[^a-zA-Z0-9\-]","","ALL")) />
-	<cfset arguments.filename=lcase(rereplace(arguments.filename,"\-+","-","ALL")) />
+	<cfset arguments.filename=lcase(rereplace(arguments.filename,"[^a-zA-Z0-9\#wordDelim#]","","ALL")) />
+	<cfset arguments.filename=lcase(rereplace(arguments.filename,"\#wordDelim#+",wordDelim,"ALL")) />
 
 	<cfreturn arguments.filename>
 
@@ -562,6 +563,7 @@ http://#listFirst(cgi.http_host,":")##variables.configBean.getServerPort()##vari
 	<cfset var pass =0 />
 	<cfset var tempfile = "">
 	<cfset var parentFilename="">
+
 	<cfset arguments.contentBean.setFilename(formatFilename(arguments.contentBean.getURLTitle()))>
 	
 	<cfif not len(arguments.contentBean.getfilename()) and arguments.contentBean.getContentID() neq  '00000000000000000000000000000000001'>
@@ -901,7 +903,7 @@ Sincerely,
 		<cfset rsKids=getBean("contentGateway").getNest(parentID=arguments.contentID, siteID=arguments.siteID, sortBy=contentBean.getSortBy(), sortDirection=sortDirection)>
 			
 		<cfloop query="rsKids">
-			<cfset copy(arguments.siteID, rsKids.contentID, newContentID, rsKids.hasKids, true, contentBean.getPath(), arguments.setNotOnDisplay)>
+			<cfset copy(arguments.siteID, rsKids.contentID, newContentID, rsKids.hasKids, false, contentBean.getPath(), arguments.setNotOnDisplay)>
 		</cfloop>
 	</cfif>
 

@@ -93,6 +93,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cfset variables.instance.fileStoreAccessInfo=""/>
 <cfset variables.instance.tooltips=structNew()/>
 <cfset variables.instance.sessionHistory=1 />
+<cfset variables.instance.clearSessionHistory=1 />
 <cfset variables.instance.extensionManager=""/>
 <cfset variables.instance.reactorDbType=""/>
 <cfset variables.instance.reactor=""/>
@@ -137,6 +138,10 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cfset variables.instance.readOnlyDbPassword="" />
 <cfset variables.instance.MYSQLEngine="InnoDB" />
 <cfset variables.instance.autoDiscoverPlugins=false />
+<cfset variables.instance.trackSessionInNewThread=1 />
+<cfset variables.instance.cfStaticJavaLoaderScope="application">
+<cfset variables.instance.URLTitleDelim="-">
+<cfset variables.dbUtility="">
 
 <cffunction name="OnMissingMethod" access="public" returntype="any" output="false" hint="Handles missing method exceptions.">
 <cfargument name="MissingMethodName" type="string" required="true" hint="The name of the missing method." />
@@ -166,14 +171,14 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cffunction name="set" returntype="any" output="true" access="public">
 	<cfargument name="config" type="struct"> 	
 	<cfset var prop="">
-	<cfset setWebRoot(config.webroot)/>
-	<cfset setContext(config.context)/>
-	<cfset setAssetPath(config.assetPath)/>
+	<cfset setWebRoot(arguments.config.webroot)/>
+	<cfset setContext(arguments.config.context)/>
+	<cfset setAssetPath(arguments.config.assetPath)/>
 	<cfset setFileDelim()/>
 	<!--- setFileDir must be after setWebRoot and setFileDelim and setAssetPath--->
-	<cfset setFileDir(config.fileDir)/>
-	<cfset setDefaultLocale(config.locale)>
-	<cfset setServerPort(config.port)>
+	<cfset setFileDir(arguments.config.fileDir)/>
+	<cfset setDefaultLocale(arguments.config.locale)>
+	<cfset setServerPort(arguments.config.port)>
 	
 	<cfloop collection="#arguments.config#" item="prop">
 		<cfif not listFindNoCase("webroot,filedir,plugindir,locale,port,assetpath,context",prop)>
@@ -185,14 +190,14 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		</cfif>
 	</cfloop>
 	
-	<cfif structKeyExists(config,"assetDir")>
-		<cfset setAssetDir(config.assetDir)/>
+	<cfif structKeyExists(arguments.config,"assetDir")>
+		<cfset setAssetDir(arguments.config.assetDir)/>
 	<cfelse>
-		<cfset setAssetDir(config.fileDir)/>
+		<cfset setAssetDir(arguments.config.fileDir)/>
 	</cfif>
 	
-	<cfif structKeyExists(config,"pluginDir") and len(trim(config.pluginDir))>
-		<cfset setPluginDir(config.pluginDir)/>
+	<cfif structKeyExists(arguments.config,"pluginDir") and len(trim(arguments.config.pluginDir))>
+		<cfset setPluginDir(arguments.config.pluginDir)/>
 	<cfelse>
 		<cfset setPluginDir("#getWebRoot()##getFileDelim()#plugins")/>
 	</cfif>
@@ -221,8 +226,9 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<cfset variables.instance.readOnlyDbUsername=variables.instance.dbUsername>
 	</cfif>
 
-	<cfset variables.instance.reactorDBType=config.dbType>
-	
+	<cfset variables.instance.reactorDBType=arguments.config.dbType>
+	<cfset variables.dbUtility=getBean("dbUtility")>
+
 	<cfreturn this />
 </cffunction>
 
@@ -762,8 +768,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 --->
 
 <cffunction name="loadClassExtensionManager" returntype="any" access="public" output="false">
-	<cfargument name="contentRenderer"  />
-	<cfset variables.instance.extensionManager=createObject("component","#getMapDir()#.extend.extendManager").init(this,arguments.contentRenderer) />
+	<cfset variables.instance.extensionManager=createObject("component","#getMapDir()#.extend.extendManager").init(this) />
 	<cfreturn this>
 </cffunction>
 
@@ -772,6 +777,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfset var rsCheck ="" />
 	<cfset var rsSubCheck ="" />
 	<cfset var rsUpdates ="" />
+	<cfset var dbUtility=getBean("dbUtility") />
 	<cfset var i ="" />
 	
 	<cfdirectory action="list" directory="#getDirectoryFromPath(getCurrentTemplatePath())#dbUpdates" name="rsUpdates" filter="*.cfm" sort="name asc">
@@ -782,7 +788,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfreturn this>
 </cffunction>
 
-<cffunction name="dbTableColumns" output="false">
+<cffunction name="dbTableColumns" output="false" hint="deprecated, use dbUtility">
 	<cfargument name="table">
 	<cfset var rs ="">
 	
@@ -809,7 +815,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfreturn rs>
 </cffunction>
 
-<cffunction name="dbCreateIndex" output="false">
+<cffunction name="dbCreateIndex" output="false" hint="deprecated, use dbUtility">
 	<cfargument name="table">
 	<cfargument name="column" default="">
 	
@@ -851,7 +857,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	</cfif>
 </cffunction>
 
-<cffunction name="dbDropIndex" output="false">
+<cffunction name="dbDropIndex" output="false" hint="deprecated, use dbUtility">
 	<cfargument name="table">
 	<cfargument name="column" default="">
 	
@@ -890,7 +896,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	</cfif>
 </cffunction>
 
-<cffunction name="dbDropColumn" access="private">
+<cffunction name="dbDropColumn" access="private" hint="deprecated, use dbUtility">
 	<cfargument name="table">
 	<cfargument name="column" default="">
 	
@@ -928,12 +934,10 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	</cfswitch>	
 	</cfif>
 </cffunction>
-
 <cffunction name="getClassExtensionManager" returntype="any" access="public" output="false">
-	<cfargument name="contentRenderer" required="true" default="" />
 	
 	<cfif not isObject(variables.instance.extensionManager)>
-		<cfset loadClassExtensionManager(arguments.contentRenderer)/>
+		<cfset loadClassExtensionManager()/>
 	</cfif>
 	<cfreturn variables.instance.extensionManager />
 </cffunction>
@@ -1349,6 +1353,14 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 
 <cffunction name="getMaxArchivedVersions" returntype="any" access="public" output="false">
 	<cfreturn variables.instance.maxArchivedVersions />
+	<cfreturn this>
+</cffunction>
+
+<cffunction name="setTrackSessionInNewThread" access="public" output="false">
+	<cfargument name="trackSessionInNewThread" type="string" />
+	<cfif isBoolean(arguments.trackSessionInNewThread)>
+		<cfset variables.instance.trackSessionInNewThread = arguments.trackSessionInNewThread />
+	</cfif>
 	<cfreturn this>
 </cffunction>
 

@@ -83,7 +83,7 @@ function saveAttributeSort(id){
 	);
 	
 	var url = "index.cfm";
-	var pars = 'fuseaction=cExtend.saveAttributeSort&attributeID=' + attArray.toString() + '&cacheID=' + Math.random();	
+	var pars = 'muraAction=cExtend.saveAttributeSort&attributeID=' + attArray.toString() + '&cacheID=' + Math.random();	
 	
 	//location.href=url + "?" + pars;
 	jQuery.get(url + "?" + pars); 
@@ -100,7 +100,7 @@ function saveExtendSetSort(id){
 	);
 
 	var url = "index.cfm";
-	var pars = 'fuseaction=cExtend.saveExtendSetSort&extendSetID=' + setArray.toString() + '&cacheID=' + Math.random();	
+	var pars = 'muraAction=cExtend.saveExtendSetSort&extendSetID=' + setArray.toString() + '&cacheID=' + Math.random();	
 	
 	//location.href=url + "?" + pars;
 	jQuery.get(url + "?" + pars); 	
@@ -116,15 +116,43 @@ function setBaseInfo(str){
 	var dataArray=str.split("^");
 	
 	document.subTypeFrm.type.value=dataArray[0];
-	document.subTypeFrm.baseTable.value=dataArray[1];
-	document.subTypeFrm.baseKeyField.value=dataArray[2];
-	document.subTypeFrm.dataTable.value=dataArray[3];
-
-	if(dataArray[0]=="Site"){
+	
+	if(dataArray.length > 1){
+		document.subTypeFrm.baseTable.value=dataArray[1];
+		document.subTypeFrm.baseKeyField.value=dataArray[2];
+		document.subTypeFrm.dataTable.value=dataArray[3];
+	}
+	if(dataArray[0]==""){
 		jQuery(".subTypeContainer").hide();
+		jQuery(".hasSummaryContainer").hide();
+		jQuery(".hasBodyContainer").hide();
+	} else if(dataArray[0]=="Site"){
+		jQuery(".subTypeContainer").hide();
+		jQuery(".hasSummaryContainer").hide();
+		jQuery(".hasBodyContainer").hide();
 		jQuery("#subType").val("Default");
+	} else if(dataArray[0]=="1" 
+		|| dataArray[0]=="2"
+		|| dataArray[0]=="Address"
+		|| dataArray[0]=="Custom"
+		|| dataArray[0]=="Base"){
+		jQuery(".subTypeContainer").show();
+		jQuery(".hasSummaryContainer").hide();
+		jQuery(".hasBodyContainer").hide();
+	} else if(dataArray[0]=="File" 
+		|| dataArray[0]=="Link"){
+		jQuery(".subTypeContainer").show();
+		jQuery(".hasSummaryContainer").show();
+		jQuery(".hasBodyContainer").hide();
+	} else if(dataArray[0]=="Component" 
+		|| dataArray[0]=="Form"){
+		jQuery(".subTypeContainer").show();
+		jQuery(".hasSummaryContainer").hide();
+		jQuery(".hasBodyContainer").show();
 	} else {
 		jQuery(".subTypeContainer").show();
+		jQuery(".hasSummaryContainer").show();
+		jQuery(".hasBodyContainer").show();
 	}
 	
 }

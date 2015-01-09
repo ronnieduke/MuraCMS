@@ -26,7 +26,7 @@ component extends="mura.cfobject" {
 		var context=configBean.getContext();
 		var site=getBean('settingsManager').getSite(variables.siteid);
 		
-		if(getBean('utility').isHTTPS()){
+		if( getBean('utility').isHTTPS() || YesNoFormat(site.getUseSSL()) ){
 			var protocol="https://";
 		} else {
 			var protocol="http://";
@@ -1308,15 +1308,34 @@ component extends="mura.cfobject" {
 	function processAsyncObject(siteid){
 
 		if(!isDefined('arguments.siteid')){
-			throw(type="invalidParameters");
+			if(isDefined('session.siteid')){
+				arguments.siteid=session.siteid;
+			} else {
+				throw(type="invalidParameters");
+			}
+			
 		}
+		
 		request.siteid=arguments.siteid;
 		session.siteid=request.siteid;
 		request.servletEvent=new mura.servletEvent();
 		
 		var $=request.servletEvent.getValue("MuraScope");
 		
-		$.event('contentBean',$.getBean('content').loadBy(contenthistid=$.event('contenthistid')));
+		if(len($.event('filename'))){
+			$.event('currentFilename',$.event('filename'));
+			getBean('contentServer').parseCustomURLVars($.event());
+			$.event('contentBean',$.getBean('content').loadBy(filename=$.event('currentFilenameAdjusted')));
+		} else if(len($.event('contenthistid'))){
+			$.event('contentBean',$.getBean('content').loadBy(contenthistid=$.event('contenthistid')));
+			$.event('currentFilename',$.content('filename'));
+			$.event('currentFilenameAdjusted',$.content('filename'));
+		} else {
+			$.event('contentBean',$.getBean('content').loadBy(contentid=$.event('contentid')));
+			$.event('currentFilename',$.content('filename'));
+			$.event('currentFilenameAdjusted',$.content('filename'));
+		}
+		
 		$.event('crumbdata',$.content().getCrumbArray());
 		$.event().getHandler('standardSetContentRenderer').handle($.event());
 		$.getContentRenderer().injectMethod('crumbdata',$.event("crumbdata"));
@@ -1352,6 +1371,20 @@ component extends="mura.cfobject" {
 
 				return {
 					html=$.dspObject_Include(theFile='dsp_login.cfm')
+				};
+
+			break;
+
+			case 'body':
+				return {
+					html=$.dspBody(argumentCollection=$.event().getAllValues())
+				};
+
+			break;
+
+			case 'displayregion':
+				return {
+					html=$.dspObjects(argumentCollection=$.event().getAllValues())
 				};
 
 			break;
@@ -1448,13 +1481,18 @@ component extends="mura.cfobject" {
 		//var logdata={object=$.event('object'),objectid=$.event('objectid'),siteid=arguments.siteid};
 		//writeLog(text=serializeJSON(logdata));
 		//return $.event('objectparams');
-		var result={html=$.dspObject(
+		
+		var args={
 				object=$.event('object'),
 				objectid=$.event('objectid'),
-				siteid=arguments.siteid,
-				params=urlDecode($.event('objectparams'))
-			)
-		};
+				siteid=arguments.siteid
+			};
+
+		if(len($.event('objectparams'))){
+			args.params=urlDecode($.event('objectparams'));
+		}
+
+		var result={html=$.dspObject(argumentCollection=args)};
 		
 		if(isdefined('request.muraAjaxRedirectURL')){
 			return {redirect=request.muraAjaxRedirectURL};

@@ -44,10 +44,10 @@
 	modified version; it is your choice whether to do so, or to make such modified version available under the GNU General Public License 
 	version 2 without this exception.  You may, if you choose, apply this exception to your own modified versions of Mura CMS. */
 if(window.Prototype) {
-    delete Object.prototype.toJSON;
-    delete Array.prototype.toJSON;
-    delete Hash.prototype.toJSON;
-    delete String.prototype.toJSON;
+		delete Object.prototype.toJSON;
+		delete Array.prototype.toJSON;
+		delete Hash.prototype.toJSON;
+		delete String.prototype.toJSON;
 }
 
 if(!this.JSON){JSON=function(){function f(n){return n<10?'0'+n:n;}
@@ -78,163 +78,411 @@ cx.lastIndex=0;if(cx.test(text)){text=text.replace(cx,function(a){return'\\u'+('
 if(/^[\],:{}\s]*$/.test(text.replace(/\\(?:["\\\/bfnrt]|u[0-9a-fA-F]{4})/g,'@').replace(/"[^"\\\n\r]*"|true|false|null|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?/g,']').replace(/(?:^|:|,)(?:\s*\[)+/g,''))){j=eval('('+text+')');return typeof reviver==='function'?walk({'':j},''):j;}
 throw new SyntaxError('JSON.parse');}};}();}
 
+//https://github.com/malko/l.js
+;(function(window, undefined){
 /*
- * arrive.js
- * v2.0.0
- * https://github.com/uzairfarooq/arrive
- * MIT licensed
- *
- * Copyright (c) 2014 Uzair Farooq
- */
+* script for js/css parallel loading with dependancies management
+* @author Jonathan Gotti < jgotti at jgotti dot net >
+* @licence dual licence mit / gpl
+* @since 2012-04-12
+* @todo add prefetching using text/cache for js files
+* @changelog
+*            - 2014-06-26 - bugfix in css loaded check when hashbang is used
+*            - 2014-05-25 - fallback support rewrite + null id bug correction + minification work
+*            - 2014-05-21 - add cdn fallback support with hashbang url
+*            - 2014-05-22 - add support for relative paths for stylesheets in checkLoaded
+*            - 2014-05-21 - add support for relative paths for scripts in checkLoaded
+*            - 2013-01-25 - add parrallel loading inside single load call
+*            - 2012-06-29 - some minifier optimisations
+*            - 2012-04-20 - now sharp part of url will be used as tag id
+*                         - add options for checking already loaded scripts at load time
+*            - 2012-04-19 - add addAliases method
+* @note coding style is implied by the target usage of this script not my habbits
+*/
+	/** gEval credits goes to my javascript idol John Resig, this is a simplified jQuery.globalEval */
+	var gEval = function(js){ ( window.execScript || function(js){ window[ "eval" ].call(window,js);} )(js); }
+		, isA =  function(a,b){ return a instanceof (b || Array);}
+		//-- some minifier optimisation
+		, D = document
+		, getElementsByTagName = 'getElementsByTagName'
+		, length = 'length'
+		, readyState = 'readyState'
+		, onreadystatechange = 'onreadystatechange'
+		//-- get the current script tag for further evaluation of it's eventual content
+		, scripts = D[getElementsByTagName]("script")
+		, scriptTag = scripts[scripts[length]-1]
+		, script  = scriptTag.innerHTML.replace(/^\s+|\s+$/g,'')
+	;
+	//avoid multiple inclusion to override current loader but allow tag content evaluation
+	
+	if( ! window.ljs ){
+		var checkLoaded = scriptTag.src.match(/checkLoaded/)?1:0
+			//-- keep trace of header as we will make multiple access to it
+			,header  = D[getElementsByTagName]("head")[0] || D.documentElement
+			, urlParse = function(url){
+				var parts={}; // u => url, i => id, f = fallback
+				parts.u = url.replace(/#(=)?([^#]*)?/g,function(m,a,b){ parts[a?'f':'i'] = b; return '';});
+				return parts;
+			}
+			,appendElmt = function(type,attrs,cb){
+				var e = D.createElement(type), i;
+				if( cb ){ //-- this is not intended to be used for link
+					if(e[readyState]){
+						e[onreadystatechange] = function(){
+							if (e[readyState] === "loaded" || e[readyState] === "complete"){
+								e[onreadystatechange] = null;
+								cb();
+							}
+						};
+					}else{
+						e.onload = cb;
+					}
+				}
+				for( i in attrs ){ attrs[i] && (e[i]=attrs[i]); }
+				header.appendChild(e);
+				// return e; // unused at this time so drop it
+			}
+			,load = function(url,cb){
+				if( this.aliases && this.aliases[url] ){
+					var args = this.aliases[url].slice(0);
+					isA(args) || (args=[args]);
+					cb && args.push(cb);
+					return this.load.apply(this,args);
+				}
+				if( isA(url) ){ // parallelized request
+					for( var l=url[length]; l--;){
+						this.load(url[l]);
+					}
+					cb && url.push(cb); // relaunch the dependancie queue
+					return this.load.apply(this,url);
+				}
+				if( url.match(/\.css\b/) ){
+					return this.loadcss(url,cb);
+				}
+				return this.loadjs(url,cb);
+			}
+			,loaded = {}  // will handle already loaded urls
+			,loader  = {
+				aliases:{}
+				,loadjs: function(url,attrs,cb){
+					if(typeof url == 'object'){
+						if(Array.isArray(url)){
+							return loader.load.apply(this, arguments);
+						} else if(typeof attrs === 'function'){
+							cb=attrs;
+							attrs={};
+							url=attrs.href
+						} else if (typeof attrs=='string' || (typeof attrs=='object' && Array.isArray(attrs))) {
+							return loader.load.apply(this, arguments);
+						} else {
+							attrs=url;
+							url=attrs.href;
+							cb=undefined;
+						}
+					} else if (typeof attrs=='function' ) {
+						cb = attrs;
+						attrs = {};
+					} else if (typeof attrs=='string' || (typeof attrs=='object' && Array.isArray(attrs))) {
+						return loader.load.apply(this, arguments);
+					}
+					if(typeof attrs==='undefined'){
+						attrs={};
+					}
 
-(function(q,r,m){function n(a,b,e){for(var d=0,c;c=a[d];d++)f.matchesSelector(c,b.selector)&&-1==b.firedElems.indexOf(c)&&(b.firedElems.push(c),e.push({callback:b.callback,elem:c})),0<c.childNodes.length&&n(c.childNodes,b,e)}function s(a){for(var b=0,e;e=a[b];b++)e.callback.call(e.elem)}function g(a){a.arrive=h.bindEvent;f.addMethod(a,"unbindArrive",h.unbindEvent);f.addMethod(a,"unbindArrive",h.unbindEventWithSelectorOrCallback);f.addMethod(a,"unbindArrive",h.unbindEventWithSelectorAndCallback);a.leave=
-k.bindEvent;f.addMethod(a,"unbindLeave",k.unbindEvent);f.addMethod(a,"unbindLeave",k.unbindEventWithSelectorOrCallback);f.addMethod(a,"unbindLeave",k.unbindEventWithSelectorAndCallback)}var f=function(){var a=HTMLElement.prototype.matches||HTMLElement.prototype.webkitMatchesSelector||HTMLElement.prototype.mozMatchesSelector||HTMLElement.prototype.msMatchesSelector;return{matchesSelector:function(b,e){return b instanceof HTMLElement&&a.call(b,e)},addMethod:function(b,a,d){var c=b[a];b[a]=function(){if(d.length==
-arguments.length)return d.apply(this,arguments);if("function"==typeof c)return c.apply(this,arguments)}}}}(),t=function(){var a=function(){this._eventsBucket=[];this._beforeRemoving=this._beforeAdding=null};a.prototype.addEvent=function(b,a,d,c){b={target:b,selector:a,options:d,callback:c,firedElems:[]};this._beforeAdding&&this._beforeAdding(b);this._eventsBucket.push(b);return b};a.prototype.removeEvent=function(b){for(var a=this._eventsBucket.length-1,d;d=this._eventsBucket[a];a--)b(d)&&(this._beforeRemoving&&
-this._beforeRemoving(d),this._eventsBucket.splice(a,1))};a.prototype.beforeAdding=function(b){this._beforeAdding=b};a.prototype.beforeRemoving=function(b){this._beforeRemoving=b};return a}();m=function(a,b,e){function d(b){"number"!==typeof b.length&&(b=[b]);return b}var c=new t;c.beforeAdding(function(b){var c=b.target,d;if(c===q.document||c===q)c=document.getElementsByTagName("html")[0];d=new MutationObserver(function(a){e.call(this,a,b)});var l=a(b.options);d.observe(c,l);b.observer=d});c.beforeRemoving(function(b){b.observer.disconnect()});
-this.bindEvent=function(a,e,p){"undefined"===typeof p&&(p=e,e=b);for(var l=d(this),f=0;f<l.length;f++)c.addEvent(l[f],a,e,p)};this.unbindEvent=function(){var b=d(this);c.removeEvent(function(a){for(var c=0;c<b.length;c++)if(a.target===b[c])return!0;return!1})};this.unbindEventWithSelectorOrCallback=function(b){var a=d(this);c.removeEvent("function"===typeof b?function(c){for(var d=0;d<a.length;d++)if(c.target===a[d]&&c.callback===b)return!0;return!1}:function(c){for(var d=0;d<a.length;d++)if(c.target===
-a[d]&&c.selector===b)return!0;return!1})};this.unbindEventWithSelectorAndCallback=function(b,a){var e=d(this);c.removeEvent(function(c){for(var d=0;d<e.length;d++)if(c.target===e[d]&&c.selector===b&&c.callback===a)return!0;return!1})};return this};var h=new m(function(a){var b={attributes:!1,childList:!0,subtree:!0};a.fireOnAttributesModification&&(b.attributes=!0);return b},{fireOnAttributesModification:!1},function(a,b){a.forEach(function(a){var d=a.addedNodes,c=a.target,g=[];null!==d&&0<d.length?
-n(d,b,g):"attributes"===a.type&&f.matchesSelector(c,b.selector)&&-1==b.firedElems.indexOf(c)&&(b.firedElems.push(c),g.push({callback:b.callback,elem:c}));s(g)})}),k=new m(function(a){return{childList:!0,subtree:!0}},{},function(a,b){a.forEach(function(a){a=a.removedNodes;var d=[];null!==a&&0<a.length&&n(a,b,d);s(d)})});r&&g(r.fn);g(HTMLElement.prototype);g(NodeList.prototype);g(HTMLCollection.prototype);g(HTMLDocument.prototype);g(Window.prototype)})(this,"undefined"===typeof jQuery?null:jQuery);
+					var parts = urlParse(url);  
+					var partToAttrs=[['i','id'],['f','fallback'],['u','src']];
+					
+					for(var i=0;i<partToAttrs.length;i++){
+						var part=partToAttrs[i];
+						if(!(part[1] in attrs) && (part[0] in parts)){
+							attrs[part[1]]=parts[part[0]];
+						}
+					}
+				
+					if(typeof attrs.type === 'undefined'){
+						attrs.type='text/javascript';
+					}
 
+					var finalAttrs={};
+
+					for(var a in attrs){
+						if(a != 'fallback'){
+							finalAttrs[a]=attrs[a];
+						}
+					}
+					
+					finalAttrs.onerror=function(error){
+						if( attrs.fallback ){
+							var c = error.currentTarget;
+							c.parentNode.removeChild(c);
+							finalAttrs.src=attrs.fallback;
+							appendElmt('script',attrs,cb);
+						}
+					};
+					
+
+					if( loaded[finalAttrs.src] === true ){ // already loaded exec cb if any
+						cb && cb();
+						return this;
+					} else if( loaded[finalAttrs.src]!== undefined ){ // already asked for loading we append callback if any else return
+						if( cb ){
+							loaded[finalAttrs.src] = (function(ocb,cb){ return function(){ ocb && ocb(); cb && cb(); }; })(loaded[finalAttrs.src],cb);
+						}
+						return this;
+					}
+					// first time we ask this script
+					loaded[finalAttrs.src] = (function(cb){ return function(){loaded[finalAttrs.src]=true; cb && cb();};})(cb);
+					cb = function(){ loaded[url](); };
+					appendElmt('script',finalAttrs,cb);
+					return this;
+				}
+				,loadcss: function(url,attrs,cb){
+
+					if(typeof url == 'object'){
+						if(Array.isArray(url)){
+							return loader.load.apply(this, arguments);
+						} else if(typeof attrs === 'function'){
+							cb=attrs;
+							attrs=url;
+							url=attrs.href
+						} else if (typeof attrs=='string' || (typeof attrs=='object' && Array.isArray(attrs))) {
+							return loader.load.apply(this, arguments);
+						} else {
+							attrs=url;
+							url=attrs.href;
+							cb=undefined;
+						}
+					} else if (typeof attrs=='function' ) {
+						cb = attrs;
+						attrs = {};
+					} else if (typeof attrs=='string' || (typeof attrs=='object' && Array.isArray(attrs))) {
+						return loader.load.apply(this, arguments);
+					}
+					
+					var parts = urlParse(url);
+					parts={type:'text/css',rel:'stylesheet',href:url,id:parts.i}
+
+					if(typeof attrs !=='undefined'){
+						for(var a in attrs){
+							parts[a]=attrs[a];
+						}
+					}
+
+					loaded[parts.href] || appendElmt('link',parts);
+					loaded[parts.href] = true;
+					cb && cb();
+					return this;
+				}
+				,load: function(){
+					var argv=arguments,argc = argv[length];
+					if( argc === 1 && isA(argv[0],Function) ){
+						argv[0]();
+						return this;
+					}
+					load.call(this,argv[0], argc <= 1 ? undefined : function(){ loader.load.apply(loader,[].slice.call(argv,1));} );
+					return this;
+				}
+				,addAliases:function(aliases){
+					for(var i in aliases ){
+						this.aliases[i]= isA(aliases[i]) ? aliases[i].slice(0) : aliases[i];
+					}
+					return this;
+				}
+			}
+		;
+
+		if( checkLoaded ){
+			var i,l,links,url;
+			for(i=0,l=scripts[length];i<l;i++){
+				(url = scripts[i].getAttribute('src')) && (loaded[url.replace(/#.*$/,'')] = true);
+			}
+			links = D[getElementsByTagName]('link');
+			for(i=0,l=links[length];i<l;i++){
+				(links[i].rel==='stylesheet' || links[i].type==='text/css') && (loaded[links[i].getAttribute('href').replace(/#.*$/,'')]=true);
+			}
+		}
+		//export ljs
+		window.ljs = loader;
+		// eval inside tag code if any
+	}
+	script && gEval(script);
+})(window);
 
 (function($){
-    $.fn.serializeObject = function(){
+		$.fn.serializeObject = function(){
 
-        var self = this,
-            json = {},
-            push_counters = {},
-            patterns = {
-                "validate": /^[a-zA-Z][a-zA-Z0-9_]*(?:\[(?:\d*|[a-zA-Z0-9_]+)\])*$/,
-                "key":      /[a-zA-Z0-9_]+|(?=\[\])/g,
-                "push":     /^$/,
-                "fixed":    /^\d+$/,
-                "named":    /^[a-zA-Z0-9_]+$/
-            };
+				var self = this,
+						json = {},
+						push_counters = {},
+						patterns = {
+								"validate": /^[a-zA-Z][a-zA-Z0-9_]*(?:\[(?:\d*|[a-zA-Z0-9_]+)\])*$/,
+								"key":      /[a-zA-Z0-9_]+|(?=\[\])/g,
+								"push":     /^$/,
+								"fixed":    /^\d+$/,
+								"named":    /^[a-zA-Z0-9_]+$/
+						};
 
 
-        this.build = function(base, key, value){
-            base[key] = value;
-            return base;
-        };
+				this.build = function(base, key, value){
+						base[key] = value;
+						return base;
+				};
 
-        this.push_counter = function(key){
-            if(push_counters[key] === undefined){
-                push_counters[key] = 0;
-            }
-            return push_counters[key]++;
-        };
+				this.push_counter = function(key){
+						if(push_counters[key] === undefined){
+								push_counters[key] = 0;
+						}
+						return push_counters[key]++;
+				};
 
-        $.each($(this).serializeArray(), function(){
+				$.each($(this).serializeArray(), function(){
 
-            // skip invalid keys
-            if(!patterns.validate.test(this.name)){
-                return;
-            }
+						// skip invalid keys
+						if(!patterns.validate.test(this.name)){
+								return;
+						}
 
-            var k,
-                keys = this.name.match(patterns.key),
-                merge = this.value,
-                reverse_key = this.name;
+						var k,
+								keys = this.name.match(patterns.key),
+								merge = this.value,
+								reverse_key = this.name;
 
-            while((k = keys.pop()) !== undefined){
+						while((k = keys.pop()) !== undefined){
 
-                // adjust reverse_key
-                reverse_key = reverse_key.replace(new RegExp("\\[" + k + "\\]$"), '');
+								// adjust reverse_key
+								reverse_key = reverse_key.replace(new RegExp("\\[" + k + "\\]$"), '');
 
-                // push
-                if(k.match(patterns.push)){
-                    merge = self.build([], self.push_counter(reverse_key), merge);
-                }
+								// push
+								if(k.match(patterns.push)){
+										merge = self.build([], self.push_counter(reverse_key), merge);
+								}
 
-                // fixed
-                else if(k.match(patterns.fixed)){
-                    merge = self.build([], k, merge);
-                }
+								// fixed
+								else if(k.match(patterns.fixed)){
+										merge = self.build([], k, merge);
+								}
 
-                // named
-                else if(k.match(patterns.named)){
-                    merge = self.build({}, k, merge);
-                }
-            }
+								// named
+								else if(k.match(patterns.named)){
+										merge = self.build({}, k, merge);
+								}
+						}
 
-            json = $.extend(true, json, merge);
-        });
+						json = $.extend(true, json, merge);
+				});
 
-        return json;
-    };
+				return json;
+		};
 })(jQuery);
 
+$.fn.changeElementType = function(newType) {
+		var attrs = {};
+
+		$.each(this[0].attributes, function(idx, attr) {
+				attrs[attr.nodeName] = attr.value;
+		});
+
+		var newelement = $("<" + newType + "/>", attrs).append($(this).contents());
+		this.replaceWith(newelement);
+		return newelement;
+};
+
 if (!Object.keys) {
-  Object.keys = (function () {
-    'use strict';
-    var hasOwnProperty = Object.prototype.hasOwnProperty,
-        hasDontEnumBug = !({toString: null}).propertyIsEnumerable('toString'),
-        dontEnums = [
-          'toString',
-          'toLocaleString',
-          'valueOf',
-          'hasOwnProperty',
-          'isPrototypeOf',
-          'propertyIsEnumerable',
-          'constructor'
-        ],
-        dontEnumsLength = dontEnums.length;
+	Object.keys = (function () {
+		'use strict';
+		var hasOwnProperty = Object.prototype.hasOwnProperty,
+				hasDontEnumBug = !({toString: null}).propertyIsEnumerable('toString'),
+				dontEnums = [
+					'toString',
+					'toLocaleString',
+					'valueOf',
+					'hasOwnProperty',
+					'isPrototypeOf',
+					'propertyIsEnumerable',
+					'constructor'
+				],
+				dontEnumsLength = dontEnums.length;
 
-    return function (obj) {
-      if (typeof obj !== 'object' && (typeof obj !== 'function' || obj === null)) {
-        throw new TypeError('Object.keys called on non-object');
-      }
+		return function (obj) {
+			if (typeof obj !== 'object' && (typeof obj !== 'function' || obj === null)) {
+				throw new TypeError('Object.keys called on non-object');
+			}
 
-      var result = [], prop, i;
+			var result = [], prop, i;
 
-      for (prop in obj) {
-        if (hasOwnProperty.call(obj, prop)) {
-          result.push(prop);
-        }
-      }
+			for (prop in obj) {
+				if (hasOwnProperty.call(obj, prop)) {
+					result.push(prop);
+				}
+			}
 
-      if (hasDontEnumBug) {
-        for (i = 0; i < dontEnumsLength; i++) {
-          if (hasOwnProperty.call(obj, dontEnums[i])) {
-            result.push(dontEnums[i]);
-          }
-        }
-      }
-      return result;
-    };
-  }());
+			if (hasDontEnumBug) {
+				for (i = 0; i < dontEnumsLength; i++) {
+					if (hasOwnProperty.call(obj, dontEnums[i])) {
+						result.push(dontEnums[i]);
+					}
+				}
+			}
+			return result;
+		};
+	}());
 } 
 
-
-
 var initMura=function(config){
+
+	!window.jQuery && document.write(unescape('%3Cscript type="text/javascript" src="' + config.assetpath + '/jquery/jquery.js"%3E%3C/script%3E'))
+
+	var createCookie=function(name,value,days) {
+		if (days) {
+			var date = new Date();
+			date.setTime(date.getTime()+(days*24*60*60*1000));
+			var expires = "; expires="+date.toGMTString();
+		}
+		else var expires = "";
+		document.cookie = name+"="+value+expires+"; path=/";
+	}
+
+	var readCookie=function(name) {
+		var nameEQ = name + "=";
+		var ca = document.cookie.split(';');
+		for(var i=0;i < ca.length;i++) {
+			var c = ca[i];
+			while (c.charAt(0)==' ') c = c.substring(1,c.length);
+			if (c.indexOf(nameEQ) == 0) return unescape(c.substring(nameEQ.length,c.length));
+		}
+		return "";
+	}
+
+	var eraseCookie=function(name) {
+		createCookie(name,"",-1);
+	}
+
+	var addLoadEvent=function(func) {
+		 var oldonload = window.onload;
+		 if (typeof window.onload != 'function') {
+			window.onload = func;
+		 } else {
+			window.onload = function() {
+			 oldonload();
+			 func();
+			}
+		 }
+	}
 
 	var noSpam=function(user,domain) {
 		locationstring = "mailto:" + user + "@" + domain;
 		window.location = locationstring;
 	}
 
-	var initReCAPCHTA=function(el) {
-		if (!window['___grecaptcha_cfg']){
-			$.getScript('https://www.google.com/recaptcha/api.js?hl=' + config.reCAPTCHALanguage);
-		}
-	}
-
-	var initCFFormProtect=function(el) {
-		if(!window.CFFormProtect){
-			$.getScript(config.context + '/requirements/cfformprotect/js/cffp.js');
-		}
-	}
-
 	var setHTMLEditor=function(el) {
-		if(!window.CKEDITOR){
-			$.getScript(config.context + '/requirements/ckeditor/ckeditor.js').done(function(){
-				$.getScript(config.context + '/requirements/ckeditor/adapters/jquery.js').done(function(){
-					initEditor();
-				});
-			});
-		} else {
-			initEditor();
-		}
+		loader().loadjs(
+			config.context + '/requirements/ckeditor/ckeditor.js',
+			config.context + '/requirements/ckeditor/adapters/jquery.js'
+			,
+			function(){
+				initEditor();
+			}
+		);
 
 		var initEditor=function(){
 			var instance=CKEDITOR.instances[$(el).attr('id')];
@@ -248,16 +496,16 @@ var initMura=function(config){
 				CKEDITOR.remove(instance);
 			} 
 
-			$('#' + $(el).attr('id')).ckeditor(getHTMLEditorConfig(conf),htmlEditorOnComplete);	
+			$('#' + $(el).attr('id')).ckeditor(getHTMLEditorConfig(conf),htmlEditorOnComplete); 
 
 			
 		}
 
-		var htmlEditorOnComplete=function( editorInstance ) { 		
+		var htmlEditorOnComplete=function( editorInstance ) {     
 			var instance=jQuery(editorInstance).ckeditorGet();
 			instance.resetDirty();
 			var totalIntances=CKEDITOR.instances;
-			//CKFinder.setupCKEditor( instance, { basePath : context + '/requirements/ckfinder/', rememberLastFolder : false } ) ;	
+			//CKFinder.setupCKEditor( instance, { basePath : context + '/requirements/ckfinder/', rememberLastFolder : false } ) ;  
 		}
 
 		var getHTMLEditorConfig=function(customConfig) {
@@ -267,7 +515,7 @@ var initMura=function(config){
 				customConfig : 'config.js.cfm'
 				}
 			
-			if(typeof(customConfig)== 'object'){	
+			if(typeof(customConfig)== 'object'){  
 				$.extend(htmlEditorConfig,customConfig);
 			}
 			
@@ -317,18 +565,18 @@ var initMura=function(config){
 				location.href=lu + "?returnUrl=" + escape(ru);
 			}
 		}
-	    }
+			}
 	}
 
 	var isInteger=function(s){
 		var i;
-	    for (i = 0; i < s.length; i++){   
-	        // Check that current character is number.
-	        var c = s.charAt(i);
-	        if (((c < "0") || (c > "9"))) return false;
-	    }
-	    // All characters are numbers.
-	    return true;
+			for (i = 0; i < s.length; i++){   
+					// Check that current character is number.
+					var c = s.charAt(i);
+					if (((c < "0") || (c > "9"))) return false;
+			}
+			// All characters are numbers.
+			return true;
 	}
 
 	var createDate=function(str){
@@ -344,7 +592,7 @@ var initMura=function(config){
 		if(!isNaN(date.getMonth())){
 			return date;
 		} else {
-			return new Date();	
+			return new Date();  
 		}
 							
 	}
@@ -358,26 +606,26 @@ var initMura=function(config){
 		if(dt < 10){ dt="0" + dt;}
 						
 						
-		return mon + "/" + dt + "/20" + new String(yr).substring(2,4);			
+		return mon + "/" + dt + "/20" + new String(yr).substring(2,4);      
 	}
 					
 
 	var stripCharsInBag=function(s, bag){
 		var i;
-	    var returnString = "";
-	    // Search through string's characters one by one.
-	    // If character is not in bag, append to returnString.
-	    for (i = 0; i < s.length; i++){   
-	        var c = s.charAt(i);
-	        if (bag.indexOf(c) == -1) returnString += c;
-	    }
-	    return returnString;
+			var returnString = "";
+			// Search through string's characters one by one.
+			// If character is not in bag, append to returnString.
+			for (i = 0; i < s.length; i++){   
+					var c = s.charAt(i);
+					if (bag.indexOf(c) == -1) returnString += c;
+			}
+			return returnString;
 	}
 
 	var daysInFebruary=function(year){
 		// February has 29 days in any year evenly divisible by four,
-	    // EXCEPT for centurial years which are not also divisible by 400.
-	    return (((year % 4 == 0) && ( (!(year % 100 == 0)) || (year % 400 == 0))) ? 29 : 28 );
+			// EXCEPT for centurial years which are not also divisible by 400.
+			return (((year % 4 == 0) && ( (!(year % 100 == 0)) || (year % 400 == 0))) ? 29 : 28 );
 	}
 
 	var DaysArray=function(n) {
@@ -385,8 +633,8 @@ var initMura=function(config){
 			this[i] = 31
 			if (i==4 || i==6 || i==9 || i==11) {this[i] = 30}
 			if (i==2) {this[i] = 29}
-	   } 
-	   return this
+		 } 
+		 return this
 	}
 
 	var isDate=function(dtStr,fldName){
@@ -434,7 +682,8 @@ var initMura=function(config){
 			//alert("Please enter a valid date in the "+fldName+" field")
 			return false
 		}
-	return true;
+
+		return true;
 	}
 
 	var isEmail=function(cur){
@@ -445,6 +694,20 @@ var initMura=function(config){
 				}else{
 				return true;}
 
+	}
+
+	var initShadowBox=function(el){
+
+		if($(el).find( '[data-rel^="shadowbox"]').length){
+			loader().load(
+				config.assetpath +'/css/shadowbox.min.css',
+				config.assetpath +'/js/adapter/shadowbox-jquery.min.js',
+				config.assetpath +'/js/shadowbox.min.js',
+					function(){
+						window.Shadowbox.init();
+					}
+				);
+		}
 	}
 
 	var validateForm=function(frm,customaction) {
@@ -476,7 +739,7 @@ var initMura=function(config){
 					return theField.getAttribute('message') ;
 				} else {
 					return getValidationFieldName(theField).toUpperCase() + defaultMessage;
-				}	
+				} 
 			}
 
 			var getValidationType=function(theField){
@@ -539,7 +802,7 @@ var initMura=function(config){
 			var firstErrorNode;
 			var validationType='';
 			var validations={properties:{}};
-			var frmInputs = theForm.getElementsByTagName("input");	
+			var frmInputs = theForm.getElementsByTagName("input");  
 			var rules=new Array();
 			var data={};
 			var $customaction=customaction;
@@ -552,18 +815,18 @@ var initMura=function(config){
 		
 				if(theField.style.display==""){
 					if(getValidationIsRequired(theField))
-						{	
+						{ 
 							rules.push({
 								required: true,
 								message: getValidationMessage(theField,' is required.')
 							});
 							
-							 			
+										
 						}
 					if(validationType != ''){
 							
 						if(validationType=='EMAIL' && theField.value != '')
-						{	
+						{ 
 							rules.push({
 								dataType: 'EMAIL',
 								message: getValidationMessage(theField,' must be a valid email address.')
@@ -573,7 +836,7 @@ var initMura=function(config){
 						}
 		
 						else if(validationType=='NUMERIC' && theField.value != '')
-						{	
+						{ 
 							rules.push({
 								dataType: 'NUMERIC',
 								message: getValidationMessage(theField,' must be numeric.')
@@ -582,7 +845,7 @@ var initMura=function(config){
 						}
 						
 						else if(validationType=='REGEX' && theField.value !='' && hasValidationRegex(theField))
-						{	
+						{ 
 							rules.push({
 								regex: getValidationRegex(theField),
 								message: getValidationMessage(theField,' is not valid.')
@@ -592,7 +855,7 @@ var initMura=function(config){
 						
 						else if(validationType=='MATCH' 
 								&& hasValidationMatchField(theField) && theField.value != theForm[getValidationMatchField(theField)].value)
-						{	
+						{ 
 							rules.push({
 								eq: theForm[getValidationMatchField(theField)].value,
 								message: getValidationMessage(theField, ' must match' + getValidationMatchField(theField) + '.' )
@@ -616,7 +879,7 @@ var initMura=function(config){
 					}
 				}
 			}
-			var frmTextareas = theForm.getElementsByTagName("textarea");	
+			var frmTextareas = theForm.getElementsByTagName("textarea");  
 			for (f=0; f < frmTextareas.length; f++) {
 			
 				
@@ -626,17 +889,17 @@ var initMura=function(config){
 					rules=new Array();
 					 
 					if(theField.style.display=="" && getValidationIsRequired(theField))
-					{	
+					{ 
 						rules.push({
 							required: true,
 							message: getValidationMessage(theField, ' is required.' )
 						});
 						
-					}	
+					} 
 
 					else if(validationType != ''){
 						if(validationType=='REGEX' && theField.value !='' && hasValidationRegex(theField))
-						{	
+						{ 
 							rules.push({
 								regex: getValidationRegex(theField),
 								message: getValidationMessage(theField, ' is not valid.' )
@@ -651,7 +914,7 @@ var initMura=function(config){
 					}
 			}
 			
-			var frmSelects = theForm.getElementsByTagName("select");	
+			var frmSelects = theForm.getElementsByTagName("select");  
 			for (f=0; f < frmSelects.length; f++) {
 					theField=frmSelects[f];
 					validationType=getValidationType(theField);
@@ -659,7 +922,7 @@ var initMura=function(config){
 					rules=new Array();
 
 					if(theField.style.display=="" && getValidationIsRequired(theField))
-					{	
+					{ 
 						rules.push({
 							required: true,
 							message: getValidationMessage(theField, ' is required.' )
@@ -669,7 +932,7 @@ var initMura=function(config){
 					if(rules.length){
 						validations.properties[theField.getAttribute('name')]=rules;
 						data[theField.getAttribute('name')]=theField.value;
-					}	
+					} 
 			}
 
 			try{
@@ -678,7 +941,7 @@ var initMura=function(config){
 				jQuery.ajax(
 					{
 						type: 'post',
-						url: config.context + '/index.cfm/_api/ajax/v1/?method=validate',
+						url: config.apiEndpoint + '?method=validate',
 						dataType: 'text',
 						data: {
 								data: escape(JSON.stringify(data)),
@@ -686,32 +949,32 @@ var initMura=function(config){
 								version: 4
 							},
 						success: function(resp) {
-	 				 		var _data=eval('(' + resp + ')');
-	 				 		
-	 				 		data=_data.data;
-	 				 		
-	 				 		if(jQuery.isEmptyObject(data)){
-	 				 			if(typeof $customaction == 'function'){
-	 				 				$customaction(theForm);
-	 				 				return false;
-	 				 			} else {
-	 				 				theForm.submit();
-	 				 			}
-	 				 		} else {
-		 				 		var msg='';
-		 				 		for(var e in data){
-		 				 			msg=msg + data[e] + '\n';
-		 				 		}
+							var _data=eval('(' + resp + ')');
+							
+							data=_data.data;
+							
+							if(jQuery.isEmptyObject(data)){
+								if(typeof $customaction == 'function'){
+									$customaction(theForm);
+									return false;
+								} else {
+									theForm.submit();
+								}
+							} else {
+								var msg='';
+								for(var e in data){
+									msg=msg + data[e] + '\n';
+								}
 
-		 				 		alert(msg);
-	 				 		}
+								alert(msg);
+							}
 						},
 						error: function(resp) {
-	 				 		
-	 				 		alert(JSON.stringify(resp));
+							
+							alert(JSON.stringify(resp));
 						}
 
-					}		 
+					}    
 				);
 			} 
 			catch(err){ 
@@ -725,25 +988,100 @@ var initMura=function(config){
 
 	var setLowerCaseKeys=function (obj) {
 		$.map(obj, function(value, key) {
-	   
-		   if (key !== key.toLowerCase()) { // might already be in its lower case version
-		        obj[key.toLowerCase()] = obj[key] // swap the value to a new lower case key
-		        delete obj[key] // delete the old key
-		    }
-		   	if(typeof obj[key.toLowerCase()] == 'object'){
-		   		setLowerCaseKeys(obj[key.toLowerCase()]);
-		   	}
+		 
+			 if (key !== key.toLowerCase()) { // might already be in its lower case version
+						obj[key.toLowerCase()] = obj[key] // swap the value to a new lower case key
+						delete obj[key] // delete the old key
+				}
+				if(typeof obj[key.toLowerCase()] == 'object'){
+					setLowerCaseKeys(obj[key.toLowerCase()]);
+				}
 		});
 
 		return (obj);
 	}
 
+	var loader=function(){return window.ljs;}
+
 	if(!config.apiEndpoint){
 		config.apiEndpoint=config.context + '/index.cfm/_api/ajax/v1/';
 	}
 
-	var processAsyncObject=function(frm){
-		var self=frm;
+	var processHandlers=function(scope){
+		var handlers=[
+			function(){
+				$(scope).find( ".mura-async-object" ).each( function(){
+					processAsyncObject(this);
+				});
+			},
+
+			function(){
+				$(scope).find( ".htmlEditor" ).each( function() {
+					setHTMLEditor(this);
+				});
+			},
+
+			function(){
+				if($(scope).find( ".ffp_mm" ).length){
+					loader().loadjs(config.context + '/requirements/cfformprotect/js/cffp.js');
+				}
+			},
+
+			function(){
+				if($(scope).find( ".g-recaptcha" ).length){
+					loader().loadjs('https://www.google.com/recaptcha/api.js?hl=' + config.reCAPTCHALanguage);
+				}
+			},
+
+			function(){
+				if(typeof resizeEditableObject == 'function' ){
+					$(scope).closest('.editableObject').each(function(){ 
+						resizeEditableObject(this);
+					}); 
+
+					$(scope).find(".frontEndToolsModal").each(
+						function(){
+							jQuery(this).click(function(event){
+								event.preventDefault();
+								openFrontEndToolsModal(this);
+							}
+						);
+					});
+
+					$(scope).find(".editableObject").each(function(){
+						resizeEditableObject(this);
+					});
+				}
+			},
+
+			function(){
+				initShadowBox(scope);
+			}
+		];
+
+		for(var h in handlers){
+			handlers[h]();
+		}
+	}
+
+	var processAsyncObject=function(el){
+		var self=el;
+
+		var handleResponse=function(resp){
+			if('redirect' in resp.data){
+				location.href=resp.data.redirect;
+			} else {
+				$(self).html(resp.data.html);
+				
+				processHandlers(self);
+
+				$(self).find('form').each(function(){
+					$(this).removeAttr('onsubmit');
+					$(this).on('submit',function(){return validateFormAjax(document.getElementById($(this).attr('id')));});
+				});
+			}
+		};
+
 		var validateFormAjax=function(frm) {
 
 			if(FormData && $(frm).attr('enctype')=='multipart/form-data'){
@@ -766,13 +1104,13 @@ var initMura=function(config){
 				}
 				
 				var postconfig={
-				      url:  config.apiEndpoint + '?method=processAsyncObject',
-				      type: 'POST',
-				      data: data,
-				      processData: false,
-				      contentType: false,
-				      dataType: 'JSON'
-				    } 
+							url:  config.apiEndpoint + '?method=processAsyncObject',
+							type: 'POST',
+							data: data,
+							processData: false,
+							contentType: false,
+							dataType: 'JSON'
+						} 
 			
 			} else {
 				var data=$.extend(setLowerCaseKeys($( frm ).serializeObject()),setLowerCaseKeys($(self).data()),{siteid:config.siteid,contentid:config.contentid,contenthistid:config.contenthistid,nocache:1});
@@ -782,52 +1120,17 @@ var initMura=function(config){
 				}
 
 				var postconfig={
-				      url:  config.apiEndpoint + '?method=processAsyncObject',
-				      type: 'POST',
-				      data: data,
-				      dataType: 'JSON'
-				    } 
+							url:  config.apiEndpoint + '?method=processAsyncObject',
+							type: 'POST',
+							data: data,
+							dataType: 'JSON'
+						} 
 			}
 
 			validateForm(frm,
 				function(frm){
 					$(self).html(config.preloaderMarkup);
-					$.ajax(postconfig).then(function(resp){
-				    
-				    	if('redirect' in resp.data){
-				    		location.href=resp.data.redirect;
-				    	} else {
-				    		$(self).html(resp.data.html);
-
-				    		if($(self).data('object')=='form' && $(self).data('responsechart')==1){
-								var polllist=new Array();
-								frm.find("input[type='radio']").each(function(){
-									polllist.push($(this).val());
-								});
-								if(polllist.length > 0) {
-									frm.append('<input type="hidden" name="polllist" value="' + polllist.toString() + '">');
-								}		
-							}
-
-							if($(self).data('objectinit')){
-					    		var params=$(self).data('objectparams') ?  eval('('+ unescape($(self).data('objectparams')) + ')' ) : {};
-			    				eval('(' + $(self).data('objectinit') + '(params)' + ')');
-					    	}
-
-				    		$(self).find('form').each(function(){
-				 				$(this).removeAttr('onsubmit');
-				 				$(this).on('submit',function(){return validateFormAjax(document.getElementById($(this).attr('id')));});
-				 			});
-
-				 			if(typeof resizeEditableObject == 'function' ){
-				 				$(this).closest('.editableObject').each(function(){ 
-				 					resizeEditableObject(this);
-				 				});	
-				 			}
-				    	}
-				    	
-				    });
-
+					$.ajax(postconfig).then(handleResponse);
 				}
 			);
 
@@ -844,84 +1147,60 @@ var initMura=function(config){
 		$(self).html(config.preloaderMarkup);
 
 		$.ajax({
-	      url:  config.apiEndpoint + '?method=processAsyncObject',
-	      type: 'GET',
-	      data: data,
-	      dataType: 'JSON'
-		}).then(function(resp){
-
- 			$(self).html(resp.data.html);
- 		
- 			if($(self).data('objectscript')){
-			    $.getScript($(self).data('objectscript')).done(function(){
-			    	if($(self).data('objectinit')){
-			    		var params=$(self).data('objectparams') ?  eval('('+ unescape($(self).data('objectparams')) + ')' ) : {};
-			   			eval('(' + $(self).data('objectinit') + '(params)' + ')');
-			    	}
-			    });
- 			} else if($(self).data('objectinit')){
- 				var params=$(self).data('objectparams') ?  eval('('+ unescape($(self).data('objectparams')) + ')' ) : {};
-			    eval('(' + $(self).data('objectinit') + '(params)' + ')');
-			}
-
- 			$(self).find('form').each(function(){
- 				$(this).removeAttr('onsubmit');
- 				$(this).on('submit',function(){return validateFormAjax(document.getElementById($(this).attr('id')));});
- 			});
-
- 			if(typeof resizeEditableObject == 'function' ){
- 				$(this).closest('.editableObject').each(function(){ 
- 					resizeEditableObject(this);
- 				});	
- 			}
-		});
+				url:  config.apiEndpoint + '?method=processAsyncObject',
+				type: 'GET',
+				data: data,
+				dataType: 'JSON'
+		}).then(handleResponse);
 	}
 
 	$.extend(config,{
 		vaildateForm:validateForm,
 		processAsyncObject:processAsyncObject,
 		setLowerCaseKeys:setLowerCaseKeys,
-		vaildateForm:noSpam
+		noSpam:noSpam,
+		loader:loader
 	});
 
-	window.mura=config;
+	$.extend(window,{
+		mura:config,
+		validateForm:validateForm,
+		createCookie:createCookie
+	});
 
+	
 	$(function(){
-		$( ".mura-async-object" ).each( function(){
-			processAsyncObject(this);
-		});
-
-		$(document).arrive( ".mura-async-object",function(){
-			processAsyncObject(this);
-		});
-
-		$( ".htmlEditor" ).each( function() {
-			setHTMLEditor(this);
-		});
-
-		$(document).arrive( ".htmlEditor",function(){
-		 	setHTMLEditor(this);
-		});
-
-		if($( ".ffp_mm" ).length){
-			initCFFormProtect();
-		}
-
-		$(document).arrive( ".ffp_mm",function(){
-		 	initCFFormProtect();
-		});
-
-		if($( ".g-recaptcha" ).length){
-			initReCAPCHTA();
-		}
-
-		$(document).arrive( ".g-recaptcha",function(){
-		 	initReCAPCHTA();
-		});
+		processHandlers(document);
 
 		$(document).on('keydown',function(event){
 			loginCheck(event.which);
 		});
+
+		$.fn.appendMuraObject = function(data) {
+		    var el=$('<div class="mura-async-object"></div>');
+
+			for(var a in args){
+				$.data(el,a,args[a]);
+			}
+
+			$(this).append(el);
+			processAsyncObject(this);
+
+			return el;
+		};
+
+		$.fn.prependMuraObject = function(data) {
+		    var el=$('<div class="mura-async-object"></div>');
+
+			for(var a in args){
+				$.data(el,a,args[a]);
+			}
+
+			$(this).prepend(el);
+			processAsyncObject(this);
+
+			return el;
+		};
 
 		$(document).trigger('muraReady');
 	});

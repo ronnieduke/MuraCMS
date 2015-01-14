@@ -2110,7 +2110,7 @@ Display Objects
 </cffunction>
 
 <cffunction name="dspBody"  output="false" returntype="string">
-	<cfargument name="body" type="string" default="">
+	<cfargument name="body" type="string" default="#$.content('body')#">
 	<cfargument name="pagetitle" type="string" default="">
 	<cfargument name="crumblist" type="boolean" default="1">
 	<cfargument name="crumbseparator" type="string" default="&raquo;&nbsp;">
@@ -2995,7 +2995,8 @@ Display Objects
 	
 	<cfreturn trim(str) />
 </cffunction>
- 
+
+<!--- DEPRECATED --->
 <cffunction name="sendToFriendLink" output="false" returnType="String">
 <cfreturn "javascript:sendtofriend=window.open('#variables.event.getSite().getAssetPath()#/utilities/sendtofriend.cfm?link=#urlEncodedFormat(getCurrentURL())#&siteID=#variables.event.getValue('siteID')#', 'sendtofriend', 'scrollbars=yes,resizable=yes,screenX=0,screenY=0,width=570,height=390');sendtofriend.focus();void(0);"/>
 </cffunction>

@@ -90,6 +90,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfset arguments.rc.rsRestrictGroups=variables.contentUtility.getRestrictGroups(arguments.rc.siteid) />
 	<cfset arguments.rc.feedBean=variables.feedManager.read(arguments.rc.feedID) />
 	<cfset arguments.rc.rslist=variables.feedManager.getcontentItems(arguments.rc.feedBean) />
+	<cfset arguments.rc.rsTemplates=variables.contentUtility.getTemplates(arguments.rc.siteid,"Feed") />
 </cffunction>
 
 <cffunction name="update" output="false">

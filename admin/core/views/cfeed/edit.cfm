@@ -463,6 +463,22 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cfif isObjectInstance><h2>#esapiEncode('html',rc.feedBean.getName())#</h2></cfif>
 
 	<div class="control-group">
+		<label class="control-label">
+      		<cfoutput><a href="##" rel="tooltip" data-container="body" title="#esapiEncode('html_attr',application.rbFactory.getKeyValue(session.rb,"tooltip.layoutTemplate"))#">#application.rbFactory.getKeyValue(session.rb,'sitemanager.content.fields.layouttemplate')# <i class="icon-question-sign"></i></a></cfoutput>
+      	</label> 
+      	<div class="controls">
+      		<select name="template" class="dropdown">
+				<option value="">#application.rbFactory.getKeyValue(session.rb,'sitemanager.content.fields.none')#</option>
+				<cfloop query="rc.rsTemplates">
+				<cfif right(rc.rsTemplates.name,4) eq ".cfm">
+				<cfoutput>
+				<option value="#rc.rsTemplates.name#" <cfif rc.feedBean.getTemplate() eq rc.feedBean.getName()>selected</cfif>>#rc.rsTemplates.name#</option>
+				</cfoutput>
+				</cfif></cfloop>
+			</select>
+		</div>
+	</div>
+	<div class="control-group">
 		<div class="span4">
 	      	<label class="control-label">#application.rbFactory.getKeyValue(session.rb,'collections.imagesize')#</label>
 			<div class="controls">

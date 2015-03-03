@@ -9,6 +9,10 @@
 <cfset variables.manager="">
 <cfset variables.configBean="">
 
+<cfset variables.primaryKey = 'id'>
+<cfset variables.entityName = 'extendObject'>
+<cfset variables.instanceName= 'subType'>
+
 <cffunction name="init" output="false">
 <cfargument name="type" default="Custom">
 <cfargument name="subType" default="">
@@ -17,9 +21,12 @@
 <cfargument name="configBean" default="#application.configBean#">
 <cfargument name="ID" default="">
 <cfargument name="remoteID" default="">
+<cfargument name="sourceIterator" default="">
 
 	<cfset super.init(argumentCollection=arguments)>
 
+	<cfset variables.instance.ID = "">
+	
 	<cfset setType(arguments.type)>
 	<cfset setSubType(arguments.subType)>
 	<cfset setSiteID(arguments.siteID)>
@@ -27,6 +34,7 @@
 	<cfset setConfigBean(arguments.configBean)>
 	<cfset setID(arguments.ID)>
 	<cfset variables.instance.remoteID=arguments.remoteID>
+	<cfset variables.instance.sourceIterator=arguments.sourceIterator>
 	
 	<cfreturn this>
 </cffunction>

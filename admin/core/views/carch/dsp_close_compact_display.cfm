@@ -49,8 +49,8 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
 <cfsilent>
+<cfparam name="session.frontEndProxyLoc" default="">
 <cfset event=request.event>
-<cfset contentRenderer=application.settingsManager.getSite(event.getValue("siteID")).getContentRenderer()>
 <cfset href = "">
 <cfif rc.action eq "add">
 	<cfif rc.contentBean.getActive()>
@@ -61,41 +61,43 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 </cfif>	
 <cfif len(rc.homeID) gt 0>
 	<cfset homeBean = application.contentManager.getActiveContent(event.getValue('homeID'), event.getValue('siteID'))>
-	<cfset href = contentRenderer.createHREF(homeBean.getType(), homeBean.getFilename(), homeBean.getSiteId(), homeBean.getcontentId())>
+	<cfset href = homeBean.getURL()>
 <cfelseif rc.action eq "add" and rc.contentBean.getType() neq "File" and rc.contentBean.getType() neq "Link">
-	<cfset href = contentRenderer.createHREF(currentBean.getType(), currentBean.getFilename(), currentBean.getSiteId(), currentBean.getcontentId())>
+	<cfset href =currentBean.getURL()>
 	<cfif rc.preview eq 1>
-		<cfset href = '#href#?previewID=#rc.contentBean.getContentHistID()#'/>
+		<cfset href =currentBean.getURL(queryString='previewID=#rc.contentBean.getContentHistID()#')>
+	<cfelse>
+		<cfset href =currentBean.getURL()>
 	</cfif>
 <cfelseif rc.action eq "add" and (rc.contentBean.getType() eq "File" or rc.contentBean.getType() eq "Link")>	
 	<cfset parentBean = application.contentManager.getActiveContent(currentBean.getParentID(), currentBean.getSiteID())>
-	<cfset href = contentRenderer.createHREF(parentBean.getType(), parentBean.getFilename(), parentBean.getSiteId(), parentBean.getcontentId())>
+	<cfset href = parentBean.getURL()>
 <cfelseif rc.action eq "multiFileUpload">
 	<cfset parentBean = application.contentManager.getActiveContent(rc.parentID, rc.siteID)>
-	<cfset href = contentRenderer.createHREF(parentBean.getType(), parentBean.getFilename(), parentBean.getSiteId(), parentBean.getcontentId())>
+	<cfset href = parentBean.getURL()>
 <cfelse>
 	<cfset rc.contentBean = application.contentManager.getActiveContent(rc.parentid, rc.siteid)>
-	<cfset href = contentRenderer.createHREF(rc.contentBean.getType(), rc.contentBean.getFilename(), rc.contentBean.getSiteId(), rc.contentBean.getcontentId())>
+	<cfset href = rc.contentBean.getURL()>
 </cfif>
 </cfsilent>
 <cfoutput>
-<script src="#application.configBean.getContext()#/admin/js/jquery/jquery.js?coreversion=#application.coreversion#" type="text/javascript"></script>
-<script src="#application.configBean.getContext()#/admin/js/porthole/porthole.min.js?coreversion=#application.coreversion#" type="text/javascript"></script>
+<script src="#application.configBean.getContext()#/admin/assets/js/jquery/jquery.js?coreversion=#application.coreversion#" type="text/javascript"></script>
+<script src="#application.configBean.getContext()#/admin/assets/js/porthole/porthole.min.js?coreversion=#application.coreversion#" type="text/javascript"></script>
 <script>
 	function reload(){
 		if (top.location != self.location) {
-			frontEndProxy = new Porthole.WindowProxy("#session.frontEndProxyLoc##application.configBean.getContext()#/admin/js/porthole/proxy.html");
+			frontEndProxy = new Porthole.WindowProxy("#esapiEncode('javascript',session.frontEndProxyLoc)##application.configBean.getContext()#/admin/assets/js/porthole/proxy.html");
 			if (jQuery("##ProxyIFrame").length) {
 				jQuery("##ProxyIFrame").load(function(){
-					frontEndProxy.postMessage("cmd=setLocation&location=" + encodeURIComponent("#JSStringFormat(href)#"));
+					frontEndProxy.post({cmd:'setLocation',location:encodeURIComponent("#esapiEncode('javascript',href)#")});
 				});
 			}
 			else {
-				frontEndProxy.postMessage("cmd=setLocation&location=" + encodeURIComponent("#JSStringFormat(href)#"));
+				frontEndProxy.post({cmd:'setLocation',location:encodeURIComponent("#esapiEncode('javascript',href)#")});
 			}
 			
 		} else {
-			location.href="#JSStringFormat(href)#";
+			location.href="#esapiEncode('javascript',href)#";
 		}
 	}
 </script>

@@ -45,7 +45,16 @@ modified version; it is your choice whether to do so, or to make such modified v
 version 2 without this exception.  You may, if you choose, apply this exception to your own modified versions of Mura CMS.
 --->
 <cfoutput>
-<div id="alertDialog" title="Alert" style="display:none">
-	<p><span class="ui-icon ui-icon-alert" style="float:left; margin:0 7px 20px 0;"></span><span id="alertDialogMessage"></span></p>
+<div id="alertDialog" title="Alert" class="alert alert-notice hide">
+	<span id="alertDialogMessage"></span>
 </div>
+<cfif isDefined('rc.$') and len(rc.$.event('siteid')) and isObject(rc.$.siteConfig().getRazunaSettings()) and len(rc.$.siteConfig().getRazunaSettings().getApiKey())>
+	<link rel="stylesheet" id="theme" href="#$.globalConfig('context')#/admin/assets/css/jstree/style.css" type="text/css" media="screen" />
+	<script>
+	   razuna_folder = "#rc.$.globalConfig('context')#/admin/";
+	   razuna_servertype="#rc.$.siteConfig().getRazunaSettings().getServerType()#";
+	</script>
+	<script src="#rc.$.globalConfig('context')#/admin/assets/js/razuna.js" type="text/javascript"></script>
+	<script src="#rc.$.globalConfig('context')#/admin/assets/js/jquery/jquery.jstree.js" type="text/javascript"></script>
+	</cfif>
 </cfoutput>

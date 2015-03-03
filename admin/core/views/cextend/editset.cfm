@@ -47,53 +47,90 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 
 <cfset subType=application.classExtensionManager.getSubTypeByID(rc.subTypeID)>
 <cfset extendSetBean=subType.loadSet(rc.extendSetID) />
-<h2><cfif len(rc.extendSetID)>Edit<cfelse>Add</cfif> Attribute Set</h2>
+<h1><cfif len(rc.extendSetID)>Edit<cfelse>Add</cfif> Attribute Set</h1>
 <cfoutput>
-	
-<ul class="metadata">
-<li><strong>Class Extension:</strong> #application.classExtensionManager.getTypeAsString(subType.getType())# / #subType.getSubType()#</li>
-</ul>
 
-<ul id="navTask">
-<li><a href="index.cfm?muraAction=cExtend.listSubTypes&siteid=#URLEncodedFormat(rc.siteid)#">Class Extension Manager</a></li>
-<li><a href="index.cfm?muraAction=cExtend.listSets&subTypeID=#rc.subTypeID#&siteid=#URLEncodedFormat(rc.siteid)#">Back to Attribute Sets</a></li>
-</ul>
+<div id="nav-module-specific" class="btn-group">
+      <a class="btn dropdown-toggle" data-toggle="dropdown" href="##">
+         <i class="icon-circle-arrow-left"></i> Back <span class="caret"></span>
+       </a>
+       <ul class="dropdown-menu">
+          <li><a href="./?muraAction=cExtend.listSubTypes&siteid=#esapiEncode('url',rc.siteid)#">&hellip;to Class Extensions</a></li>
+          <li><a href="./?muraAction=cExtend.listSets&subTypeID=#esapiEncode('url',rc.subTypeID)#&siteid=#esapiEncode('url',rc.siteid)#">&hellip;to Class Extension Overview</a></li>
+       </ul>
+</div>
 
+<h2><i class="#subtype.getIconClass(includeDefault=true)# icon-large"></i> #application.classExtensionManager.getTypeAsString(subType.getType())# / #subType.getSubType()#</h2>
 
-<form novalidate="novalidate" name="form1" method="post" action="index.cfm" onsubit="return validateForm(this);">
-<dl class="oneColumn separate">
-<dt class="first">Attribute Set Name</dt>
-<dd><input name="name" value="#HTMLEditFormat(extendSetBean.getName())#" required="true"/></dd>
+<form class="fieldset-wrap" novalidate="novalidate" name="form1" method="post" action="index.cfm" onsubit="return validateForm(this);">
+
+<div class="fieldset">
+
+<div class="control-group">
+	<label class="control-label">Attribute Set Name</label>
+	<div class="controls">
+	<input name="name" type="text" value="#esapiEncode('html_attr',extendSetBean.getName())#" required="true"/>
+	</div>
+</div>
+
 <cfif subType.getType() neq "Custom">
-<dt>Container</dt>
-<dd><select name="container">
-<option value="Default">Extended Attributes Tab</option>
-<cfif subType.getTYpe() neq "Site">
-<option value="Basic"<cfif extendSetBean.getContainer() eq "Basic"> selected</cfif>>Basic Tab</option></cfif>
-<option value="Custom"<cfif extendSetBean.getContainer() eq "Custom"> selected</cfif>>Custom UI</option>
-</select>
-</dd>
+	<div class="control-group">
+		<label class="control-label">Container (Tab)</label>
+		<div class="controls">
+			<select name="container">
+				<option value="Default">Extended Attributes</option>			
+				<cfif listFindNoCase('Page,Folder,File,Gallery,Calender,Link,Base',subType.getType())>
+					<cfloop list="#application.contentManager.getTabList()#" index="t">
+					<cfif t neq 'Extended Attributes'>
+					<option value="#t#"<cfif extendSetBean.getContainer() eq t> selected</cfif>>
+					</cfif>
+	      			#application.rbFactory.getKeyValue(session.rb,"sitemanager.content.tabs.#REreplace(t, "[^\\\w]", "", "all")#")#
+	      			</option>
+	      		</cfloop>
+	      		<cfelseif listFindNoCase('Component,Form',subType.getType())>
+					<cfloop list="Basic,Categorization,Usage Report" index="t">
+					<option value="#t#"<cfif extendSetBean.getContainer() eq t> selected</cfif>>
+	      			#application.rbFactory.getKeyValue(session.rb,"sitemanager.content.tabs.#REreplace(t, "[^\\\w]", "", "all")#")#
+	      			</option>
+	      		</cfloop>
+	      		<cfelseif subType.getType() neq 'site'>
+					<option value="Basic"<cfif extendSetBean.getContainer() eq "Basic"> selected</cfif>>Basic Tab</option>
+				</cfif>
+				<option value="Custom"<cfif extendSetBean.getContainer() eq "Custom"> selected</cfif>>Custom UI</option>
+			</select>
+		</div>
+	</div>
 <cfelse>
-<input name="container" value="Custom" type="hidden"/>	
+	<input name="container" value="Custom" type="hidden"/>	
 </cfif>
+
+<!---
 <cfif  not listFindNoCase("1,Site,Custom", subtype.getType()) and application.categoryManager.getCategoryCount(rc.siteID)>
-<dt>Available Category Dependencies</dt>
-<dd class="categoryAssignment"><cf_dsp_categories_nest siteID="#rc.siteID#" parentID="" nestLevel="0" extendSetBean="#extendSetBean#"></dd>
-</cfif></dl>
-<div class="clearfix" id="actionButtons">
+	<div class="control-group">
+		<label class="control-label">Available Category Dependencies</label>
+		<div class="controls categoryAssignment"><cf_dsp_categories_nest siteID="#rc.siteID#" parentID="" nestLevel="0" extendSetBean="#extendSetBean#">
+		</div>
+	</div>
+</cfif>
+--->
+
+</div>
+<div class="form-actions">
 <cfif not len(rc.extendSetID)>
-	<input type="button" class="submit" onclick="submitForm(document.forms.form1,'add');" value="Add" />
-	<input type=hidden name="extendSetID" value="#createuuid()#">
+	<cfset rc.extendSetID=createuuid()>
+	<input type="button" class="btn" onclick="submitForm(document.forms.form1,'add');" value="Add" />
+	<input type=hidden name="extendSetID" value="#esapiEncode('html_attr',rc.extendSetID)#">
 <cfelse>
-	<input type="button" class="submit" onclick="submitForm(document.forms.form1,'delete','Delete Attribute Set?');" value="Delete" />
-	<input type="button" class="submit" onclick="submitForm(document.forms.form1,'update');" value="Update" />
-	<input type=hidden name="extendSetID" value="#extendSetBean.getExtendSetID()#">
+	<input type="button" class="btn" onclick="submitForm(document.forms.form1,'delete','Delete Attribute Set?');" value="Delete" />
+	<input type="button" class="btn" onclick="submitForm(document.forms.form1,'update');" value="Update" />
+	<input type=hidden name="extendSetID" value="#esapiEncode('html_attr',extendSetBean.getExtendSetID())#">
 </cfif>
 </div>
 
 <input type="hidden" name="action" value="">
 <input name="muraAction" value="cExtend.updateSet" type="hidden">
-<input name="siteID" value="#HTMLEditFormat(rc.siteid)#" type="hidden">
-<input name="subTypeID" value="#subType.getSubTypeID()#" type="hidden">
+<input name="siteID" value="#esapiEncode('html_attr',rc.siteid)#" type="hidden">
+<input name="subTypeID" value="#esapiEncode('html_attr',subType.getSubTypeID())#" type="hidden">
+#rc.$.renderCSRFTokens(context=rc.extendSetID,format="form")#
 </form>
 </cfoutput>

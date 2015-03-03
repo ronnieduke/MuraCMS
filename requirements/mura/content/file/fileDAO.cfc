@@ -60,9 +60,10 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 			<cfset variables.s3=createObject("component","s3").init(
 							listFirst(variables.configBean.getFileStoreAccessInfo(),'^'),
 							listGetAt(variables.configBean.getFileStoreAccessInfo(),2,'^'),
-							"#application.configBean.getFileDir()##application.configBean.getFileDelim()#s3cache#application.configBean.getFileDelim()#")>
+							"#application.configBean.getFileDir()#/s3cache/",
+							variables.configBean.getFileStoreEndPoint())>
 			<cfif listLen(variables.configBean.getFileStoreAccessInfo(),"^") eq 3>
-			<cfset variables.bucket=listLast(variables.configBean.getFileStoreAccessInfo(),"^") />
+				<cfset variables.bucket=listLast(variables.configBean.getFileStoreAccessInfo(),"^") />
 			<cfelse>
 				<cfset variables.bucket="sava" />
 			</cfif>
@@ -92,101 +93,111 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<cfargument name="fileObjMedium" type="any" required="yes"/>
 		<cfargument name="fileID" type="any" required="yes" default="#createUUID()#"/>
 		<cfargument name="fileObjSource" type="any" default=""/>
+		<cfargument name="credits" type="string" required="yes" default=""/>
+		<cfargument name="caption" type="string" required="yes" default=""/>
+		<cfargument name="alttext" type="string" required="yes" default=""/>
+		<cfargument name="remoteid" type="string" required="yes" default=""/>
+		<cfargument name="remoteURL" type="string" required="yes" default=""/>
+		<cfargument name="remotePubDate" type="string" required="yes" default=""/>
+		<cfargument name="remoteSource" default=""/>
+		<cfargument name="remoteSourceURL" type="string" required="yes" default=""/>
+		<!---<cfargument name="gpsaltitude" type="string" required="yes" default=""/>
+		<cfargument name="gpsaltiuderef" type="string" required="yes" default=""/>
+		<cfargument name="gpslatitude" type="string" required="yes" default=""/>
+		<cfargument name="gpslatituderef" type="string" required="yes" default=""/>
+		<cfargument name="gpslongitude" type="string" required="yes" default=""/>
+		<cfargument name="gpslongituderef" type="string" required="yes" default=""/>
+		<cfargument name="gpsimgdirection" type="string" required="yes" default=""/>
+		<cfargument name="gpstimestamp" type="string" required="yes" default=""/>--->
+		<cfargument name="exif" type="string" required="yes" default=""/>
 		
 		<cfset var ct=arguments.contentType & "/" & arguments.contentSubType />
 		<cfset var pluginEvent = createObject("component","mura.event").init(arguments) />
+		<cfset var fileBean=getBean('file')>
+	
+		<cfset arguments.fileExt=lcase(arguments.fileExt)>
+		<cfset fileBean.set(arguments)>
+		<cfset pluginEvent.setValue('fileBean',fileBean)>
 		<cfset variables.pluginManager.announceEvent("onBeforeFileCache",pluginEvent)>
+		
 		
 		<cfswitch expression="#variables.configBean.getFileStore()#">
 			<cfcase value="fileDir">		
 				<cfif isBinary(arguments.fileObj)>
 				
-					<cfset variables.fileWriter.writeFile(mode="774", file="#application.configBean.getFileDir()##application.configBean.getFileDelim()##arguments.siteid##application.configBean.getFileDelim()#cache#application.configBean.getFileDelim()#file#application.configBean.getFileDelim()##arguments.fileID#.#arguments.fileExt#", output="#arguments.fileObj#")>
+					<cfset variables.fileWriter.writeFile(mode="774", file="#application.configBean.getFileDir()#/#arguments.siteid#/cache/file/#arguments.fileID#.#arguments.fileExt#", output="#arguments.fileObj#")>
 				
 					<cfif listFindNoCase("png,gif,jpg,jpeg",arguments.fileExt)>					
 						<cfif isBinary(arguments.fileObjSource)>
-							<cfset variables.fileWriter.writeFile(mode="774", file="#application.configBean.getFileDir()##application.configBean.getFileDelim()##arguments.siteid##application.configBean.getFileDelim()#cache#application.configBean.getFileDelim()#file#application.configBean.getFileDelim()##arguments.fileID#_source.#arguments.fileExt#", output="#arguments.fileObjSource#")>
+							<cfset variables.fileWriter.writeFile(mode="774", file="#application.configBean.getFileDir()#/#arguments.siteid#/cache/file/#arguments.fileID#_source.#arguments.fileExt#", output="#arguments.fileObjSource#")>
 						</cfif>
 						<cfif isBinary(arguments.fileObjSmall)>
-							<cfset variables.fileWriter.writeFile(mode="774", file="#application.configBean.getFileDir()##application.configBean.getFileDelim()##arguments.siteid##application.configBean.getFileDelim()#cache#application.configBean.getFileDelim()#file#application.configBean.getFileDelim()##arguments.fileID#_small.#arguments.fileExt#", output="#arguments.fileObjSmall#")>
+							<cfset variables.fileWriter.writeFile(mode="774", file="#application.configBean.getFileDir()#/#arguments.siteid#/cache/file/#arguments.fileID#_small.#arguments.fileExt#", output="#arguments.fileObjSmall#")>
 						</cfif>
 						<cfif isBinary(arguments.fileObjMedium)>
-							<cfset variables.fileWriter.writeFile(mode="774", file="#application.configBean.getFileDir()##application.configBean.getFileDelim()##arguments.siteid##application.configBean.getFileDelim()#cache#application.configBean.getFileDelim()#file#application.configBean.getFileDelim()##arguments.fileID#_medium.#arguments.fileExt#", output="#arguments.fileObjMedium#")/>
+							<cfset variables.fileWriter.writeFile(mode="774", file="#application.configBean.getFileDir()#/#arguments.siteid#/cache/file/#arguments.fileID#_medium.#arguments.fileExt#", output="#arguments.fileObjMedium#")/>
 						</cfif>
 					<cfelseif arguments.fileExt eq 'flv'>
 						<cfif isBinary(arguments.fileObjSmall)>
-							<cfset variables.fileWriter.writeFile(mode="774", file="#application.configBean.getFileDir()##application.configBean.getFileDelim()##arguments.siteid##application.configBean.getFileDelim()#cache#application.configBean.getFileDelim()#file#application.configBean.getFileDelim()##arguments.fileID#_small.jpg", output="#arguments.fileObjSmall#")>
+							<cfset variables.fileWriter.writeFile(mode="774", file="#application.configBean.getFileDir()#/#arguments.siteid#/cache/file/#arguments.fileID#_small.jpg", output="#arguments.fileObjSmall#")>
 						</cfif>
 						<cfif isBinary(arguments.fileObjMedium)>
-							<cfset variables.fileWriter.writeFile( mode="774",  file="#application.configBean.getFileDir()##application.configBean.getFileDelim()##arguments.siteid##application.configBean.getFileDelim()#cache#application.configBean.getFileDelim()#file#application.configBean.getFileDelim()##arguments.fileID#_medium.jpg", output="#arguments.fileObjMedium#")>
+							<cfset variables.fileWriter.writeFile( mode="774",  file="#application.configBean.getFileDir()#/#arguments.siteid#/cache/file/#arguments.fileID#_medium.jpg", output="#arguments.fileObjMedium#")>
 						</cfif>
 					</cfif>			
 				<cfelse>				
-					<cfset variables.fileWriter.moveFile(mode="774", destination="#application.configBean.getFileDir()##application.configBean.getFileDelim()##arguments.siteid##application.configBean.getFileDelim()#cache#application.configBean.getFileDelim()#file#application.configBean.getFileDelim()##arguments.fileID#.#arguments.fileExt#", source="#arguments.fileObj#")>
+					<cfset variables.fileWriter.moveFile(mode="774", destination="#application.configBean.getFileDir()#/#arguments.siteid#/cache/file/#arguments.fileID#.#arguments.fileExt#", source="#arguments.fileObj#")>
 				
 					<cfif listFindNoCase("png,gif,jpg,jpeg",arguments.fileExt)>	
-						<cfif len(arguments.fileObjSource)>
-							<cfset variables.fileWriter.moveFile(mode="774", destination="#application.configBean.getFileDir()##application.configBean.getFileDelim()##arguments.siteid##application.configBean.getFileDelim()#cache#application.configBean.getFileDelim()#file#application.configBean.getFileDelim()##arguments.fileID#_source.#arguments.fileExt#", source="#arguments.fileObjSource#")>
+						<cfif len(arguments.fileObjSource) AND FileExists(arguments.fileObjSource)>
+							<cfset variables.fileWriter.moveFile(mode="774", destination="#application.configBean.getFileDir()#/#arguments.siteid#/cache/file/#arguments.fileID#_source.#arguments.fileExt#", source="#arguments.fileObjSource#")>
 						</cfif>
-						<cfif len(arguments.fileObjSmall)>
-							<cfset variables.fileWriter.moveFile(mode="774", destination="#application.configBean.getFileDir()##application.configBean.getFileDelim()##arguments.siteid##application.configBean.getFileDelim()#cache#application.configBean.getFileDelim()#file#application.configBean.getFileDelim()##arguments.fileID#_small.#arguments.fileExt#", source="#arguments.fileObjSmall#")>
+						<cfif len(arguments.fileObjSmall) AND FileExists(arguments.fileObjSmall)>
+							<cfset variables.fileWriter.moveFile(mode="774", destination="#application.configBean.getFileDir()#/#arguments.siteid#/cache/file/#arguments.fileID#_small.#arguments.fileExt#", source="#arguments.fileObjSmall#")>
 						</cfif>
-						<cfif len(arguments.fileObjMedium)>
-							<cfset variables.fileWriter.moveFile(mode="774", destination="#application.configBean.getFileDir()##application.configBean.getFileDelim()##arguments.siteid##application.configBean.getFileDelim()#cache#application.configBean.getFileDelim()#file#application.configBean.getFileDelim()##arguments.fileID#_medium.#arguments.fileExt#", source="#arguments.fileObjMedium#")/>
+						<cfif len(arguments.fileObjMedium) AND FileExists(arguments.fileObjMedium)>
+							<cfset variables.fileWriter.moveFile(mode="774", destination="#application.configBean.getFileDir()#/#arguments.siteid#/cache/file/#arguments.fileID#_medium.#arguments.fileExt#", source="#arguments.fileObjMedium#")/>
 						</cfif>
 					<cfelseif arguments.fileExt eq 'flv'>
-						<cfif len(arguments.fileObjSmall)>
-							<cfset variables.fileWriter.moveFile(mode="774", destination="#application.configBean.getFileDir()##application.configBean.getFileDelim()##arguments.siteid##application.configBean.getFileDelim()#cache#application.configBean.getFileDelim()#file#application.configBean.getFileDelim()##arguments.fileID#_small.jpg", source="#arguments.fileObjSmall#")>
+						<cfif len(arguments.fileObjSmall) AND FileExists(arguments.fileObjSmall)>
+							<cfset variables.fileWriter.moveFile(mode="774", destination="#application.configBean.getFileDir()#/#arguments.siteid#/cache/file/#arguments.fileID#_small.jpg", source="#arguments.fileObjSmall#")>
 						</cfif>
-						<cfif len(arguments.fileObjMedium)>
-							<cfset variables.fileWriter.writeFile( mode="774",  destination="#application.configBean.getFileDir()##application.configBean.getFileDelim()##arguments.siteid##application.configBean.getFileDelim()#cache#application.configBean.getFileDelim()#file#application.configBean.getFileDelim()##arguments.fileID#_medium.jpg", source="#arguments.fileObjMedium#")>
+						<cfif len(arguments.fileObjMedium) AND FileExists(arguments.fileObjMedium)>
+							<cfset variables.fileWriter.writeFile( mode="774",  destination="#application.configBean.getFileDir()#/#arguments.siteid#/cache/file/#arguments.fileID#_medium.jpg", source="#arguments.fileObjMedium#")>
 						</cfif>
 					</cfif>			
 				</cfif>	
 			</cfcase>
 			<cfcase value="s3">
 				<cfset variables.s3.putFileOnS3(arguments.fileObj,ct,variables.bucket,'#arguments.siteid#/#arguments.fileid#.#arguments.fileExt#') />
-				<cfif arguments.fileExt eq 'jpg' or arguments.fileExt eq 'jpeg' or arguments.fileExt eq 'png' or arguments.fileExt eq 'gif'>
-					<cfif isBinary(fileObjSmall)><cfset variables.s3.putFileOnS3(arguments.fileObjSmall,ct,variables.bucket,'#arguments.siteid#/#arguments.fileid#_small.#arguments.fileExt#') /></cfif>
-					<cfif isBinary(fileObjMedium)><cfset variables.s3.putFileOnS3(arguments.fileObjMedium,ct,variables.bucket,'#arguments.siteid#/#arguments.fileid#_medium.#arguments.fileExt#') /></cfif>
-				<cfelseif arguments.fileExt eq 'flv'>
-					<cfif isBinary(fileObjSmall)><cfset variables.s3.putFileOnS3(arguments.fileObjSmall,'image/jpeg',variables.bucket,'#arguments.siteid#/#arguments.fileid#_small.jpg') /></cfif>
-					<cfif isBinary(fileObjMedium)><cfset variables.s3.putFileOnS3(arguments.fileObjMedium,'image/jpeg',variables.bucket,'#arguments.siteid#/#arguments.fileid#_medium.jpg') /></cfif>
-				</cfif>
+		        <cfset var s3_path = "#arguments.siteid#/cache/file/">
+		        <cfset variables.s3.putFileOnS3(arguments.fileObj,ct,variables.bucket,'#s3_path##arguments.fileid#.#arguments.fileExt#') />
+		        <cfif arguments.fileExt eq 'jpg' or arguments.fileExt eq 'jpeg' or arguments.fileExt eq 'png' or arguments.fileExt eq 'gif'>
+		       	 	<cfif isBinary(fileObjSmall)><cfset variables.s3.putFileOnS3(arguments.fileObjSmall,ct,variables.bucket,'#s3_path##arguments.fileid#_small.#arguments.fileExt#') /></cfif>
+		          	<cfif isBinary(fileObjMedium)><cfset variables.s3.putFileOnS3(arguments.fileObjMedium,ct,variables.bucket,'#s3_path##arguments.fileid#_medium.#arguments.fileExt#') /></cfif>
+		         <cfelseif arguments.fileExt eq 'flv'>
+		          	<cfif isBinary(fileObjSmall)><cfset variables.s3.putFileOnS3(arguments.fileObjSmall,'image/jpeg',variables.bucket,'#s3_path##arguments.fileid#_small.jpg') /></cfif>
+		          	<cfif isBinary(fileObjMedium)><cfset variables.s3.putFileOnS3(arguments.fileObjMedium,'image/jpeg',variables.bucket,'#s3_path##arguments.fileid#_medium.jpg') /></cfif>
+		         </cfif>
 			</cfcase>
 		</cfswitch>
-		
-		<cfquery datasource="#variables.configBean.getDatasource()#"  username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
-		INSERT INTO tfiles (fileID,contentID,siteID,filename,contentType,contentSubType,fileSize,moduleID,fileExt,created<cfif variables.configBean.getFileStore() eq 'database'>,image,imageSmall,imageMedium</cfif>,deleted)
-		VALUES(
-		<cfqueryparam cfsqltype="cf_sql_varchar"  value="#arguments.fileid#">,
-		<cfqueryparam cfsqltype="cf_sql_varchar"  value="#arguments.contentid#">,
-		<cfqueryparam cfsqltype="cf_sql_varchar"  value="#arguments.siteid#">,
-		<cfqueryparam cfsqltype="cf_sql_varchar"  value="#arguments.filename#">,
-		<cfqueryparam cfsqltype="cf_sql_varchar"  value="#arguments.contentType#">,
-		<cfqueryparam cfsqltype="cf_sql_varchar"  value="#arguments.contentSubType#">,
-		<cfqueryparam cfsqltype="cf_sql_integer"  value="#arguments.fileSize#">,
-		<cfqueryparam cfsqltype="cf_sql_varchar"  value="#arguments.moduleID#">,
-		<cfqueryparam cfsqltype="cf_sql_varchar"  null="#iif(arguments.fileExt eq '',de('yes'),de('no'))#" value="#arguments.fileExt#">,
-		<cfqueryparam cfsqltype="cf_sql_timestamp" value="#now()#">
-		<cfif variables.configBean.getFileStore() eq 'database'>,
-		<cfqueryparam cfsqltype="cf_sql_blob"  value="#arguments.fileObj#">,
-		<cfqueryparam cfsqltype="cf_sql_blob"  null="#iif(isBinary(arguments.fileObjSmall),de('no'),de('yes'))#" value="#arguments.fileObjSmall#">,
-		<cfqueryparam cfsqltype="cf_sql_blob"  null="#iif(isBinary(arguments.fileObjMedium),de('no'),de('yes'))#" value="#arguments.fileObjMedium#">
-		</cfif>,
-		0
-		)	
-		</cfquery>
-		
+
+		<cfset fileBean.save(processFile=false)>
+
 		<cfset variables.pluginManager.announceEvent("onFileCache", pluginEvent)>
 		<cfset variables.pluginManager.announceEvent("onAfterFileCache",pluginEvent)>
+
+		<cfif listFindNoCase('jpg,jpeg,png',fileBean.getFileExt()) and isDefined('request.newImageIDList')>
+			<cfset request.newImageIDList=listAppend(request.newImageIDList,fileid)>
+		</cfif>
+
 		<cfreturn fileid />
 </cffunction>
 
 <cffunction name="deleteVersion" returntype="void" access="public" output="false">
 		<cfargument name="fileID" type="any" required="yes"/>
 		
-		<cfquery datasource="#variables.configBean.getDatasource()#"  username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
+		<cfquery>
 		update tfiles set deleted=1 where fileid=<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.fileID#">
 		</cfquery>
 	
@@ -196,7 +207,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<cfargument name="contentID" type="string" required="yes"/>
 		<cfset var rs='' />
 		
-		<cfquery name="rs" datasource="#variables.configBean.getDatasource()#"  username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
+		<cfquery attributeCollection="#variables.configBean.getReadOnlyQRYAttrs(name='rs')#">
 		select contentHistID, fileID from tcontent 
 		where contentid= <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.contentID#">
 		and fileID is not null
@@ -209,8 +220,8 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cffunction name="read" returntype="query" access="public" output="false">
 		<cfargument name="fileID" type="any" required="yes"/>
 		<cfset var rs=""/>
-		<cfquery name="rs" datasource="#variables.configBean.getReadOnlyDatasource()#"  username="#variables.configBean.getReadOnlyDbUsername()#" password="#variables.configBean.getReadOnlyDbPassword()#">
-		SELECT fileID, contentID, siteID, moduleID, filename, fileSize, contentType, contentSubType, fileExt,image, created FROM tfiles where fileid= <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.fileID#">
+		<cfquery attributeCollection="#variables.configBean.getReadOnlyQRYAttrs(name='rs')#">
+		SELECT fileID, contentID, siteID, moduleID, filename, fileSize, contentType, contentSubType, fileExt,image, created, alttext, caption, credits FROM tfiles where fileid= <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.fileID#">
 		</cfquery>
 		
 		<cfreturn rs />
@@ -220,7 +231,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cffunction name="readAll" returntype="query" access="public" output="false">
 		<cfargument name="fileID" type="any" required="yes"/>
 		<cfset var rs=""/>
-		<cfquery name="rs" datasource="#variables.configBean.getReadOnlyDatasource()#"  username="#variables.configBean.getReadOnlyDbUsername()#" password="#variables.configBean.getReadOnlyDbPassword()#">
+		<cfquery attributeCollection="#variables.configBean.getReadOnlyQRYAttrs(name='rs')#">
 		SELECT * FROM tfiles where fileid= <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.fileID#">
 		</cfquery>
 		
@@ -231,8 +242,8 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cffunction name="readMeta" returntype="query" access="public" output="false">
 		<cfargument name="fileID" type="any" required="yes"/>
 		<cfset var rs=""/>
-		<cfquery name="rs" datasource="#variables.configBean.getReadOnlyDatasource()#"  username="#variables.configBean.getReadOnlyDbUsername()#" password="#variables.configBean.getReadOnlyDbPassword()#">
-		SELECT fileID, contentID, siteID, moduleID, filename, fileSize, contentType, contentSubType, fileExt, created  FROM tfiles where fileid= <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.fileID#">
+		<cfquery attributeCollection="#variables.configBean.getReadOnlyQRYAttrs(name='rs')#">
+		SELECT fileID, contentID, siteID, moduleID, filename, fileSize, contentType, contentSubType, fileExt, created, alttext, caption, credits  FROM tfiles where fileid= <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.fileID#">
 		</cfquery>
 		
 		<cfreturn rs />
@@ -242,8 +253,8 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cffunction name="readSmall" returntype="query" access="public" output="false">
 		<cfargument name="fileID" type="any" required="yes"/>
 		<cfset var rs=""/>
-		<cfquery name="rs" datasource="#variables.configBean.getReadOnlyDatasource()#"  username="#variables.configBean.getReadOnlyDbUsername()#" password="#variables.configBean.getReadOnlyDbPassword()#">
-		SELECT fileID, contentID, siteID, moduleID, filename, fileSize, contentType, contentSubType, fileExt, imageSmall, created  FROM tfiles where fileid= <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.fileID#"> and imageSmall is not null
+		<cfquery attributeCollection="#variables.configBean.getReadOnlyQRYAttrs(name='rs')#">
+		SELECT fileID, contentID, siteID, moduleID, filename, fileSize, contentType, contentSubType, fileExt, imageSmall, created, alttext, caption, credits  FROM tfiles where fileid= <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.fileID#"> and imageSmall is not null
 		</cfquery>
 		
 		<cfreturn rs />
@@ -253,7 +264,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cffunction name="readMedium" returntype="query" access="public" output="false">
 		<cfargument name="fileID" type="any" required="yes"/>
 		<cfset var rs=""/>
-		<cfquery name="rs" datasource="#variables.configBean.getReadOnlyDatasource()#"  username="#variables.configBean.getReadOnlyDbUsername()#" password="#variables.configBean.getReadOnlyDbPassword()#">
+		<cfquery attributeCollection="#variables.configBean.getReadOnlyQRYAttrs(name='rs')#">
 		SELECT fileID, contentID, siteID, moduleID, filename, fileSize, contentType, contentSubType, fileExt, imageMedium, created  FROM tfiles where fileid= <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.fileID#"> and imageMedium is not null
 		</cfquery>
 		
@@ -270,25 +281,25 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<cfset var rs4 = "" />
 		
 		<cfif len(arguments.fileID)>
-			<cfquery name="rs1" datasource="#variables.configBean.getReadOnlyDatasource()#"  username="#variables.configBean.getReadOnlyDbUsername()#" password="#variables.configBean.getReadOnlyDbPassword()#">
+			<cfquery attributeCollection="#variables.configBean.getReadOnlyQRYAttrs(name='rs1')#">
 			SELECT fileId FROM tcontent where 
 			fileid in (<cfqueryparam list="true" cfsqltype="cf_sql_varchar" value="#arguments.fileID#">)
 			and contenthistId not in (<cfqueryparam list="true" cfsqltype="cf_sql_varchar" value="#arguments.baseID#">)
 			</cfquery>
 			
-			<cfquery name="rs2" datasource="#variables.configBean.getReadOnlyDatasource()#"  username="#variables.configBean.getReadOnlyDbUsername()#" password="#variables.configBean.getReadOnlyDbPassword()#">
+			<cfquery attributeCollection="#variables.configBean.getReadOnlyQRYAttrs(name='rs2')#">
 			SELECT attributeValue FROM tclassextenddata where 
 			stringValue in (<cfqueryparam list="true" cfsqltype="cf_sql_varchar" value="#arguments.fileID#">)
 			and baseId not in (<cfqueryparam list="true" cfsqltype="cf_sql_varchar" value="#arguments.baseID#">)
 			</cfquery>
 			
-			<cfquery name="rs3" datasource="#variables.configBean.getReadOnlyDatasource()#"  username="#variables.configBean.getReadOnlyDbUsername()#" password="#variables.configBean.getReadOnlyDbPassword()#">
+			<cfquery attributeCollection="#variables.configBean.getReadOnlyQRYAttrs(name='rs3')#">
 			SELECT attributeValue FROM tclassextenddatauseractivity where 
 			stringValue in (<cfqueryparam list="true" cfsqltype="cf_sql_varchar" value="#arguments.fileID#">)
 			and baseId not in (<cfqueryparam list="true" cfsqltype="cf_sql_varchar" value="#arguments.baseID#">)
 			</cfquery>
 			
-			<cfquery name="rs4" datasource="#variables.configBean.getDatasource()#"  username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
+			<cfquery attributeCollection="#variables.configBean.getReadOnlyQRYAttrs(name='rs4')#">
 			SELECT photoFileID FROM tusers where 
 			photoFileID in (<cfqueryparam list="true" cfsqltype="cf_sql_varchar" value="#arguments.fileID#">)
 			and userId not in (<cfqueryparam list="true" cfsqltype="cf_sql_varchar" value="#arguments.baseID#">)
@@ -306,7 +317,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cfset var rs="">
 	
 <cflock type="exclusive" name="purgingDeletedFile#application.instanceID#" timeout="1000">
-	<cfquery name="rs" datasource="#variables.configBean.getReadOnlyDatasource()#"  username="#variables.configBean.getReadOnlyDbUsername()#" password="#variables.configBean.getReadOnlyDbPassword()#">
+	<cfquery attributeCollection="#variables.configBean.getReadOnlyQRYAttrs(name='rs')#">
 	select fileID from tfiles where deleted=1 
 	<cfif len(arguments.siteID)>
 	and siteID=<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#">
@@ -317,7 +328,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<cfset deleteCachedFile(rs.fileID)>
 	</cfloop>
 	
-	<cfquery name="rs" datasource="#variables.configBean.getDatasource()#"  username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
+	<cfquery>
 	delete from tfiles where deleted=1
 	<cfif len(arguments.siteID)>
 	and siteID=<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#">
@@ -329,14 +340,13 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 
 <cffunction name="restoreVersion" output="false">
 	<cfargument name="fileID">
-	<cfquery datasource="#variables.configBean.getDatasource()#"  username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
+	<cfquery>
 	update tfiles set deleted=0 where fileID=<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.fileID#">
 	</cfquery>
 </cffunction>
 
 <cffunction name="deleteCachedFile" returntype="void" access="public">
 <cfargument name="fileID" type="string" required="yes"/>
-		<cfset var delim=variables.configBean.getFileDelim() />
 		<cfset var rsFile=readMeta(arguments.fileID) />
 		<cfset var pluginEvent = createObject("component","mura.event") />
 		<cfset var data=arguments />

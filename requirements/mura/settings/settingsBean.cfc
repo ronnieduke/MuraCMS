@@ -44,75 +44,98 @@ For clarity, if you create a modified version of Mura CMS, you are not obligated
 modified version; it is your choice whether to do so, or to make such modified version available under the GNU General Public License 
 version 2 without this exception.  You may, if you choose, apply this exception to your own modified versions of Mura CMS.
 --->
-<cfcomponent extends="mura.bean.beanExtendable" output="false">
+<cfcomponent extends="mura.bean.beanExtendable" entityName="site" table="tsettings" output="false">
  
-<cfproperty name="siteID" type="string" default="" required="true" />
-<cfproperty name="site" type="string" default="" required="true" />
-<cfproperty name="tagLine" type="string" default="" required="true" />
+<cfproperty name="siteID" fieldtype="id" type="string" default="" required="true" />
+<cfproperty name="site" type="string" default=""/>
+<cfproperty name="tagLine" type="string" default=""/>
 <cfproperty name="pageLimit" type="string" default="1000" required="true" />
 <cfproperty name="locking" type="string" default="none" required="true" />
-<cfproperty name="domain" type="string" default="" required="true" />
-<cfproperty name="stagingDomain" type="string" default="" required="true" />
-<cfproperty name="domainAlias" type="string" default="" required="true" />
-<cfproperty name="contact" type="string" default="" required="true" />
-<cfproperty name="mailServerIP" type="string" default="" required="true" />
+<cfproperty name="domain" type="string" default=""/>
+<cfproperty name="domainAlias" type="string" default=""/>
+<cfproperty name="enforcePrimaryDomain" type="int" default="0" required="true" />
+<cfproperty name="contact" type="string" default=""/>
+<cfproperty name="mailServerIP" type="string" default=""/>
 <cfproperty name="mailServerSMTPPort" type="string" default="25" required="true" />
 <cfproperty name="mailServerPOPPort" type="string" default="110" required="true" />
 <cfproperty name="mailserverTLS" type="string" default="false" required="true" />
 <cfproperty name="mailserverSSL" type="string" default="false" required="true" />
-<cfproperty name="mailServerUsername" type="string" default="" required="true" />
-<cfproperty name="mailServerUsernameEmail" type="string" default="" required="true" />
-<cfproperty name="mailServerPassword" type="string" default="" required="true" />
+<cfproperty name="mailServerUsername" type="string" default=""/>
+<cfproperty name="mailServerUsernameEmail" type="string" default=""/>
+<cfproperty name="mailServerPassword" type="string" default=""/>
 <cfproperty name="useDefaultSMTPServer" type="numeric" default="1" required="true" />
 <cfproperty name="EmailBroadcaster" type="numeric" default="0" required="true" />
 <cfproperty name="EmailBroadcasterLimit" type="numeric" default="0" required="true" />
-<cfproperty name="extranet" type="numeric" default="0" required="true" />
-<cfproperty name="extranetSSL" type="numeric" default="0" required="true" />
+<cfproperty name="extranet" type="numeric" default="1" required="true" />
+<cfproperty name="extranetSSL" type="numeric" default="0" required="true" hint="deprecated"/>
 <cfproperty name="cache" type="numeric" default="0" required="true" />
 <cfproperty name="cacheCapacity" type="numeric" default="0" required="true" />
 <cfproperty name="cacheFreeMemoryThreshold" type="numeric" default="60" required="true" />
 <cfproperty name="viewDepth" type="numeric" default="1" required="true" />
 <cfproperty name="nextN" type="numeric" default="20" required="true" />
-<cfproperty name="dataCollection" type="numeric" default="0" required="true" />
+<cfproperty name="dataCollection" type="numeric" default="1" required="true" />
 <cfproperty name="columnCount" type="numeric" default="3" required="true" />
 <cfproperty name="columnNames" type="string" default="Left Column^Main Content^Right Column" required="true" />
 <cfproperty name="ExtranetPublicReg" type="numeric" default="0" required="true" />
 <cfproperty name="primaryColumn" type="numeric" default="2" required="true" />
-<cfproperty name="contactName" type="string" default="" required="true" />
-<cfproperty name="contactAddress" type="string" default="" required="true" />
-<cfproperty name="contactCity" type="string" default="" required="true" />
-<cfproperty name="contactState" type="string" default="" required="true" />
-<cfproperty name="contactZip" type="string" default="" required="true" />
-<cfproperty name="contactEmail" type="string" default="" required="true" />
-<cfproperty name="contactPhone" type="string" default="" required="true" />
-<cfproperty name="publicUserPoolID" type="string" default="" required="true" />
-<cfproperty name="privateUserPoolID" type="string" default="" required="true" />
-<cfproperty name="advertiserUserPoolID" type="string" default="" required="true" />
-<cfproperty name="displayPoolID" type="string" default="" required="true" />
-<cfproperty name="feedManager" type="numeric" default="0" required="true" />
-<cfproperty name="galleryMainScaleBy" type="string" default="y" required="true" />
-<cfproperty name="galleryMainScale" type="numeric" default="600" required="true" />
-<cfproperty name="gallerySmallScaleBy" type="string" default="s" required="true" />
-<cfproperty name="gallerySmallScale" type="numeric" default="80" required="true" />
-<cfproperty name="galleryMediumScaleBy" type="string" default="s" required="true" />
-<cfproperty name="galleryMediumScale" type="numeric" default="180" required="true" />
-<cfproperty name="sendLoginScript" type="string" default="" required="true" />
-<cfproperty name="mailingListConfirmScript" type="string" default="" required="true" />
-<cfproperty name="reminderScript" type="string" default="" required="true" />
-<cfproperty name="ExtranetPublicRegNotify" type="string" default="" required="true" />
-<cfproperty name="exportLocation" type="string" default="" required="true" />
-<cfproperty name="loginURL" type="string" default="" required="true" />
-<cfproperty name="editProfileURL" type="string" default="" required="true" />
+<cfproperty name="contactName" type="string" default=""/>
+<cfproperty name="contactAddress" type="string" default=""/>
+<cfproperty name="contactCity" type="string" default=""/>
+<cfproperty name="contactState" type="string" default=""/>
+<cfproperty name="contactZip" type="string" default=""/>
+<cfproperty name="contactEmail" type="string" default=""/>
+<cfproperty name="contactPhone" type="string" default=""/>
+<cfproperty name="publicUserPoolID" type="string" default=""/>
+<cfproperty name="privateUserPoolID" type="string" default=""/>
+<cfproperty name="advertiserUserPoolID" type="string" default=""/>
+<cfproperty name="displayPoolID" type="string" default=""/>
+<cfproperty name="contentPoolID" type="string" default=""/>
+<cfproperty name="categoryPoolID" type="string" default=""/>
+<cfproperty name="feedManager" type="numeric" default="1" required="true" />
+<cfproperty name="largeImageHeight" type="string" default="AUTO" required="true" />
+<cfproperty name="largeImageWidth" type="numeric" default="600" required="true" />
+<cfproperty name="smallImageHeight" type="string" default="80" required="true" />
+<cfproperty name="smallImageWidth" type="numeric" default="80" required="true" />
+<cfproperty name="mediumImageHeight" type="string" default="180" required="true" />
+<cfproperty name="mediumImageWidth" type="numeric" default="180" required="true" />
+<cfproperty name="sendLoginScript" type="string" default=""/>
+<cfproperty name="mailingListConfirmScript" type="string" default=""/>
+<cfproperty name="reminderScript" type="string" default=""/>
+<cfproperty name="ExtranetPublicRegNotify" type="string" default=""/>
+<cfproperty name="exportLocation" type="string" default=""/>
+<cfproperty name="loginURL" type="string" default=""/>
+<cfproperty name="editProfileURL" type="string" default=""/>
 <cfproperty name="commentApprovalDefault" type="numeric" default="1" required="true" />
 <cfproperty name="display" type="numeric" default="1" required="true" />
-<cfproperty name="lastDeployment" type="date" default="" required="true" />
-<cfproperty name="accountActivationScript" type="string" default="" required="true" />
-<cfproperty name="googleAPIKey" type="string" default="" required="true" />
-<cfproperty name="siteLocale" type="string" default="" required="true" />
-<cfproperty name="hasChangesets" type="numeric" default="0" required="true" />
-<cfproperty name="theme" type="string" default="" required="true" />
-<cfproperty name="javaLocale" type="string" default="" required="true" /> 
+<cfproperty name="lastDeployment" type="date" default=""/>
+<cfproperty name="accountActivationScript" type="string" default=""/>
+<cfproperty name="googleAPIKey" type="string" default=""/>
+<cfproperty name="siteLocale" type="string" default=""/>
+<cfproperty name="hasChangesets" type="numeric" default="1" required="true" />
+<cfproperty name="theme" type="string" default=""/>
+<cfproperty name="javaLocale" type="string" default=""/> 
 <cfproperty name="orderno" type="numeric" default="0" required="true" />
+<cfproperty name="enforceChangesets" type="numeric" default="0" required="true" />
+<cfproperty name="contentApprovalScript" type="string" default=""/>
+<cfproperty name="contentRejectionScript" type="string" default=""/>
+<cfproperty name="enableLockdown" type="string" default="" />
+<cfproperty name="customTagGroups" type="string" default="" />
+<cfproperty name="hasComments" type="numeric" default="1" required="true" />
+<cfproperty name="hasLockableNodes" type="numeric" default="0" required="true" />
+<cfproperty name="reCAPTCHASiteKey" type="string" default="" />
+<cfproperty name="reCAPTCHASecret" type="string" default="" />
+<cfproperty name="reCAPTCHALanguage" type="string" default="en" />
+<cfproperty name="JSONApi" type="numeric" default="0" />
+<cfproperty name="useSSL" type="numeric" default="0" />
+<cfproperty name="isRemote" type="numeric" default="0" />
+<cfproperty name="RemoteContext" type="string" default="" />
+<cfproperty name="RemotePort" type="numeric" default="0" />
+<cfproperty name="resourceSSL" type="numeric" default="0" />
+<cfproperty name="resourceDomain" type="string" default="" />
+
+<cfset variables.primaryKey = 'siteid'>
+<cfset variables.entityName = 'site'>
+<cfset variables.instanceName= 'site'>
 
 <cffunction name="init" returntype="any" output="false" access="public">
 	
@@ -123,9 +146,9 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfset variables.instance.TagLine=""/>
 	<cfset variables.instance.pageLimit=1000/>
 	<cfset variables.instance.Locking="None"/>
-	<cfset variables.instance.stagingDomain=""/>
 	<cfset variables.instance.Domain=""/>
 	<cfset variables.instance.DomainAlias="">
+	<cfset variables.instance.enforcePrimaryDomain=0>
 	<cfset variables.instance.Contact=""/>
 	<cfset variables.instance.MailServerIP=""/>
 	<cfset variables.instance.MailServerSMTPPort="25"/>
@@ -138,7 +161,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfset variables.instance.useDefaultSMTPServer=1/>
 	<cfset variables.instance.EmailBroadcaster=0/>
 	<cfset variables.instance.EmailBroadcasterLimit=0/>
-	<cfset variables.instance.Extranet=0/>
+	<cfset variables.instance.Extranet=1/>
 	<cfset variables.instance.ExtranetSSL=0/>
 	<cfset variables.instance.cache=0/>
 	<cfset variables.instance.cacheFactories=structNew()/>
@@ -146,7 +169,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfset variables.instance.cacheFreeMemoryThreshold=60/>
 	<cfset variables.instance.ViewDepth=1/>
 	<cfset variables.instance.nextN=20/>
-	<cfset variables.instance.DataCollection=0/>
+	<cfset variables.instance.DataCollection=1/>
 	<cfset variables.instance.ColumnCount=3/>
 	<cfset variables.instance.ColumnNames="Left Column^Main Content^Right Column"/>
 	<cfset variables.instance.ExtranetPublicReg=0/>
@@ -164,13 +187,15 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfset variables.instance.PrivateUserPoolID=""/>
 	<cfset variables.instance.AdvertiserUserPoolID=""/>
 	<cfset variables.instance.DisplayPoolID=""/>
-	<cfset variables.instance.feedManager=0/>
-	<cfset variables.instance.galleryMainScaleBy="y"/>
-	<cfset variables.instance.galleryMainScale=600/>
-	<cfset variables.instance.gallerySmallScaleBy="s"/>
-	<cfset variables.instance.gallerySmallScale=80/>
-	<cfset variables.instance.galleryMediumScaleBy="s"/>
-	<cfset variables.instance.galleryMediumScale=180/>
+	<cfset variables.instance.ContentPoolID=""/>
+	<cfset variables.instance.CategoryPoolID=""/>
+	<cfset variables.instance.feedManager=1/>
+	<cfset variables.instance.largeImageHeight='AUTO'/>
+	<cfset variables.instance.largeImageWidth='600'/>
+	<cfset variables.instance.smallImageHeight='80'/>
+	<cfset variables.instance.smallImageWidth='80'/>
+	<cfset variables.instance.mediumImageHeight='180'/>
+	<cfset variables.instance.mediumImageWidth='180'/>
 	<cfset variables.instance.sendLoginScript=""/>
 	<cfset variables.instance.mailingListConfirmScript=""/>
 	<cfset variables.instance.publicSubmissionApprovalScript=""/>
@@ -187,16 +212,35 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfset variables.instance.siteLocale=""/>
 	<cfset variables.instance.rbFactory=""/>    
 	<cfset variables.instance.javaLocale=""/>
-	<cfset variables.instance.jsDateKey=""/>  
+	<cfset variables.instance.jsDateKey=""/>
+	<cfset variables.instance.jsDateKeyObjInc=""/>   
 	<cfset variables.instance.theme=""/> 
 	<cfset variables.instance.contentRenderer=""/>
 	<cfset variables.instance.themeRenderer=""/>
-	<cfset variables.instance.hasChangesets=0/>
+	<cfset variables.instance.hasChangesets=1/>
 	<cfset variables.instance.type="Site"/>
 	<cfset variables.instance.subtype="Default"/>
 	<cfset variables.instance.baseID=createUUID()/>
 	<cfset variables.instance.orderno=0/>
-	
+	<cfset variables.instance.enforceChangesets=0/>
+	<cfset variables.instance.contentApprovalScript=""/>
+	<cfset variables.instance.contentRejectionScript=""/>
+	<cfset variables.instance.enableLockdown=""/>
+	<cfset variables.instance.customTagGroups=""/>
+	<cfset variables.instance.hasSharedFilePool=""/>
+	<cfset variables.instance.hasComments=1/>
+	<cfset variables.instance.hasLockableNodes=0/>
+	<cfset variables.instance.reCAPTCHASiteKey=""/>
+	<cfset variables.instance.reCAPTCHASecret=""/>
+	<cfset variables.instance.reCAPTCHALanguage="en"/>
+	<cfset variables.instance.JSONApi=0/>
+	<cfset variables.instance.useSSL=0/>
+	<cfset variables.instance.isRemote=0/>
+	<cfset variables.instance.RemoteContext=""/>
+	<cfset variables.instance.RemotePort=80/>
+	<cfset variables.instance.resourceSSL=0/>
+	<cfset variables.instance.resourceDomain=""/>
+
 	<cfreturn this />
 </cffunction>
 
@@ -220,7 +264,17 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 </cffunction>
 
 <cffunction name="set" output="false" access="public">
-	<cfargument name="data" type="any" required="true">
+	<cfargument name="property" required="true">
+    <cfargument name="propertyValue">
+    
+    <cfif not isDefined('arguments.config')>
+	    <cfif isSimpleValue(arguments.property)>
+	      <cfreturn setValue(argumentCollection=arguments)>
+	    </cfif>
+
+	    <cfset arguments.data=arguments.property>
+    </cfif>
+
 	<cfset var prop="">
 	<cfif isQuery(arguments.data) and arguments.data.recordcount>
 		<cfloop list="#arguments.data.columnlist#" index="prop">
@@ -248,6 +302,18 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 			
 	<cfif variables.instance.displayPoolID eq ''>
 		<cfset variables.instance.displayPoolID=variables.instance.siteID />
+	</cfif>
+
+	<cfif variables.instance.filePoolID eq ''>
+		<cfset variables.instance.filePoolID=variables.instance.siteID />
+	</cfif>
+
+	<cfif variables.instance.categoryPoolID eq ''>
+		<cfset variables.instance.categoryPoolID=variables.instance.siteID />
+	</cfif>
+
+	<cfif variables.instance.contentPoolID eq ''>
+		<cfset variables.instance.contentPoolID=variables.instance.siteID />
 	</cfif>
 
 	<cfreturn this>
@@ -278,37 +344,42 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 </cffunction>
 
 <cffunction name="getDomain" returntype="String" access="public" output="false">
-	<cfargument name="mode" type="String" required="true" default="#variables.configBean.getMode()#" />
+	<cfargument name="mode" type="String" required="true" default="" />
 	<cfset var temp="">
 
-	<cfif arguments.mode neq 'production'>
-		<cfif not len(variables.instance.stagingDomain)>
-			
-			<cfif len(variables.instance.Domain)
-				and listFirst(variables.instance.Domain,".") eq "www">
-				<cfset temp=lcase(arguments.mode) & "." & listDeleteAt(variables.instance.Domain,1,".")>
-			<cfelse>
-				<cfset temp=lcase(arguments.mode) & "." & variables.instance.Domain>
-			</cfif>
-
-			<cfif listFindNoCase(variables.instance.domainAlias,temp,chr(13)&chr(10))>
-				<cfset variables.instance.stagingDomain=temp>		
-			<cfelseif arguments.mode eq "Staging">
-				<cfif len(variables.configBean.getAdminDomain())>
-					<cfset variables.instance.stagingDomain=variables.configBean.getAdminDomain() />
-				<cfelse>
-					<cfset variables.instance.stagingDomain=cgi.server_name />
-				</cfif>
-			<cfelse>
-				<cfset variables.instance.stagingDomain=variables.instance.Domain />
-			</cfif>
-
+	<cfif arguments.mode eq 'preview'>
+		<cfif len(request.muraPreviewDomain)>
+			<cfreturn request.muraPreviewDomain />
+		<cfelse>
+			<cfreturn variables.instance.Domain />
 		</cfif>
-
-		<cfreturn variables.instance.stagingDomain />
 	<cfelse>
 		<cfreturn variables.instance.Domain />
 	</cfif>
+</cffunction>
+
+<cffunction name="setEnforcePrimaryDomain" access="public" output="false">
+	<cfargument name="enforcePrimaryDomain" />
+	<cfif isNumeric(arguments.enforcePrimaryDomain)>
+	<cfset variables.instance.enforcePrimaryDomain = arguments.enforcePrimaryDomain />
+	</cfif>
+	<cfreturn this>
+</cffunction>
+
+<cffunction name="getUseSSL" output="false">
+	<cfif variables.instance.useSSL or variables.instance.extranetSSL>
+		<cfreturn 1>
+	<cfelse>
+		<cfreturn 0>
+	</cfif>
+</cffunction>
+
+<cffunction name="setEnforceChangesets" access="public" output="false">
+	<cfargument name="enforceChangesets" />
+	<cfif isNumeric(arguments.enforceChangesets)>
+		<cfset variables.instance.enforceChangesets = arguments.enforceChangesets />
+	</cfif>
+	<cfreturn this>
 </cffunction>
 
 <cffunction name="setHasFeedManager" output="false">
@@ -327,6 +398,30 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfset variables.instance.ExportLocation = arguments.ExportLocation />
 	</cfif>
 	<cfreturn this>
+</cffunction>
+
+<cffunction name="getDataCollection" output="false">
+	<cfif not variables.configBean.getDataCollection()>
+		<cfreturn 0>
+	<cfelse>
+		<cfreturn variables.instance.dataCollection>
+	</cfif>
+</cffunction>
+
+<cffunction name="getAdManager" output="false">
+	<cfif not variables.configBean.getAdManager()>
+		<cfreturn 0>
+	<cfelse>
+		<cfreturn variables.instance.adManager>
+	</cfif>
+</cffunction>
+
+<cffunction name="getEmailBroadcaster" output="false">
+	<cfif not variables.configBean.getEmailBroadcaster()>
+		<cfreturn 0>
+	<cfelse>
+		<cfreturn variables.instance.EmailBroadcaster>
+	</cfif>
 </cffunction>
 
 <cffunction name="setMailServerUsernameEmail" access="public" output="false">
@@ -376,28 +471,64 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfreturn this>
 </cffunction>
 
-<cffunction name="setGalleryMainScale" access="public" output="true">
-	<cfargument name="GalleryMainScale" type="any" required="yes" default="0" />
-	<cfif isNumeric(arguments.GalleryMainScale)>
-		<cfset variables.instance.GalleryMainScale = arguments.GalleryMainScale />
+<cffunction name="setSmallImageWidth" access="public" output="true">
+	<cfargument name="smallImageWidth" type="any" required="yes" default="0" />
+	<cfif isNumeric(arguments.smallImageWidth) and arguments.smallImageWidth or arguments.smallImageWidth eq 'AUTO'>
+		<cfset variables.instance.smallImageWidth = arguments.smallImageWidth />
 	</cfif>
 	<cfreturn this>
 </cffunction>
 
-<cffunction name="setGallerySmallScale" access="public" output="true">
-	<cfargument name="GallerySmallScale" type="any" required="yes" default="0" />
-	<cfif isNumeric(arguments.GallerySmallScale)>
-		<cfset variables.instance.GallerySmallScale = arguments.GallerySmallScale />
+<cffunction name="setSmallImageHeight" access="public" output="true">
+	<cfargument name="smallImageHeight" type="any" required="yes" default="0" />
+	<cfif isNumeric(arguments.smallImageHeight) and arguments.smallImageHeight or arguments.smallImageHeight eq 'AUTO'>
+		<cfset variables.instance.smallImageHeight = arguments.smallImageHeight />
 	</cfif>
 	<cfreturn this>
 </cffunction>
 
-<cffunction name="setGalleryMediumScale" access="public" output="true">
-	<cfargument name="GalleryMediumScale" type="any" required="yes" default="0" />
-	<cfif isNumeric(arguments.GalleryMediumScale)>
-		<cfset variables.instance.GalleryMediumScale = arguments.GalleryMediumScale />
+<cffunction name="setMediumImageWidth" access="public" output="true">
+	<cfargument name="mediumImageWidth" type="any" required="yes" default="0" />
+	<cfif isNumeric(arguments.mediumImageWidth) and arguments.mediumImageWidth or arguments.mediumImageWidth eq 'AUTO'>
+		<cfset variables.instance.mediumImageWidth = arguments.mediumImageWidth />
 	</cfif>
 	<cfreturn this>
+</cffunction>
+
+<cffunction name="setMediumImageHeight" access="public" output="true">
+	<cfargument name="mediumImageHeight" type="any" required="yes" default="0" />
+	<cfif isNumeric(arguments.mediumImageHeight) and arguments.mediumImageHeight or arguments.mediumImageHeight eq 'AUTO'>
+		<cfset variables.instance.mediumImageHeight = arguments.mediumImageHeight />
+	</cfif>
+	<cfreturn this>
+</cffunction>
+
+<cffunction name="setLargeImageWidth" access="public" output="true">
+	<cfargument name="largeImageWidth" type="any" required="yes" default="0" />
+	<cfif isNumeric(arguments.largeImageWidth) and  arguments.largeImageWidth or arguments.largeImageWidth eq 'AUTO'>
+		<cfset variables.instance.largeImageWidth = arguments.largeImageWidth />
+	</cfif>
+	<cfreturn this>
+</cffunction>
+
+<cffunction name="setLargeImageHeight" access="public" output="true">
+	<cfargument name="largeImageHeight" type="any" required="yes" default="0" />
+	<cfif isNumeric(arguments.largeImageHeight) and  arguments.largeImageHeight or arguments.largeImageHeight eq 'AUTO'>
+		<cfset variables.instance.largeImageHeight = arguments.largeImageHeight />
+	</cfif>
+	<cfreturn this>
+</cffunction>
+
+<cffunction name="getGallerySmallScale" output="false" hint="for legacy compatability">
+	<cfreturn variables.instance.smallImageWidth>
+</cffunction>
+
+<cffunction name="getGalleryMediumScale" output="false" hint="for legacy compatability">
+	<cfreturn variables.instance.mediumImageWidth>
+</cffunction>
+
+<cffunction name="getGalleryMainScale" output="false" hint="for legacy compatability">
+	<cfreturn variables.instance.largeImageWidth>
 </cffunction>
 
 <cffunction name="getLoginURL" returntype="String" access="public" output="false">
@@ -433,6 +564,14 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfreturn this>
 </cffunction>
 
+<cffunction name="setHasComments" access="public" output="false">
+	<cfargument name="hasComments"  />
+	<cfif isNumeric(arguments.hasComments)>
+		<cfset variables.instance.hasComments = arguments.hasComments />
+	</cfif>
+	<cfreturn this>
+</cffunction>
+
 <cffunction name="setUseDefaultSMTPServer" access="public" output="false">
 	<cfargument name="UseDefaultSMTPServer"  />
 	<cfif isNumeric(arguments.UseDefaultSMTPServer)>
@@ -442,17 +581,17 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 </cffunction>
 
 <cffunction name="setMailServerSMTPPort" access="public" output="false">
-	<cfargument name="mailServerPort" type="String" />
-	<cfif isNumeric(arguments.mailServerPort)>
-	<cfset variables.instance.mailServerSMTPPort = arguments.mailServerPort />
+	<cfargument name="MailServerSMTPPort" type="String" />
+	<cfif isNumeric(arguments.MailServerSMTPPort)>
+	<cfset variables.instance.mailServerSMTPPort = arguments.MailServerSMTPPort />
 	</cfif>
 	<cfreturn this>
 </cffunction>
 
 <cffunction name="setMailServerPOPPort" access="public" output="false">
-	<cfargument name="mailServerPort" type="String" />
-	<cfif isNumeric(arguments.mailServerPort)>
-	<cfset variables.instance.mailServerPOPPort = arguments.mailServerPort />
+	<cfargument name="MailServerPOPPort" type="String" />
+	<cfif isNumeric(arguments.MailServerPOPPort)>
+	<cfset variables.instance.mailServerPOPPort = arguments.MailServerPOPPort />
 	</cfif>
 	<cfreturn this>
 </cffunction>
@@ -487,18 +626,20 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfif structKeyExists(variables.instance.cacheFactories,arguments.name)>
 		<cfreturn variables.instance.cacheFactories["#arguments.name#"] />
 	<cfelse>
-		<cfif not variables.instance.cacheCapacity>
+		<!---<cfif not variables.instance.cacheCapacity>--->
 			<cfset variables.instance.cacheFactories["#arguments.name#"]=application.settingsManager.createCacheFactory(freeMemoryThreshold=variables.instance.cacheFreeMemoryThreshold,name=arguments.name,siteID=variables.instance.siteID)>
+		<!---
 		<cfelse>
 			<cfset variables.instance.cacheFactories["#arguments.name#"]=application.settingsManager.createCacheFactory(capacity=variables.instance.cacheCapacity,freeMemoryThreshold=variables.instance.cacheFreeMemoryThreshold,name=arguments.name,siteID=variables.instance.siteID)>
 		</cfif>
+		--->
 		<cfreturn variables.instance.cacheFactories["#arguments.name#"] />
 	</cfif>
 	
 </cffunction>
 
 <cffunction name="purgeCache" access="public" output="false">
-	<cfargument name="name" default="data" hint="data, output or both">
+	<cfargument name="name" default="output" hint="data, output or both">
 	<cfargument name="broadcast" default="true">
 	<cfset getCacheFactory(name=arguments.name).purgeAll()>
 	<cfif arguments.broadcast>
@@ -546,12 +687,19 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfreturn variables.instance.jsDateKey />
 </cffunction>
 
+<cffunction name="getJSDateKeyObjInc" returntype="String" access="public" output="false">
+	<cfif not len(variables.instance.jsDateKeyObjInc)>
+		<cfset variables.instance.jsDateKeyObjInc=getLocaleUtils().getJsDateKeyObjInc()>
+	</cfif>
+	<cfreturn variables.instance.jsDateKeyObjInc />
+</cffunction>
+
 <cffunction name="getLocaleUtils" returntype="any" access="public" output="false">
 	<cfreturn getRBFactory().getUtils() />
 </cffunction>
 s
 <cffunction name="getAssetPath" returntype="any" access="public" output="false">
-	<cfreturn "#variables.configBean.getContext()#/#variables.instance.displayPoolID#" />
+	<cfreturn getResourcePath() & "/#variables.instance.displayPoolID#" />
 </cffunction>
 
 <cffunction name="getIncludePath" returntype="any" access="public" output="false">
@@ -566,9 +714,9 @@ s
 	<cfargument name="theme" default="#request.altTheme#">
 	
 	<cfif len(arguments.theme) and directoryExists(getTemplateIncludeDir(arguments.theme))>
-		<cfreturn "#getAssetPath()#/includes/themes/#arguments.theme#" />
+		<cfreturn getAssetPath() & "/includes/themes/#arguments.theme#" />
 	<cfelseif len(variables.instance.theme)>
-		<cfreturn "#getAssetPath()#/includes/themes/#variables.instance.theme#" />
+		<cfreturn  getAssetPath() & "/includes/themes/#variables.instance.theme#" />
 	<cfelse>
 		<cfreturn getAssetPath() />
 	</cfif>
@@ -651,7 +799,7 @@ s
 	<cfset var dir="">
 	
 	<cfswitch expression="#arguments.type#">
-	<cfcase value="Component">
+	<cfcase value="Component,Email">
 		
 		<cfset dir="#getTemplateIncludeDir()#/#lcase(arguments.type)#s">
 		
@@ -679,52 +827,81 @@ s
 <cffunction name="isValidDomain" output="false" returntype="boolean">
 	<cfargument name="domain">
 	<cfargument name="mode" required="true" default="either">
+	<cfargument name="enforcePrimaryDomain" default="false">
 	<cfset var i="">
 	<cfset var lineBreak=chr(13)&chr(10)>
 	
-	<cfif arguments.mode neq "partial">
+	<cfif arguments.enforcePrimaryDomain and variables.instance.enforcePrimaryDomain>
 		<cfif arguments.domain eq getDomain()>
 			<cfreturn true>
-		<cfelseif len(variables.instance.domainAlias)>
-			<cfloop list="#variables.instance.domainAlias#" delimiters="#lineBreak#" index="i">
-				<cfif arguments.domain eq i>
-					<cfreturn true>
-				</cfif>
-			</cfloop>
 		</cfif>
-	</cfif>
-	
-	<cfif arguments.mode neq "complete">
-		<cfif find(arguments.domain,getDomain())>
-			<cfreturn true>
-		<cfelseif len(variables.instance.domainAlias)>
-			<cfloop list="#variables.instance.domainAlias#" delimiters="#lineBreak#" index="i">
-				<cfif find(arguments.domain,i)>
-					<cfreturn true>
-				</cfif>
-			</cfloop>
+	<cfelse>
+		<cfif arguments.mode neq "partial">
+			<cfif arguments.domain eq getDomain()>
+				<cfreturn true>
+			<cfelseif len(variables.instance.domainAlias)>
+				<cfloop list="#variables.instance.domainAlias#" delimiters="#lineBreak#" index="i">
+					<cfif arguments.domain eq i>
+						<cfreturn true>
+					</cfif>
+				</cfloop>
+			</cfif>
+		</cfif>
+		
+		<cfif arguments.mode neq "complete">
+			<cfif find(arguments.domain,getDomain())>
+				<cfreturn true>
+			<cfelseif len(variables.instance.domainAlias)>
+				<cfloop list="#variables.instance.domainAlias#" delimiters="#lineBreak#" index="i">
+					<cfif find(arguments.domain,i)>
+						<cfreturn true>
+					</cfif>
+				</cfloop>
+			</cfif>
 		</cfif>
 	</cfif>
 
 	<cfreturn false>
 </cffunction>
 
-<cffunction name="getContentRenderer" output="false">
-<cfif not isObject(variables.instance.contentRenderer)>
-	<cfset variables.instance.contentRenderer=createObject("component","#getAssetMap()#.includes.contentRenderer")>
-</cfif>
-<cfreturn variables.instance.contentRenderer>
+<cffunction name="getLocalHandler" output="false">
+	<cfset var localHandler="">
+	<cfif fileExists(expandPath("/#application.configBean.getWebRootMap()#") & "/#getValue('siteid')#/includes/eventHandler.cfc")>
+		<cfset localHandler=createObject("component","#application.configBean.getWebRootMap()#.#getValue('siteid')#.includes.eventHandler").init()>
+		<cfset localHandler.setValue("_objectName","#application.configBean.getWebRootMap()#.#getValue('siteid')#.includes.eventHandler")>
+	<cfelseif getValue('displaypoolid') neq getValue('siteid') and fileExists(expandPath("/#application.configBean.getWebRootMap()#") & "/#getValue('displaypoolid')#/includes/eventHandler.cfc")>
+		<cfset localHandler=createObject("component","#application.configBean.getWebRootMap()#.#getValue('displaypoolid')#.includes.eventHandler").init()>
+		<cfset localHandler.setValue("_objectName","#application.configBean.getWebRootMap()#.#getValue('displaypoolid')#.includes.eventHandler")>
+	</cfif>
+	<cfreturn localHandler>
 </cffunction>
 
-<cffunction name="getThemeRenderer" output="false">
-	<cfif not isObject(variables.instance.themeRenderer)>
-		<cfif fileExists(expandPath(getThemeIncludePath()) & "/contentRenderer.cfc")>
-			<cfset variables.instance.themeRenderer=createObject("component","#getThemeAssetMap()#.contentRenderer")>
-		<cfelse>
-			<cfset variables.instance.themeRenderer=createObject("component","mura.cfobject").init()>
-		</cfif>
+<cffunction name="getContentRenderer" output="false">
+<cfargument name="$" default="">
+<cfif not isObject(arguments.$)>
+	<cfif not isObject(variables.instance.contentRenderer)>
+		<cfset arguments.$=getBean("$").init(getValue('siteid'))>
+		<cfset variables.instance.contentRenderer=arguments.$.getContentRenderer()>
 	</cfif>
-	<cfreturn variables.instance.themeRenderer>
+	<cfreturn variables.instance.contentRenderer>
+<cfelse>
+	<cfreturn arguments.$.getContentRenderer()>
+</cfif>
+</cffunction>
+
+<cffunction name="getApi" output="false">
+<cfargument name="type" default="json">
+<cfargument name="version" default="v1">
+	<cfif not isDefined('variables.instance.api#arguments.type##arguments.version#')>
+		<cfset variables.instance['api#arguments.type##arguments.version#']=evaluate('new mura.client.api.#arguments.type#.#arguments.version#.apiUtility(siteid=getValue("siteid"))')>
+	</cfif>
+
+	<cfreturn variables.instance['api#arguments.type##arguments.version#']>
+</cffunction>
+
+<cffunction name="getThemeRenderer" output="false" hint="deprecated: use getContentRenderer()">
+<cfargument name="$" default="">
+	<cfreturn getContentRenderer(arguments.$)>
 </cffunction>
 
 <cffunction name="exportHTML" output="false">
@@ -739,6 +916,21 @@ s
 <cffunction name="save" returnType="any" output="false" access="public">
 	<cfset setAllValues(application.settingsManager.save(this).getAllValues())>
 	<cfreturn this />
+</cffunction>
+
+<cffunction name="getCustomImageSizeQuery" output="false">
+	<cfargument name="reset" default="false">
+	<cfset var rsCustomImageSizeQuery="">
+
+	<cfquery attributeCollection="#variables.configBean.getReadOnlyQRYAttrs(name='rsCustomImageSizeQuery')#">
+		select sizeid,siteid,name,height,width from timagesizes where siteID=<cfqueryparam cfsqltype="cf_sql_varchar" value="#variables.instance.siteid#">
+	</cfquery>
+	
+	<cfreturn rsCustomImageSizeQuery>
+</cffunction>
+
+<cffunction name="getCustomImageSizeIterator" output="false">
+	<cfreturn getBean("imageSizeIterator").setQuery(getCustomImageSizeQuery())>
 </cffunction>
 
 <!---
@@ -756,6 +948,197 @@ s
 	<cfset arguments.settingsBean=this>
 	
 	<cfreturn application.settingsManager.read(argumentCollection=arguments)>
+</cffunction>
+
+<cffunction name="getScheme" returntype="string" output="false">
+	<cfreturn YesNoFormat(getValue('useSSL')) ? 'https' : 'http' />
+</cffunction>
+
+<cffunction name="getProtocol" returntype="string" output="false">
+	<cfreturn UCase(getScheme()) />
+</cffunction>
+
+<cffunction name="getRazunaSettings" output="false">
+	<cfif not structKeyExists(variables,'razunaSettings')>
+		<cfset variables.razunaSettings=getBean('razunaSettings').loadBy(siteid=getValue('siteid'))>
+	</cfif>
+	<cfreturn variables.razunaSettings>
+</cffunction>
+
+<cffunction name="getContentPoolID" output="false">
+
+	<cfif not listFindNoCase(variables.instance.contentPoolID,getValue('siteid'))>
+		<!---<cfset variables.instance.contentPoolID=listAppend(arguments.contentPoolID,getValue('siteid'))>--->
+	</cfif>
+
+	<cfreturn variables.instance.contentPoolID>
+</cffunction>
+
+<cffunction name="getHasSharedFilePool" output="false">
+	<cfif not isBoolean(variables.instance.hasSharedFilePool)>
+		<cfif getValue('siteid') neq getValue('filePoolID')>
+			<cfset variables.instance.hasSharedFilePool=true/>
+		<cfelse>
+			<cfset var rs="">
+			<cfquery name="rs">
+				select count(*) as counter from tsettings
+				where filePoolID=<cfqueryparam cfsqltype="cf_sql_varchar" value='#getValue('siteid')#'>
+				and siteid!=<cfqueryparam cfsqltype="cf_sql_varchar" value='#getValue('siteid')#'>
+			</cfquery>
+			<cfset variables.instance.hasSharedFilePool=rs.counter/>
+		</cfif>
+	</cfif>
+	<cfreturn variables.instance.hasSharedFilePool>
+</cffunction>
+
+<cffunction name="setHasLockableNodes" access="public" output="false">
+	<cfargument name="hasLockableNodes" type="String" />
+	<cfif isNumeric(arguments.hasLockableNodes)>
+	<cfset variables.instance.hasLockableNodes = arguments.hasLockableNodes />
+	</cfif>
+	<cfreturn this>
+</cffunction>
+
+<cffunction name="setJSONApi" access="public" output="false">
+	<cfargument name="JSONApi" type="String" />
+	<cfif isNumeric(arguments.JSONApi)>
+	<cfset variables.instance.JSONApi = arguments.JSONApi />
+	</cfif>
+	<cfreturn this>
+</cffunction>
+
+<cffunction name="setIsRemote" access="public" output="false">
+	<cfargument name="isRemote" type="String" />
+	<cfif isNumeric(arguments.isRemote)>
+	<cfset variables.instance.isRemote = arguments.isRemote />
+	</cfif>
+	<cfreturn this>
+</cffunction>
+
+<cffunction name="setResourceSSL" access="public" output="false">
+	<cfargument name="resourceSSL" type="String" />
+	<cfif isNumeric(arguments.resourceSSL)>
+	<cfset variables.instance.resourceSSL = arguments.resourceSSL />
+	</cfif>
+	<cfreturn this>
+</cffunction>
+
+<cffunction name="setRemotePort" access="public" output="false">
+	<cfargument name="RemotePort" type="String" />
+	<cfif isNumeric(arguments.RemotePort)>
+	<cfset variables.instance.RemotePort = arguments.RemotePort />
+	</cfif>
+	<cfreturn this>
+</cffunction>
+
+<cffunction name="setUseSSL" access="public" output="false">
+	<cfargument name="useSSL"  />
+	<cfif isNumeric(arguments.useSSL)>
+		<cfset variables.instance.useSSL = arguments.useSSL />
+	</cfif>
+	<cfreturn this>
+</cffunction>
+
+
+<cffunction name="getContext" output="false">
+	<cfif getValue('isRemote')>
+		<cfreturn getValue('RemoteContext')>
+	<cfelse>
+		<cfreturn application.configBean.getContext()>
+	</cfif> 
+</cffunction>
+
+<cffunction name="getServerPort" output="false">
+	<cfif getValue('isRemote')>
+		<cfset var port=getValue('RemotePort')>
+		<cfif isNumeric(port) and port neq 80>
+			<cfreturn ":" & port>
+		<cfelse>
+			<cfreturn "">
+		</cfif>
+	<cfelse>
+		<cfreturn application.configBean.getServerPort()>
+	</cfif> 
+</cffunction>
+
+<cffunction name="getAdminPath" output="false">
+	<cfreturn getBean('configBean').getAdminPath()>
+</cffunction>
+
+<cffunction name="getWebPath" output="false">
+	<cfargument name="secure" default="#getValue('useSSL')#">
+	<cfargument name="complete" default=0>
+	<cfif arguments.secure or arguments.complete>
+		<cfif arguments.secure>
+			<cfreturn 'https://' & getValue('domain') & getServerPort() & getContext()>
+		<cfelse>
+			<cfreturn getScheme() & '://' & getValue('domain') & getServerPort() & getContext()>
+		</cfif>
+	<cfelse>
+		<cfreturn getContext()>
+	</cfif>
+	
+</cffunction>
+
+<cffunction name="getResourcePath" output="false">
+	<cfargument name="complete" default=0>
+	<cfif getValue('isRemote') and len(getValue('resourceDomain'))>
+		<cfset var configBean=getBean('configBean')>
+		<cfif getValue('resourceSSL')>
+			<cfreturn "https://" & getValue('resourceDomain') & configBean.getServerPort() & configBean.getContext()>
+		<cfelse>
+			<cfreturn "http://" & getValue('resourceDomain') & configBean.getServerPort() & configBean.getContext()>
+		</cfif>
+	<cfelseif arguments.complete>
+		<cfreturn getWebPath(argumentCollection=arguments)>
+	<cfelse>
+		<cfreturn getContext()>
+	</cfif>	
+</cffunction>
+
+<cffunction name="getRequirementsPath" output="false">
+	<cfargument name="secure" default="#getValue('useSSL')#">
+	<cfargument name="complete" default=0>
+	<cfreturn getResourcePath(argumentCollection=arguments) & "/requirements">
+</cffunction>
+
+<cffunction name="getPluginsPath" output="false">
+	<cfargument name="secure" default="#getValue('useSSL')#">
+	<cfargument name="complete" default=0>
+	<cfreturn getResourcePath(argumentCollection=arguments) & "/plugins">
+</cffunction>
+
+<cffunction name="getAccessControlOriginList" output="false">
+	<cfset var thelist="#getScheme()#://#getValue('domain')#">
+	<cfset var adminSSL=application.configBean.getAdminSSL()>
+	<cfset var i="">
+	<cfset var lineBreak=chr(13)&chr(10)>
+
+	<cfif adminSSL and not YesNoFormat(getValue('useSSL'))>
+		<cfset thelist = listAppend(thelist,"https://#getValue('domain')#")>
+	</cfif>
+
+	<cfif len(application.configBean.getAdminDomain())>
+		<cfset thelist = listAppend(thelist,"#getScheme()#://#application.configBean.getAdminDomain()##application.configBean.getServerPort()#")>
+		<cfif adminSSL and not YesNoFormat(getValue('useSSL'))>
+			<cfset thelist = listAppend(thelist,"https://#application.configBean.getAdminDomain()##application.configBean.getServerPort()#")>
+		</cfif>
+	</cfif>
+	
+	<cfif len(getValue('domainAlias'))>
+		<cfloop list="#getValue('domainAlias')#" delimiters="#lineBreak#" index="i">
+			<cfset thelist = listAppend(thelist,"#getScheme()#://#i##getServerPort()#")>
+			<cfif adminSSL and not YesNoFormat(getValue('useSSL'))>
+				<cfset thelist = listAppend(thelist,"https://#i##getServerPort()#")>
+			</cfif>	
+		</cfloop>
+	</cfif>
+
+	<cfreturn thelist>
+</cffunction>
+
+<cffunction name="getVersion" output="false">
+	<cfreturn getBean('autoUpdater').getCurrentVersion(getValue('siteid'))>
 </cffunction>
 
 </cfcomponent>

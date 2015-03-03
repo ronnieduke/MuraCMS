@@ -45,30 +45,31 @@ modified version; it is your choice whether to do so, or to make such modified v
 version 2 without this exception.  You may, if you choose, apply this exception to your own modified versions of Mura CMS.
 --->
 <cfoutput>
-<h2>#application.rbFactory.getKeyValue(session.rb,"plugin.siteplugins")#</h2>
+<h1>#application.rbFactory.getKeyValue(session.rb,"plugin.siteplugins")#</h1>
 
 <cfset started=false>
-	<div class="tabs initActiveTab" style="display:none">
-		<ul>
+	<div class="tabbable">
+		<ul class="nav nav-tabs tabs initActiveTab">
 		<li><a href="##tab#ucase('Application')#" onclick="return false;"><span>Application</span></a></li>
 		<li><a href="##tab#ucase('Utility')#" onclick="return false;"><span>Utility</span></a></li>
 		<cfloop collection="#rc.plugingroups#" item="local.category" >
 			<cfif not listFind("Application,Utility",local.category) and rc.plugingroups[local.category].recordCount>
-				<li><a href="##tab#ucase(replace(local.category,' ','','all'))#" onclick="return false;"><span>#local.category#</span></a></li>
+				<li><a href="##tab#ucase(replace(local.category,' ','','all'))#" onclick="return false;"><span>#esapiEncode('html',local.category)#</span></a></li>
 			</cfif>
 		</cfloop>
 		</ul>
-	<cfset rscategorylist = rc.plugingroups['Application']/>
-	<cfset local.category = "Application" />
-	<cfinclude template="dsp_table.cfm" />
-	<cfset rscategorylist = rc.plugingroups['Utility']/>
-	<cfset local.category = "Utility" />
-	<cfinclude template="dsp_table.cfm" />
-	<cfloop collection="#rc.plugingroups#" item="local.category" >
-		<cfif not listFind("Application,Utility",local.category) and rc.plugingroups[local.category].recordCount>
-			<cfset rscategorylist = rc.plugingroups[local.category]/>
-			<cfinclude template="dsp_table.cfm" />
-		</cfif>
-	</cfloop>
+		<div class="tab-content">
+		<cfset rscategorylist = rc.plugingroups['Application']/>
+		<cfset local.category = "Application" />
+		<cfinclude template="dsp_table.cfm" />
+		<cfset rscategorylist = rc.plugingroups['Utility']/>
+		<cfset local.category = "Utility" />
+		<cfinclude template="dsp_table.cfm" />
+		<cfloop collection="#rc.plugingroups#" item="local.category" >
+			<cfif not listFind("Application,Utility",local.category) and rc.plugingroups[local.category].recordCount>
+				<cfset rscategorylist = rc.plugingroups[local.category]/>
+				<cfinclude template="dsp_table.cfm" />
+			</cfif>
+		</cfloop>
 	</div>
 </cfoutput>

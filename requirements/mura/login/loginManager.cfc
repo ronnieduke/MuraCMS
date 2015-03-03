@@ -73,13 +73,11 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	</cfif>
 	
 	<cfif isloggedin>
-		<cfcookie name="userid" expires="never" value="#session.mura.userID#" />
-		<cfcookie name="userHash" expires="never" value="#encrypt(arguments.userHash,application.configBean.getEncryptionKey(),'cfmx_compat','hex')#" />
 		<cfset session.rememberMe=1>
 		<cfreturn true />
 	<cfelse>
-		<cfcookie name="userid" expires="never" value="" />
-		<cfcookie name="userHash" expires="never" value="" />
+		<cfset structDelete(cookie,"userid")>
+		<cfset structDelete(cookie,"userhash")>
 		<cfset session.rememberMe=0>
 		<cfreturn false />
 	</cfif>
@@ -105,7 +103,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cfparam name="arguments.data.compactDisplay" default="false" />
 
 <cfif arguments.data.isAdminLogin>
-	<cfset indexFile="./index.cfm">
+	<cfset indexFile="./">
 </cfif>
 
 <cfset session.rememberMe=arguments.data.rememberMe />
@@ -168,7 +166,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		</cfif>
 	<cfelse>
 		<cfif arguments.data.isAdminLogin>
-			<cflocation url="./index.cfm?muraAction=cLogin.main&display=login&status=failed&rememberMe=#arguments.data.rememberMe#&contentid=#arguments.data.contentid#&LinkServID=#arguments.data.linkServID#&returnURL=#urlEncodedFormat(arguments.data.returnUrl)#&compactDisplay=#urlEncodedFormat(arguments.data.compactDisplay)#" addtoken="false">
+			<cflocation url="./?muraAction=cLogin.main&display=login&status=failed&rememberMe=#arguments.data.rememberMe#&contentid=#arguments.data.contentid#&LinkServID=#arguments.data.linkServID#&returnURL=#urlEncodedFormat(arguments.data.returnUrl)#&compactDisplay=#urlEncodedFormat(arguments.data.compactDisplay)#" addtoken="false">
 		<cfelse>
 			<cfset loginURL = application.settingsManager.getSite(request.siteid).getLoginURL() />
 			<cfif find('?', loginURL)>
@@ -273,7 +271,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 
 			<cfif arguments.data.redirect eq '' and arguments.data.returnUrl eq ''>
 				<cfif len(arguments.data.linkServID)>
-					<cflocation url="./?LinkServID=#arguments.data.linkServID#" addtoken="false">
+					<cflocation url="./index.cfm?LinkServID=#arguments.data.linkServID#" addtoken="false">
 				<cfelse>
 					<cflocation url="./" addtoken="false">
 				</cfif>
@@ -288,7 +286,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 			<cflocation url="#returnUrl#" addtoken="false">
 		<cfelse>
 			<cfif len(arguments.data.linkServID)>
-				<cflocation url="./?LinkServID=#arguments.data.linkServID#" addtoken="false">
+				<cflocation url="./index.cfm?LinkServID=#arguments.data.linkServID#" addtoken="false">
 			<cfelse>
 				<cflocation url="./" addtoken="false">
 			</cfif>
@@ -300,22 +298,43 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 
 </cffunction>
 
+
 <cffunction name="logout" returntype="void" access="public" output="false">
 	<cfset var pluginEvent="">
+
 	<cfif structKeyExists(request,"servletEvent")>
 		<cfset pluginEvent=request.servletEvent>
+	<cfelseif structKeyExists(request,"event")>
+		<cfset pluginEvent=request.event>
 	<cfelse>
-		<cfset pluginEvent = createObject("component","mura.event").init(session) />
+		<cfset pluginEvent = new mura.event() />
 	</cfif>
+
 	<cfif len(pluginEvent.getValue("siteID"))>
 		<cfset getPluginManager().announceEvent('onSiteLogout',pluginEvent)/>
+		<cfset getPluginManager().announceEvent('onBeforeSiteLogout',pluginEvent)/>
 	<cfelse>
 		<cfset getPluginManager().announceEvent('onGlobalLogout',pluginEvent)/>
+		<cfset getPluginManager().announceEvent('onBeforeGlobalLogout',pluginEvent)/>
 	</cfif>
+
 	<cflogout>
+
+	<cfif getBean('configBean').getValue(property='rotateSessions',defaultValue='false')>
+		<cfset sessionInvalidate()>
+	</cfif>
+
 	<cfset structclear(session) />
-	<cfcookie name="userid" expires="never" value="" />
+	<cfset structDelete(cookie,"userid")>
+	<cfset structDelete(cookie,"userhash")>
 	<cfset variables.userUtility.setUserStruct()/>
+	<cfset getBean('changesetManager').removeSessionPreviewData()>
+
+	<cfif len(pluginEvent.getValue("siteID"))>
+		<cfset getPluginManager().announceEvent('onAfterSiteLogout',pluginEvent)/>
+	<cfelse>
+		<cfset getPluginManager().announceEvent('onAfterGlobalLogout',pluginEvent)/>
+	</cfif>
 </cffunction>
 
 </cfcomponent>

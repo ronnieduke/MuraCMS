@@ -49,9 +49,9 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <span>
 		<div class="mura-tb-form" id="formblock-${fieldid}">
 			<div class="mura-tb-header radio">
-				<h3><!---#mmRBF.getKeyValue(session.rb,'formbuilder.field.radio')#:---> <span id="mura-tb-form-label"></span></h3>
+				<h2><!---#mmRBF.getKeyValue(session.rb,'formbuilder.field.radio')#:---> <span id="mura-tb-form-label"></span></h2>
 				<ul class="mura-tb-nav-utility">
-					<li><div class="ui-button" id="button-trash" title="#mmRBF.getKeyValue(session.rb,'formbuilder.delete')#"></div></li>
+					<li><div id="button-trash" title="#mmRBF.getKeyValue(session.rb,'formbuilder.delete')#"></div></li>
 				</ul>
 			</div>
 			
@@ -60,7 +60,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 			<ul class="ui-tabs-nav">
 				<li class="ui-state-default ui-corner-top"><a href="##mura-tb-form-tab-basic"><span>Basic</span></a></li>
 				<li class="ui-state-default ui-corner-top"><a href="##mura-tb-form-tab-advanced"><span>Advanced</span></a></li>
-				<li class="ui-state-default ui-corner-top"><a href="##mura-tb-form-tab-validation"><span>Validation</span></a></li>
+				<!--<li class="ui-state-default ui-corner-top"><a href="##mura-tb-form-tab-validation"><span>Validation</span></a></li>-->
 			</ul>
 			
 			<div class="ui-tabs-panel" id="mura-tb-form-tab-basic">
@@ -73,6 +73,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 							<label for="name">#mmRBF.getKeyValue(session.rb,'formbuilder.field.name')#</label>
 							<input id="tb-name" class="text long disabled" name="name" type="text" value="" maxlength="50" disabled="true" />
 						</li>
+						#application.serviceFactory.getBean('$').init(session.siteid).renderEvent('onFormElementBasicTabRender')#
 					</ul>
 				</div>
 				
@@ -91,12 +92,16 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 							<input class="text long" type="text" name="cssclass" value="" maxlength="50" data-required='false' />
 						</li>
 						<li>
+							<label for="wrappercssclass">#mmRBF.getKeyValue(session.rb,'formbuilder.field.wrappercssclass')#</label>
+							<input class="text " type="text" name="wrappercssclass" value="" maxlength="50" data-required='false' />
+						</li>
+						<li>
 							<label for="tooltip">#mmRBF.getKeyValue(session.rb,'formbuilder.field.tooltip')#</label>
 							<textarea name="tooltip" value="" maxlength="250" ></textarea>
 						</li>
 					</ul>
 				</div> <!--- End Tab Panel --->
-				
+				<!--
 				<div class="ui-tabs-panel" id="mura-tb-form-tab-validation">
 					<ul class="template-form">
 						<li>
@@ -123,7 +128,8 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 							#mmRBF.getKeyValue(session.rb,'formbuilder.field.isrequired')#</label>
 						</li>
 					</ul>
-				</div> <!--- End Tab Panel --->
+				</div>
+				--> <!--- End Tab Panel --->
 				
 			</div> <!--- End ui-tabs --->
 		</div> <!--- End mura-tb-form --->

@@ -60,9 +60,14 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfset var inheritedObjectsPerm="">
 	<cfset var inheritedObjectsContentID="">
 	
+	<cfif not isNumeric(arguments.event.getValue('startRow'))>
+		<cfset arguments.event.setValue('startRow',1)>
+	</cfif>
+	<cfif not isNumeric(arguments.event.getValue('pageNum'))>
+		<cfset arguments.event.setValue('pageNum',1)>
+	</cfif>
 	
-
-	<cfif session.mura.isLoggedIn and siteRenderer.showEditableObjects>
+	<cfif session.mura.isLoggedIn and siteRenderer.getShowEditableObjects()>
 		<cfset inheritedObjectsContentID=$.getBean("contentGateway").getContentIDFromContentHistID(contentHistID=$.event('inheritedObjects') )>
 		<cfif len(inheritedObjectsContentID)>
 			<cfset inheritedObjectsPerm=$.getBean('permUtility').getNodePerm($.getBean('contentGateway').getCrumblist(inheritedObjectsContentID,$.event('siteID')))>
@@ -87,13 +92,46 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<cfset commitTracePoint(tracePoint)>
 		<cfelse>
 		<cfset tracePoint=initTracePoint("#arguments.event.getSite().getTemplateIncludePath()#/default.cfm")>
-		<cfinclude template="#arguments.event.getSite().getTemplateIncludePath()#/default.cfm">
+		<cftry>
+			<cfinclude template="#arguments.event.getSite().getTemplateIncludePath()#/default.cfm">
+		<cfcatch type="any">
+			<cfoutput>
+				#$.rbKey('sitemanager.missingDefaultTemplate')#
+			</cfoutput>
+		</cfcatch>
+		</cftry>
 		<cfset commitTracePoint(tracePoint)>
 		</cfif>
 	</cfsavecontent>
 	
+	<cfset page=rereplace(page,'(class|id)="\s*"','','all')>
+
 	<cfset page=replaceNoCase(page,"</head>", renderer.renderHTMLQueue("Head") & "</head>")>
-	<cfset page=replaceNoCase(page,"</body>", renderer.renderHTMLQueue("Foot") & "</body>")>
+	
+	<!--- This is to prevent a lower level CF replaceNoCase issue from throwing an error with some utf chars--->
+	<cfset var renderedFootQueue=renderer.renderHTMLQueue("Foot")>
+	<cftry>
+		<cfset page=replaceNoCase(page,"</body>", renderedFootQueue & "</body>")>
+		<cfcatch>
+			<cfset page=replace(page,"</body>", renderedFootQueue & "</body>")>
+		</cfcatch>
+	</cftry>
+	
+	<!--- Cleaning up old paths --->
+	<cftry>
+		<cfset page=replaceNoCase(page,"/tasks/widgets/","/requirements/")>
+		<cfcatch>
+			<cfset page=replace(page,"/tasks/widgets/","/requirements/")>
+		</cfcatch>
+	</cftry>
+
+	<cftry>
+		<cfset page=replaceNoCase(page,"/tasks/","/index.cfm/tasks/")>
+		<cfcatch>
+			<cfset page=replace(page,"/tasks/","/index.cfm/tasks/")>
+		</cfcatch>
+	</cftry>
+
 	<cfset arguments.event.setValue('__MuraResponse__',trim(page))>
 </cffunction>
 

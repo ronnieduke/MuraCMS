@@ -46,14 +46,16 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 --->
 <cfcomponent extends="mura.cfobject" output="false">
 
-<cfsavecontent variable="variables.fieldlist"><cfoutput>siteid,pagelimit,domain, domainAlias, contact,locking,site,mailserverip,mailserverusername,mailserverpassword,emailbroadcaster,emailbroadcasterlimit,extranet,extranetPublicReg,extranetssl,
+<cfsavecontent variable="variables.fieldlist"><cfoutput>siteid,pagelimit,domain,domainAlias,enforcePrimaryDomain,contact,locking,site,mailserverip,mailserverusername,mailserverpassword,emailbroadcaster,emailbroadcasterlimit,extranet,extranetPublicReg,extranetssl,
 cache, cacheCapacity, cacheFreeMemoryThreshold, viewdepth,nextn,dataCollection,ExportLocation,
 columnCount,primaryColumn,publicSubmission,adManager,columnNames,contactName,contactAddress,contactCity,contactState,contactZip,contactEmail,contactPhone,
-publicUserPoolID,PrivateUserPoolID,AdvertiserUserPoolID,displayPoolID,orderno,feedManager,
-galleryMainScaleBy, galleryMainScale, gallerySmallScaleBy, gallerySmallScale, galleryMediumScaleBy, galleryMediumScale,
+publicUserPoolID,PrivateUserPoolID,AdvertiserUserPoolID,displayPoolID,filePoolID,categoryPoolID,contentPoolID,orderno,feedManager,
+largeImageHeight, largeImageWidth, smallImageHeight, smallImageWidth, mediumImageHeight, mediumImageWidth,
 sendLoginScript, mailingListConfirmScript,publicSubmissionApprovalScript,reminderScript,ExtranetPublicRegNotify,
 loginURL,editProfileURL,CommentApprovalDefault,deploy,accountActivationScript,
-googleAPIKey,useDefaultSMTPServer,siteLocale, mailServerSMTPPort, mailServerPOPPort, mailserverTLS, mailserverSSL, theme, tagline,hasChangesets,baseID</cfoutput></cfsavecontent>
+googleAPIKey,useDefaultSMTPServer,siteLocale, mailServerSMTPPort, mailServerPOPPort,
+mailserverTLS, mailserverSSL, theme, tagline,hasChangesets,baseID,enforceChangesets,contentApprovalScript,contentRejectionScript,enableLockdown,customTagGroups,
+hasComments,hasLockableNodes,reCAPTCHASiteKey,reCAPTCHASecret,reCAPTCHALanguage,JSONApi,useSSL,isRemote,remotecontext,remoteport,resourceSSL,resourceDomain</cfoutput></cfsavecontent>
 
 <cffunction name="init" access="public" returntype="any" output="false">
 <cfargument name="configBean" type="any" required="yes"/>
@@ -71,14 +73,15 @@ googleAPIKey,useDefaultSMTPServer,siteLocale, mailServerSMTPPort, mailServerPOPP
 	
 	<cfif not isObject(bean)>
 		<cfset bean=getBean("site")>
-	</cfif>s
+	</cfif>
 
 	<cfquery name="rs" datasource="#variables.configBean.getReadOnlyDatasource()#" username="#variables.configBean.getReadOnlyDbUsername()#" password="#variables.configBean.getReadOnlyDbPassword()#">
 	select #variables.fieldlist#, lastdeployment from tsettings where siteid=<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#" />
 	</cfquery>
 	
 	<cfif rs.recordcount>
-	<cfset bean.set(rs) />
+		<cfset bean.set(rs) />
+		<cfset bean.setIsNew(0)>
 	</cfif>
 	
 	<cfreturn bean />
@@ -89,159 +92,183 @@ googleAPIKey,useDefaultSMTPServer,siteLocale, mailServerSMTPPort, mailServerPOPP
 <cfargument name="siteid" type="string" />
 
 	<cftransaction>
-	<cfquery datasource="#variables.configBean.getDatasource()#" username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
+	<cfquery>
 	delete from tsettings where siteid=<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#" />
 	</cfquery>
 
-	<cfquery datasource="#variables.configBean.getDatasource()#" username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
+	<cfquery>
+	delete from timagesizes where siteid=<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#" />
+	</cfquery>
+
+	<cfquery>
 	delete from tusersinterests where CategoryID in (select categoryID from tcontentcategories where siteid=<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#" />)
 	</cfquery>
 
-	<cfquery datasource="#variables.configBean.getDatasource()#" username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
+	<cfquery>
 	delete from tusersfavorites where siteid=<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#" />
 	</cfquery>
 
-	<cfquery datasource="#variables.configBean.getDatasource()#" username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
+	<cfquery>
 	delete from tusersmemb where groupID in (select userID from tusers where siteid=<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#" /> and type=1 )
 	</cfquery>
 	
-	<cfquery datasource="#variables.configBean.getDatasource()#" username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
+	<cfquery>
 	delete from tuseraddresses where siteid=<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#" />
 	</cfquery>
 	
-	<cfquery datasource="#variables.configBean.getDatasource()#" username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
+	<cfquery>
 	delete from tusers where siteid=<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#" />
 	</cfquery>
 	
-	<cfquery datasource="#variables.configBean.getDatasource()#" username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
+	<cfquery>
 	delete from tmailinglist where siteid=<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#" />
 	</cfquery>
 	
-	<cfquery datasource="#variables.configBean.getDatasource()#" username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
+	<cfquery>
 	delete from tmailinglistmembers where siteid=<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#" />
 	</cfquery>
 
-	<cfquery datasource="#variables.configBean.getDatasource()#" username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
+	<cfquery>
 	delete from tpermissions where siteid=<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#" />
 	</cfquery>
 
-	<cfquery datasource="#variables.configBean.getDatasource()#" username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
+	<cfquery>
 	delete from tformresponsepackets where siteid=<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#" />
 	</cfquery>
 
-	<cfquery datasource="#variables.configBean.getDatasource()#" username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
+	<cfquery>
 	delete from tformresponsequestions where 
 	formID in (select contentID from tcontent
 				where siteid=<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#" />
 				and type ='Form')
 	</cfquery>
 	
-	<cfquery datasource="#variables.configBean.getDatasource()#" username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
+	<cfquery>
 	delete from tcontent where siteid=<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#" />
 	</cfquery>
 
-	<cfquery datasource="#variables.configBean.getDatasource()#" username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
+	<cfquery>
 	delete from tcontentcomments where siteid=<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#" />
 	</cfquery>
 	
-	<cfquery datasource="#variables.configBean.getDatasource()#" username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
+	<cfquery>
 	delete from tsystemobjects where siteid=<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#" />
 	</cfquery>
 	
-	<cfquery datasource="#variables.configBean.getDatasource()#" username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
+	<cfquery>
 	delete from tcontentobjects where siteid=<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#" />
 	</cfquery>
 
-	<cfquery datasource="#variables.configBean.getDatasource()#" username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
+	<cfquery>
 	delete from tcontentratings where siteid=<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#" />
 	</cfquery>
 
-	<cfquery datasource="#variables.configBean.getDatasource()#" username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
+	<cfquery>
 	delete from temailreturnstats where emailID in (select emailID from temails where siteid=<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#" />)
 	</cfquery>
 
-	<cfquery datasource="#variables.configBean.getDatasource()#" username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
+	<cfquery>
 	delete from temailstats where emailID in (select emailID from temails where siteid=<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#" />)
 	</cfquery>
 
-	<cfquery datasource="#variables.configBean.getDatasource()#" username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
+	<cfquery>
 	delete from temails where siteid=<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#" />
 	</cfquery>
 
-	<cfquery datasource="#variables.configBean.getDatasource()#" username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
+	<cfquery>
 	delete from tcontentrelated where siteid=<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#" />
 	</cfquery>
 
-	<cfquery datasource="#variables.configBean.getDatasource()#" username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
+	<cfquery>
 	delete from tcontentassignments where siteid=<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#" />
 	</cfquery>
 
-	<cfquery datasource="#variables.configBean.getDatasource()#" username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
+	<cfquery>
 	delete from tcontentcategoryassign where siteid=<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#" />
 	</cfquery>
 	
-	<cfquery datasource="#variables.configBean.getDatasource()#" username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
+	<cfquery>
 	delete from tcontentcategories where siteid=<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#" />
 	</cfquery>
 
-	<cfquery datasource="#variables.configBean.getDatasource()#" username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
+	<cfquery>
 	delete from tcontenteventreminders where siteid=<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#" />
 	</cfquery>
 
-	<cfquery datasource="#variables.configBean.getDatasource()#" username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
+	<cfquery>
 	delete from tcontentfeeditems where feedid in (select feedid from tcontentfeeds where siteID=<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#" />)
 	</cfquery>
 
-	<cfquery datasource="#variables.configBean.getDatasource()#" username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
+	<cfquery>
 	delete from tcontentfeedadvancedparams where feedid in (select feedid from tcontentfeeds where siteID=<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#" />)
 	</cfquery>
 
-	<cfquery datasource="#variables.configBean.getDatasource()#" username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
+	<cfquery>
 	delete from tcontentfeeds where siteID=<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#" />
 	</cfquery>
 
-	<cfquery datasource="#variables.configBean.getDatasource()#" username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
+	<cfquery>
 	delete from tsessiontracking where siteid=<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#" />
 	</cfquery>
 	
-	<cfquery datasource="#variables.configBean.getDatasource()#" username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
+	<cfquery>
 	update tsettings set PrivateUserPoolID=siteid where PrivateUserPoolID=<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#" />
 	</cfquery>
 	
-	<cfquery datasource="#variables.configBean.getDatasource()#" username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
+	<cfquery>
 	update tsettings set PublicUserPoolID=siteid where PublicUserPoolID=<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#" />
 	</cfquery>
 	
-	<cfquery datasource="#variables.configBean.getDatasource()#" username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
+	<cfquery>
 	delete from tcontenttags where siteid=<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#" />
 	</cfquery>
 	
-	<cfquery datasource="#variables.configBean.getDatasource()#" username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
+	<cfquery>
 	delete from tclassextenddata where siteid=<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#" />
 	</cfquery>
 	
-	<cfquery datasource="#variables.configBean.getDatasource()#" username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
+	<cfquery>
 	delete from tclassextendattributes where siteid=<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#" />
 	</cfquery>
 	
-	<cfquery datasource="#variables.configBean.getDatasource()#" username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
+	<cfquery>
 	delete from tclassextendsets where siteid=<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#" />
 	</cfquery>
 	
-	<cfquery datasource="#variables.configBean.getDatasource()#" username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
+	<cfquery>
 	delete from tclassextend where siteid=<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#" />
 	</cfquery>
 	
-	<cfquery datasource="#variables.configBean.getDatasource()#" username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
+	<cfquery>
 	delete from tfiles where siteid=<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#" />
 	</cfquery>
 	
-	<cfquery datasource="#variables.configBean.getDatasource()#" username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
+	<cfquery>
 	delete from ttrash where siteid=<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#" />
 	</cfquery>
 	
-	<cfquery datasource="#variables.configBean.getDatasource()#" username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
+	<cfquery>
 	delete from tchangesets where siteid=<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#" />
+	</cfquery>
+
+	<cfquery>
+	delete from tapprovalactions where siteid=<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#" />
+	</cfquery>
+
+	<cfquery>
+	delete from tapprovalassignments where siteid=<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#" />
+	</cfquery>
+
+	<cfquery>
+	delete from tapprovalchains where siteid=<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#" />
+	</cfquery>
+
+	<cfquery>
+	delete from tapprovalmemberships where siteid=<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#" />
+	</cfquery>
+
+	<cfquery>
+	delete from tapprovalrequests where siteid=<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#" />
 	</cfquery>
 	
 	</cftransaction>
@@ -251,12 +278,13 @@ googleAPIKey,useDefaultSMTPServer,siteLocale, mailServerSMTPPort, mailServerPOPP
 <cffunction name="update" access="public" output="false" returntype="void">
 <cfargument name="bean" type="any" />
 
-<cfquery datasource="#variables.configBean.getDatasource()#" username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
+<cfquery>
       UPDATE tsettings SET
 	  	 site = <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.bean.getsite()#" />,
          pagelimit = #arguments.bean.getpagelimit()#,
 		 domain=<cfif arguments.bean.getdomain('production') neq ''><cfqueryparam cfsqltype="cf_sql_varchar" value="#trim(arguments.bean.getdomain('production'))#" /><cfelse>null</cfif>,
 		 domainAlias=<cfif arguments.bean.getdomainAlias() neq ''><cfqueryparam cfsqltype="cf_sql_varchar" value="#trim(arguments.bean.getdomainAlias())#" /><cfelse>null</cfif>,
+		 enforcePrimaryDomain = '#arguments.bean.getEnforcePrimaryDomain()#',
 		 contact=<cfif arguments.bean.getcontact() neq ''><cfqueryparam cfsqltype="cf_sql_varchar" value="#trim(arguments.bean.getContact())#" /><cfelse>null</cfif>,
          locking = '#arguments.bean.getlocking()#',
 		 MailServerIP=<cfif arguments.bean.getMailServerIP() neq ''><cfqueryparam cfsqltype="cf_sql_varchar" value="#trim(arguments.bean.getMailServerIP())#" /><cfelse>null</cfif>,
@@ -290,13 +318,17 @@ googleAPIKey,useDefaultSMTPServer,siteLocale, mailServerSMTPPort, mailServerPOPP
 		 privateUserPoolID=<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.bean.getPrivateUserPoolID()#" />,
 		 advertiserUserPoolID=<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.bean.getAdvertiserUserPoolID()#" />,
 		 displayPoolID=<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.bean.getDisplayPoolID()#" />,
+		 filePoolID=<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.bean.getFilePoolID()#" />,
+		 categoryPoolID=<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.bean.getCategoryPoolID()#" />,
+		 contentPoolID=<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.bean.getContentPoolID()#" />,
 		 feedManager=#arguments.bean.getHasfeedManager()#,
-		 galleryMainScaleBy = '#arguments.bean.getGalleryMainScaleBy()#',
-		 galleryMainScale = #arguments.bean.getGalleryMainScale()#,
-		 gallerySmallScaleBy = '#arguments.bean.getGallerySmallScaleBy()#',
-		 gallerySmallScale = #arguments.bean.getGallerySmallScale()#,
-		 galleryMediumScaleBy = '#arguments.bean.getGalleryMediumScaleBy()#',
-		 galleryMediumScale = #arguments.bean.getGalleryMediumScale()#,
+		 
+		largeImageHeight = <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.bean.getLargeImageHeight()#" />,
+		largeImageWidth = <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.bean.getLargeImageWidth()#" />,
+		smallImageHeight = <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.bean.getSmallImageHeight()#" />,
+		smallImageWidth = <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.bean.getSmallImageWidth()#" />,
+		mediumImageHeight = <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.bean.getMediumImageHeight()#" />,
+		mediumImageWidth = <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.bean.getMediumImageWidth()#" />,
 		
 		 sendLoginScript=<cfqueryparam cfsqltype="cf_sql_longvarchar" null="#iif(arguments.bean.getSendLoginScript() neq '',de('no'),de('yes'))#" value="#arguments.bean.getSendLoginScript()#" />,
 		 mailingListConfirmScript=<cfqueryparam cfsqltype="cf_sql_longvarchar" null="#iif(arguments.bean.getMailingListConfirmScript() neq '',de('no'),de('yes'))#" value="#arguments.bean.getMailingListConfirmScript()#" />,
@@ -318,9 +350,26 @@ googleAPIKey,useDefaultSMTPServer,siteLocale, mailServerSMTPPort, mailServerPOPP
 	 	 theme= <cfif arguments.bean.getTheme() neq ''><cfqueryparam cfsqltype="cf_sql_varchar" value="#trim(arguments.bean.getTheme())#" /><cfelse>null</cfif>,
 	 	 tagline=<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.bean.getTagline()#" />,
 	 	 hasChangesets=#arguments.bean.getHasChangesets()#,
-	 	 baseID=<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.bean.getBaseID()#" />
-		 
-		where siteid='#arguments.bean.getsiteid()#'
+	 	 baseID=<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.bean.getBaseID()#" />,
+	 	 EnforceChangesets=#arguments.bean.getEnforceChangesets()#,
+	 	 contentApprovalScript=<cfqueryparam cfsqltype="cf_sql_longvarchar" null="#iif(arguments.bean.getContentApprovalScript() neq '',de('no'),de('yes'))#" value="#arguments.bean.getContentApprovalScript()#" />,
+	 	 contentRejectionScript=<cfqueryparam cfsqltype="cf_sql_longvarchar" null="#iif(arguments.bean.getContentRejectionScript() neq '',de('no'),de('yes'))#" value="#arguments.bean.getContentRejectionScript()#" />,
+		 enableLockdown=<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.bean.getEnableLockdown()#" />,
+		 customTagGroups=<cfif arguments.bean.getCustomTagGroups() neq ''><cfqueryparam cfsqltype="cf_sql_varchar" value="#trim(arguments.bean.getCustomTagGroups())#" /><cfelse>null</cfif>,
+		 hasComments=#arguments.bean.getHasComments()#,
+		 hasLockableNodes=#arguments.bean.getHasLockableNodes()#,
+		 reCAPTCHASiteKey=<cfif Len(Trim(arguments.bean.getReCAPTCHASiteKey()))><cfqueryparam cfsqltype="cf_sql_varchar" value="#Trim(arguments.bean.getReCAPTCHASiteKey())#" /><cfelse>null</cfif>,
+		 reCAPTCHASecret=<cfif Len(Trim(arguments.bean.getReCAPTCHASecret()))><cfqueryparam cfsqltype="cf_sql_varchar" value="#Trim(arguments.bean.getReCAPTCHASecret())#" /><cfelse>null</cfif>,
+		 reCAPTCHALanguage=<cfif Len(Trim(arguments.bean.getReCAPTCHALanguage()))><cfqueryparam cfsqltype="cf_sql_varchar" value="#Trim(arguments.bean.getReCAPTCHALanguage())#" /><cfelse>null</cfif>,
+		 JSONApi=#arguments.bean.getJSONApi()#,
+		 useSSL=#arguments.bean.getUseSSL()#,
+		 IsRemote=#arguments.bean.getIsRemote()#,
+		 resourceSSL=#arguments.bean.getResourceSSL()#,
+		 resourceDomain=<cfif Len(Trim(arguments.bean.getResourceDomain()))><cfqueryparam cfsqltype="cf_sql_varchar" value="#Trim(arguments.bean.getResourceDomain())#" /><cfelse>null</cfif>,
+		 RemoteContext=<cfif Len(Trim(arguments.bean.getRemoteContext()))><cfqueryparam cfsqltype="cf_sql_varchar" value="#Trim(arguments.bean.getRemoteContext())#" /><cfelse>null</cfif>,
+		 RemotePort=#arguments.bean.getRemotePort()#
+
+		where siteid=<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.bean.getsiteid()#">
    </cfquery>
    
 	
@@ -334,71 +383,73 @@ googleAPIKey,useDefaultSMTPServer,siteLocale, mailServerSMTPPort, mailServerPOPP
 <cfset var rsSystemObject="">
 <cftransaction>
 
-<cfquery name="rssites" datasource="#variables.configBean.getReadOnlyDatasource()#" username="#variables.configBean.getReadOnlyDbUsername()#" password="#variables.configBean.getReadOnlyDbPassword()#">
+<cfquery name="rsSites">
  select siteID from tsettings
 </cfquery>
 
 <cfset orderno=rssites.recordcount+1>
 
-<cfquery datasource="#variables.configBean.getDatasource()#" username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
+<cfquery>
       Insert into tsettings (#variables.fieldlist#)
 	  values(
-	  	'#arguments.bean.getsiteid()#',
-         #arguments.bean.getpagelimit()# ,
-		 <cfif arguments.bean.getdomain('production') neq ''>'#trim(arguments.bean.getdomain('production'))#'<cfelse>null</cfif>,
-		 <cfif arguments.bean.getdomainAlias() neq ''>'#trim(arguments.bean.getdomainAlias())#'<cfelse>null</cfif>,
+	  	<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.bean.getsiteid()#">,
+        #arguments.bean.getpagelimit()# ,
+		<cfif arguments.bean.getdomain('production') neq ''>'#trim(arguments.bean.getdomain('production'))#'<cfelse>null</cfif>,
+		<cfif arguments.bean.getdomainAlias() neq ''>'#trim(arguments.bean.getdomainAlias())#'<cfelse>null</cfif>,
+		'#arguments.bean.getEnforcePrimaryDomain()#',
 		<cfif arguments.bean.getcontact() neq ''>'#trim(arguments.bean.getcontact())#'<cfelse>null</cfif>,
-         '#arguments.bean.getlocking()#',
-		   <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.bean.getsite()#" />,
-		  <cfif arguments.bean.getMailServerIP() neq ''><cfqueryparam cfsqltype="cf_sql_varchar" value="#trim(arguments.bean.getMailServerIP())#" /><cfelse>null</cfif>,
-		  <cfif arguments.bean.getMailServerUsername() neq ''><cfqueryparam cfsqltype="cf_sql_varchar" value="#trim(arguments.bean.getMailserverUsername())#" /><cfelse>null</cfif>,
-		  <cfif arguments.bean.getMailServerPassword() neq ''><cfqueryparam cfsqltype="cf_sql_varchar" value="#trim(arguments.bean.getMailserverPassword())#" /><cfelse>null</cfif>,
-		  #arguments.bean.getemailbroadcaster()#,
-		  #arguments.bean.getemailbroadcasterlimit()#,
-		   #arguments.bean.getextranet()#,
-		   #arguments.bean.getextranetPublicReg()#,
-		   #arguments.bean.getextranetssl()#,
-		   #arguments.bean.getcache()#,
-		   #arguments.bean.getCacheCapacity()#,
-		   #arguments.bean.getCacheFreeMemoryThreshold()#,
-		   #arguments.bean.getviewdepth()#,
-		   #arguments.bean.getnextn()#,
-		   #arguments.bean.getdataCollection()#,
-		   <cfif arguments.bean.getExportLocation() neq ''><cfqueryparam cfsqltype="cf_sql_varchar" value="#trim(arguments.bean.getExportLocation())#" /><cfelse>null</cfif>,
-		   #arguments.bean.getcolumnCount()#,
-		  #arguments.bean.getprimaryColumn()#,
-		   #arguments.bean.getpublicSubmission()#,
-		   #arguments.bean.getadmanager()#,
-		   <cfif arguments.bean.getcolumnNames() neq ''><cfqueryparam cfsqltype="cf_sql_varchar" value="#trim(arguments.bean.getColumnNames())#" /><cfelse>null</cfif>,
-		  <cfif arguments.bean.getcontactName() neq ''><cfqueryparam cfsqltype="cf_sql_varchar" value="#trim(arguments.bean.getContactName())#" /><cfelse>null</cfif>,
-		   <cfif arguments.bean.getcontactAddress() neq ''><cfqueryparam cfsqltype="cf_sql_varchar" value="#trim(arguments.bean.getContactAddress())#" /><cfelse>null</cfif>,
-		   <cfif arguments.bean.getcontactCity() neq ''><cfqueryparam cfsqltype="cf_sql_varchar" value="#trim(arguments.bean.getContactCity())#" /><cfelse>null</cfif>,
-		   <cfif arguments.bean.getcontactState() neq ''><cfqueryparam cfsqltype="cf_sql_varchar" value="#trim(arguments.bean.getContactState())#" /><cfelse>null</cfif>,
-		   <cfif arguments.bean.getcontactZip() neq ''><cfqueryparam cfsqltype="cf_sql_varchar" value="#trim(arguments.bean.getContactZip())#" /><cfelse>null</cfif>,
-		   <cfif arguments.bean.getcontactEmail() neq ''><cfqueryparam cfsqltype="cf_sql_varchar" value="#trim(arguments.bean.getContactEmail())#" /><cfelse>null</cfif>,
-		   <cfif arguments.bean.getcontactPhone() neq ''><cfqueryparam cfsqltype="cf_sql_varchar" value="#trim(arguments.bean.getContactPhone())#" /><cfelse>null</cfif>,
-		   <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.bean.getPublicUserPoolID()#" />,
-		   <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.bean.getPrivateUserPoolID()#" />,
-		   <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.bean.getAdvertiserUserPoolID()#" />,
-		   <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.bean.getDisplayPoolID()#" />,
-		   #orderno#,
-		   #arguments.bean.getHasfeedManager()#,
-		   '#arguments.bean.getGalleryMainScaleBy()#',
-		   #arguments.bean.getGalleryMainScale()#,
-		   '#arguments.bean.getGallerySmallScaleBy()#',
-		   #arguments.bean.getGallerySmallScale()#,
-		   '#arguments.bean.getGalleryMediumScaleBy()#',
-		   #arguments.bean.getGalleryMediumScale()#,
-	 
-		 <cfqueryparam cfsqltype="cf_sql_longvarchar" null="#iif(arguments.bean.getSendLoginScript() neq '',de('no'),de('yes'))#" value="#arguments.bean.getSendLoginScript()#" />,
-		 <cfqueryparam cfsqltype="cf_sql_longvarchar" null="#iif(arguments.bean.getMailingListConfirmScript() neq '',de('no'),de('yes'))#" value="#arguments.bean.getMailingListConfirmScript()#" />,
-		 <cfqueryparam  null="#iif(arguments.bean.getPublicSubmissionApprovalScript() neq '',de('no'),de('yes'))#" cfsqltype="cf_sql_longvarchar" value="#arguments.bean.getPublicSubmissionApprovalScript()#" />,
-		 <cfqueryparam  null="#iif(arguments.bean.getreminderScript() neq '',de('no'),de('yes'))#" cfsqltype="cf_sql_longvarchar" value="#arguments.bean.getreminderScript()#" />,
-		 
-		 <cfqueryparam  null="#iif(arguments.bean.getExtranetPublicRegNotify() neq '',de('no'),de('yes'))#" cfsqltype="cf_sql_longvarchar" value="#arguments.bean.getExtranetPublicRegNotify()#" />,
-		 <cfqueryparam  null="#iif(arguments.bean.getloginURL() neq '',de('no'),de('yes'))#" cfsqltype="cf_sql_varchar" value="#arguments.bean.getloginURL(parseMuraTag=false)#" />,
-		 <cfqueryparam  null="#iif(arguments.bean.getEditProfileURL() neq '',de('no'),de('yes'))#" cfsqltype="cf_sql_varchar" value="#arguments.bean.getEditProfileURL(parseMuraTag=false)#" />,
-		 #arguments.bean.getCommentApprovalDefault()#,
+        '#arguments.bean.getlocking()#',
+		<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.bean.getsite()#" />,
+		<cfif arguments.bean.getMailServerIP() neq ''><cfqueryparam cfsqltype="cf_sql_varchar" value="#trim(arguments.bean.getMailServerIP())#" /><cfelse>null</cfif>,
+		<cfif arguments.bean.getMailServerUsername() neq ''><cfqueryparam cfsqltype="cf_sql_varchar" value="#trim(arguments.bean.getMailserverUsername())#" /><cfelse>null</cfif>,
+		<cfif arguments.bean.getMailServerPassword() neq ''><cfqueryparam cfsqltype="cf_sql_varchar" value="#trim(arguments.bean.getMailserverPassword())#" /><cfelse>null</cfif>,
+		#arguments.bean.getemailbroadcaster()#,
+		#arguments.bean.getemailbroadcasterlimit()#,
+		#arguments.bean.getextranet()#,
+		#arguments.bean.getextranetPublicReg()#,
+		#arguments.bean.getextranetssl()#,
+		#arguments.bean.getcache()#,
+		#arguments.bean.getCacheCapacity()#,
+		#arguments.bean.getCacheFreeMemoryThreshold()#,
+		#arguments.bean.getviewdepth()#,
+		#arguments.bean.getnextn()#,
+		#arguments.bean.getdataCollection()#,
+		<cfif arguments.bean.getExportLocation() neq ''><cfqueryparam cfsqltype="cf_sql_varchar" value="#trim(arguments.bean.getExportLocation())#" /><cfelse>null</cfif>,
+		#arguments.bean.getcolumnCount()#,
+		#arguments.bean.getprimaryColumn()#,
+		#arguments.bean.getpublicSubmission()#,
+		#arguments.bean.getadmanager()#,
+		<cfif arguments.bean.getcolumnNames() neq ''><cfqueryparam cfsqltype="cf_sql_varchar" value="#trim(arguments.bean.getColumnNames())#" /><cfelse>null</cfif>,
+		<cfif arguments.bean.getcontactName() neq ''><cfqueryparam cfsqltype="cf_sql_varchar" value="#trim(arguments.bean.getContactName())#" /><cfelse>null</cfif>,
+		<cfif arguments.bean.getcontactAddress() neq ''><cfqueryparam cfsqltype="cf_sql_varchar" value="#trim(arguments.bean.getContactAddress())#" /><cfelse>null</cfif>,
+		<cfif arguments.bean.getcontactCity() neq ''><cfqueryparam cfsqltype="cf_sql_varchar" value="#trim(arguments.bean.getContactCity())#" /><cfelse>null</cfif>,
+		<cfif arguments.bean.getcontactState() neq ''><cfqueryparam cfsqltype="cf_sql_varchar" value="#trim(arguments.bean.getContactState())#" /><cfelse>null</cfif>,
+		<cfif arguments.bean.getcontactZip() neq ''><cfqueryparam cfsqltype="cf_sql_varchar" value="#trim(arguments.bean.getContactZip())#" /><cfelse>null</cfif>,
+		<cfif arguments.bean.getcontactEmail() neq ''><cfqueryparam cfsqltype="cf_sql_varchar" value="#trim(arguments.bean.getContactEmail())#" /><cfelse>null</cfif>,
+		<cfif arguments.bean.getcontactPhone() neq ''><cfqueryparam cfsqltype="cf_sql_varchar" value="#trim(arguments.bean.getContactPhone())#" /><cfelse>null</cfif>,
+		<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.bean.getPublicUserPoolID()#" />,
+		<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.bean.getPrivateUserPoolID()#" />,
+		<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.bean.getAdvertiserUserPoolID()#" />,
+		<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.bean.getDisplayPoolID()#" />,
+		<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.bean.getFilePoolID()#" />,
+		<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.bean.getCategoryPoolID()#" />,
+		<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.bean.getContentPoolID()#" />,
+		#orderno#,
+		#arguments.bean.getHasfeedManager()#,
+		<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.bean.getLargeImageHeight()#" />,
+		<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.bean.getLargeImageWidth()#" />,
+		<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.bean.getSmallImageHeight()#" />,
+		<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.bean.getSmallImageWidth()#" />,
+		<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.bean.getMediumImageHeight()#" />,
+		<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.bean.getMediumImageWidth()#" />,
+		<cfqueryparam cfsqltype="cf_sql_longvarchar" null="#iif(arguments.bean.getSendLoginScript() neq '',de('no'),de('yes'))#" value="#arguments.bean.getSendLoginScript()#" />,
+		<cfqueryparam cfsqltype="cf_sql_longvarchar" null="#iif(arguments.bean.getMailingListConfirmScript() neq '',de('no'),de('yes'))#" value="#arguments.bean.getMailingListConfirmScript()#" />,
+		<cfqueryparam  null="#iif(arguments.bean.getPublicSubmissionApprovalScript() neq '',de('no'),de('yes'))#" cfsqltype="cf_sql_longvarchar" value="#arguments.bean.getPublicSubmissionApprovalScript()#" />,
+		<cfqueryparam  null="#iif(arguments.bean.getreminderScript() neq '',de('no'),de('yes'))#" cfsqltype="cf_sql_longvarchar" value="#arguments.bean.getreminderScript()#" />, 
+		<cfqueryparam  null="#iif(arguments.bean.getExtranetPublicRegNotify() neq '',de('no'),de('yes'))#" cfsqltype="cf_sql_longvarchar" value="#arguments.bean.getExtranetPublicRegNotify()#" />,
+		<cfqueryparam  null="#iif(arguments.bean.getloginURL() neq '',de('no'),de('yes'))#" cfsqltype="cf_sql_varchar" value="#arguments.bean.getloginURL(parseMuraTag=false)#" />,
+		<cfqueryparam  null="#iif(arguments.bean.getEditProfileURL() neq '',de('no'),de('yes'))#" cfsqltype="cf_sql_varchar" value="#arguments.bean.getEditProfileURL(parseMuraTag=false)#" />,
+		#arguments.bean.getCommentApprovalDefault()#,
 		0,
 		<cfqueryparam cfsqltype="cf_sql_longvarchar" null="#iif(arguments.bean.getAccountActivationScript() neq '',de('no'),de('yes'))#" value="#arguments.bean.getAccountActivationScript()#" />,
 		<cfqueryparam cfsqltype="cf_sql_varchar" null="#iif(arguments.bean.getGoogleAPIKey() neq '',de('no'),de('yes'))#" value="#arguments.bean.getGoogleAPIKey()#" />,
@@ -408,18 +459,34 @@ googleAPIKey,useDefaultSMTPServer,siteLocale, mailServerSMTPPort, mailServerPOPP
 		<cfqueryparam cfsqltype="cf_sql_varchar" null="#iif(arguments.bean.getMailserverPOPPort() neq '',de('no'),de('yes'))#" value="#arguments.bean.getMailserverPOPPort()#" />,
 	 	<cfqueryparam cfsqltype="cf_sql_varchar" null="#iif(arguments.bean.getMailserverTLS() neq '',de('no'),de('yes'))#" value="#arguments.bean.getMailserverTLS()#" />,
 	 	<cfqueryparam cfsqltype="cf_sql_varchar" null="#iif(arguments.bean.getMailserverSSL() neq '',de('no'),de('yes'))#" value="#arguments.bean.getMailserverSSL()#" />,
-	 	 <cfif arguments.bean.getTheme() neq ''><cfqueryparam cfsqltype="cf_sql_varchar" value="#trim(arguments.bean.getTheme())#" /><cfelse>null</cfif>,
-	 	 <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.bean.getTagline()#" />,
-	 	 #arguments.bean.getHasChangesets()#,
-	 	 <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.bean.getBaseID()#" />
-		   )
+	 	<cfif arguments.bean.getTheme() neq ''><cfqueryparam cfsqltype="cf_sql_varchar" value="#trim(arguments.bean.getTheme())#" /><cfelse>null</cfif>,
+	 	<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.bean.getTagline()#" />,
+	 	#arguments.bean.getHasChangesets()#,
+	 	<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.bean.getBaseID()#" />,
+	 	#arguments.bean.getEnforceChangesets()#,
+	 	<cfqueryparam cfsqltype="cf_sql_longvarchar" null="#iif(arguments.bean.getContentApprovalScript() neq '',de('no'),de('yes'))#" value="#arguments.bean.getContentApprovalScript()#" />,
+	 	<cfqueryparam cfsqltype="cf_sql_longvarchar" null="#iif(arguments.bean.getContentRejectionScript() neq '',de('no'),de('yes'))#" value="#arguments.bean.getContentRejectionScript()#" />,
+		<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.bean.getEnableLockdown()#" />,
+		<cfif arguments.bean.getCustomTagGroups() neq ''><cfqueryparam cfsqltype="cf_sql_varchar" value="#trim(arguments.bean.getCustomTagGroups())#" /><cfelse>null</cfif>,
+		#arguments.bean.getHasComments()#,
+		#arguments.bean.getHasLockableNodes()#,
+		<cfif Len(Trim(arguments.bean.getReCAPTCHASiteKey()))><cfqueryparam cfsqltype="cf_sql_varchar" value="#Trim(arguments.bean.getReCAPTCHASiteKey())#" /><cfelse>null</cfif>,
+		<cfif Len(Trim(arguments.bean.getReCAPTCHASecret()))><cfqueryparam cfsqltype="cf_sql_varchar" value="#Trim(arguments.bean.getReCAPTCHASecret())#" /><cfelse>null</cfif>,
+		<cfif Len(Trim(arguments.bean.getReCAPTCHALanguage()))><cfqueryparam cfsqltype="cf_sql_varchar" value="#Trim(arguments.bean.getReCAPTCHALanguage())#" /><cfelse>null</cfif>,
+		#arguments.bean.getJSONApi()#,
+		#arguments.bean.getUseSSL()#,
+		#arguments.bean.getIsRemote()#,
+		<cfif Len(Trim(arguments.bean.getRemoteContext()))><cfqueryparam cfsqltype="cf_sql_varchar" value="#Trim(arguments.bean.getRemoteContext())#" /><cfelse>null</cfif>,
+		 #arguments.bean.getRemotePort()#,
+		 #arguments.bean.getResourceSSL()#,
+		<cfif Len(Trim(arguments.bean.getResourceDomain()))><cfqueryparam cfsqltype="cf_sql_varchar" value="#Trim(arguments.bean.getResourceDomain())#" /><cfelse>null</cfif>
+		)
    </cfquery>
-  
  
-   <cfquery datasource="#variables.configBean.getDatasource()#" username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
+   <cfquery>
       Insert into tcontent (siteid,moduleid,parentid,contentid,contenthistid,type,subType,active,title,display,approved,isnav,forceSSL)
 	  values(
-	  '#arguments.bean.getsiteid()#',
+	  <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.bean.getsiteid()#">,
 	  '00000000000000000000000000000000003',
 	  '00000000000000000000000000000000END',
 	  '00000000000000000000000000000000003',
@@ -434,10 +501,10 @@ googleAPIKey,useDefaultSMTPServer,siteLocale, mailServerSMTPPort, mailServerPOPP
 	  0
 	)
    </cfquery>
-      <cfquery datasource="#variables.configBean.getDatasource()#" username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
+      <cfquery>
       Insert into tcontent (siteid,moduleid,parentid,contentid,contenthistid,type,subType,active,title,display,approved,isnav ,forceSSL,searchExclude)
 	  values(
-	  '#arguments.bean.getsiteid()#',
+	  <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.bean.getsiteid()#">,
 	  '00000000000000000000000000000000004',
 	  '00000000000000000000000000000000END',
 	  '00000000000000000000000000000000004',
@@ -453,12 +520,12 @@ googleAPIKey,useDefaultSMTPServer,siteLocale, mailServerSMTPPort, mailServerPOPP
 	  0
 	)
    </cfquery>
-   <cfquery datasource="#variables.configBean.getDatasource()#" username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
+   <cfquery>
       Insert into tcontent (siteid,moduleid,parentid,contentid,contenthistid,type,subType,active,title,menutitle,display,approved,isnav,
 	  template,orderno,lastupdate,lastupdateby,
 	  restricted,responseChart,displayTitle,isFeature,isLocked,NextN,inheritObjects,sortBy,sortDirection,forceSSL,searchExclude,path,created)
 	  values(
-	  '#arguments.bean.getsiteid()#',
+	  <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.bean.getsiteid()#">,
 	  '00000000000000000000000000000000000',
 	  '00000000000000000000000000000000END',
 	  '00000000000000000000000000000000001',
@@ -491,10 +558,10 @@ googleAPIKey,useDefaultSMTPServer,siteLocale, mailServerSMTPPort, mailServerPOPP
 	)
    </cfquery>
    
-      <cfquery datasource="#variables.configBean.getDatasource()#" username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
+      <cfquery>
       Insert into tcontent (siteid,moduleid,parentid,contentid,contenthistid,type,subType,active,title,display,approved,isnav ,forceSSL,searchExclude)
 	  values(
-	  '#arguments.bean.getsiteid()#',
+	  <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.bean.getsiteid()#">,
 	  '00000000000000000000000000000000006',
 	  '00000000000000000000000000000000END',
 	  '00000000000000000000000000000000006',
@@ -511,10 +578,10 @@ googleAPIKey,useDefaultSMTPServer,siteLocale, mailServerSMTPPort, mailServerPOPP
 	)
    </cfquery>
    
-   <cfquery datasource="#variables.configBean.getDatasource()#" username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
+   <cfquery>
       Insert into tcontent (siteid,moduleid,parentid,contentid,contenthistid,type,subType,active,title,display,approved,isnav ,forceSSL,searchExclude)
 	  values(
-	  '#arguments.bean.getsiteid()#',
+	  <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.bean.getsiteid()#">,
 	  '00000000000000000000000000000000000',
 	  '00000000000000000000000000000000END',
 	  '00000000000000000000000000000000000',
@@ -531,10 +598,10 @@ googleAPIKey,useDefaultSMTPServer,siteLocale, mailServerSMTPPort, mailServerPOPP
 	)
    </cfquery>
 
-	<cfquery datasource="#variables.configBean.getDatasource()#" username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
+	<cfquery>
       Insert into tcontent (siteid,moduleid,parentid,contentid,contenthistid,type,subType,active,title,display,approved,isnav ,forceSSL,searchExclude)
 	  values(
-	  '#arguments.bean.getsiteid()#',
+	  <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.bean.getsiteid()#">,
 	  '00000000000000000000000000000000008',
 	  '00000000000000000000000000000000END',
 	  '00000000000000000000000000000000008',
@@ -552,10 +619,10 @@ googleAPIKey,useDefaultSMTPServer,siteLocale, mailServerSMTPPort, mailServerPOPP
    </cfquery>
 	
 	   
-   <cfquery datasource="#variables.configBean.getDatasource()#" username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
+   <cfquery>
       Insert into tcontent (siteid,moduleid,parentid,contentid,contenthistid,type,subType,active,title,display,approved,isnav,forceSSL,searchExclude )
 	  values(
-	  '#arguments.bean.getsiteid()#',
+	  <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.bean.getsiteid()#">,
 	  '00000000000000000000000000000000005',
 	  '00000000000000000000000000000000END',
 	  '00000000000000000000000000000000005',
@@ -572,10 +639,10 @@ googleAPIKey,useDefaultSMTPServer,siteLocale, mailServerSMTPPort, mailServerPOPP
 	)
    </cfquery>
    
-   <cfquery datasource="#variables.configBean.getDatasource()#" username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
+   <cfquery>
       Insert into tcontent (siteid,moduleid,parentid,contentid,contenthistid,type,subType,active,title,display,approved,isnav ,forceSSL,searchExclude)
 	  values(
-	  '#arguments.bean.getsiteid()#',
+	  <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.bean.getsiteid()#">,
 	  '00000000000000000000000000000000009',
 	  '00000000000000000000000000000000END',
 	  '00000000000000000000000000000000009',
@@ -592,10 +659,10 @@ googleAPIKey,useDefaultSMTPServer,siteLocale, mailServerSMTPPort, mailServerPOPP
 	)
    </cfquery>
 
-   <cfquery datasource="#variables.configBean.getDatasource()#" username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
+   <cfquery>
       Insert into tcontent (siteid,moduleid,parentid,contentid,contenthistid,type,subType,active,title,display,approved,isnav ,forceSSL,searchExclude)
 	  values(
-	  '#arguments.bean.getsiteid()#',
+	  <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.bean.getsiteid()#">,
 	  '00000000000000000000000000000000010',
 	  '00000000000000000000000000000000END',
 	  '00000000000000000000000000000000010',
@@ -612,10 +679,10 @@ googleAPIKey,useDefaultSMTPServer,siteLocale, mailServerSMTPPort, mailServerPOPP
 	)
    </cfquery>
    
-      <cfquery datasource="#variables.configBean.getDatasource()#" username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
+      <cfquery>
       Insert into tcontent (siteid,moduleid,parentid,contentid,contenthistid,type,subType,active,title,display,approved,isnav,forceSSL,searchExclude )
 	  values(
-	  '#arguments.bean.getsiteid()#',
+	  <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.bean.getsiteid()#">,
 	  '00000000000000000000000000000000011',
 	  '00000000000000000000000000000000END',
 	  '00000000000000000000000000000000011',
@@ -633,10 +700,10 @@ googleAPIKey,useDefaultSMTPServer,siteLocale, mailServerSMTPPort, mailServerPOPP
    </cfquery>
    
    
-   <cfquery datasource="#variables.configBean.getDatasource()#" username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
+   <cfquery>
       Insert into tcontent (siteid,moduleid,parentid,contentid,contenthistid,type,subType,active,title,display,approved,isnav ,forceSSL,searchExclude)
 	  values(
-	  '#arguments.bean.getsiteid()#',
+	  <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.bean.getsiteid()#">,
 	  '00000000000000000000000000000000012',
 	  '00000000000000000000000000000000END',
 	  '00000000000000000000000000000000012',
@@ -653,10 +720,10 @@ googleAPIKey,useDefaultSMTPServer,siteLocale, mailServerSMTPPort, mailServerPOPP
 	)
    </cfquery>
 
-	<cfquery datasource="#variables.configBean.getDatasource()#" username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
+	<cfquery>
       Insert into tcontent (siteid,moduleid,parentid,contentid,contenthistid,type,subType,active,title,display,approved,isnav ,forceSSL,searchExclude)
 	  values(
-	  '#arguments.bean.getsiteid()#',
+	  <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.bean.getsiteid()#">,
 	  '00000000000000000000000000000000014',
 	  '00000000000000000000000000000000END',
 	  '00000000000000000000000000000000014',
@@ -672,38 +739,38 @@ googleAPIKey,useDefaultSMTPServer,siteLocale, mailServerSMTPPort, mailServerPOPP
 	  0
 	)
    </cfquery>
-   
-   <cfquery datasource="#variables.configBean.getReadOnlyDatasource()#" username="#variables.configBean.getReadOnlyDbUsername()#" password="#variables.configBean.getReadOnlyDbPassword()#" name="rsSystemObject">
+
+   <cfquery name="rsSystemObject">
       select * from tsystemobjects where siteid = 'default'
    	</cfquery>
 	
 	<cfloop query="rsSystemObject">
-		<cfquery datasource="#variables.configBean.getDatasource()#" username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
+		<cfquery>
 		  Insert into tsystemobjects (object,siteid,name,orderno)
 		  values(
-		  '#rsSystemObject.object#',
-		  '#arguments.bean.getsiteid()#',
-		  '#rsSystemObject.name#',
-		  #rsSystemObject.orderno#
-			)
+		  <cfqueryparam cfsqltype="cf_sql_varchar" value="#rsSystemObject.object#">,
+		  <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.bean.getsiteid()#">,
+		  <cfqueryparam cfsqltype="cf_sql_varchar" value="#rsSystemObject.name#">,
+		  <cfqueryparam cfsqltype="cf_sql_integer" value="#rsSystemObject.orderno#">
+		  )
 		</cfquery>
 	</cfloop>
 	
-	<cfquery datasource="#variables.configBean.getDatasource()#" username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
+	<cfquery>
       Insert into tmailinglist (mlid,name,lastupdate,siteid,ispurge,ispublic)
 	  values(
 	  '#createUUID()#',
-	  'Master Do Not Email List',
+	  <cfqueryparam cfsqltype="cf_sql_varchar" value="Please Remove Me from All Lists">,
 	  <cfqueryparam cfsqltype="cf_sql_timestamp" value="#now()#">,
-	  '#arguments.bean.getsiteid()#',
+	  <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.bean.getsiteid()#">,
 	  1,
 	  1
 	)
    	</cfquery>
 
- <cfquery  datasource="#variables.configBean.getDatasource()#" username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
+ <cfquery>
         INSERT INTO tusers  (UserID, s2, Fname, Lname, Password, Email, GroupName, Type, subType, ContactForm, LastUpdate, lastupdateby, lastupdatebyid, InActive, username,  perm, isPublic,
-		company,jobtitle,subscribe,siteid,website,notes,keepPrivate)
+		company,jobtitle,subscribe,siteid,website,notes,keepPrivate,created)
      VALUES(
          '#createUUID()#',
 		 0, 
@@ -725,10 +792,11 @@ googleAPIKey,useDefaultSMTPServer,siteLocale, mailServerSMTPPort, mailServerPOPP
 		  null,
 		  null, 
 		  0,
-		 '#arguments.bean.getSiteID()#',
+		 <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.bean.getsiteid()#">,
 		  null,
 		  null,
-		  0)
+		  0,
+		  <cfqueryparam cfsqltype="cf_sql_timestamp" value="#now()#">)
 		 
    </cfquery>
 

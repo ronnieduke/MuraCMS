@@ -46,14 +46,13 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 --->
 <cfcomponent extends="mura.iterator.queryIterator" output="false">
 
-<cfset variables.packageBy="active">
 <cfset variables.content="">
+<cfset variables.recordIDField="contenthistid">
 
 <cffunction name="init" access="public" output="false" returntype="any">
-	<cfargument name="packageBy" required="true" default="active">
 	<cfset super.init(argumentCollection=arguments)>
-	<cfset variables.packageBy=arguments.packageBy>
 	<cfset variables.content=getBean("contentNavBean")>
+
 	<cfreturn this />
 </cffunction>
 	
@@ -68,15 +67,17 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<cfthrow message="The records have not been set.">
 	</cfif>
 		
-	<cfset variables.content.set(item,variables.packageBy) />
+	<cfset variables.content.set(item,this) />
 	
 	<cfreturn variables.content>
 </cffunction>
 
-<cffunction name="setPackageBy" output="false" access="public">
-	<cfargument name="packageBy">
-	<cfset variables.packageBy=arguments.packageBy>
-	<cfreturn this>
+<cffunction name="getRecordIdField" access="public" output="false" returntype="any">
+		<cfif isdefined("variables.records.contenthistid")>
+			<cfreturn "contenthistid">
+		<cfelse>
+			<cfreturn "contentid">
+		</cfif>
 </cffunction>
 
 <cffunction name="buildQueryFromList" output="false" access="public">
@@ -97,57 +98,6 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfset variables.recordIndex = 0 />
 	<cfset variables.pageIndex = 1 />
 	<cfreturn this>
-</cffunction>
-
-<cffunction name="getRecordCount" access="public" output="false" returntype="numeric">
-		<cfset var recordCount = 0 />
-		<cfif structKeyExists(variables,"records")>
-			<cfif isQuery(variables.records)>
-				<cfset recordCount =variables.records.recordCount />
-			<cfelseif isArray(variables.records)>
-				<cfset recordCount= arrayLen(variables.records) />
-			</cfif>
-		</cfif>
-		<cfreturn recordCount />
-</cffunction>
-
-<cffunction name="setArray" access="public" output="false">
-	<cfargument name="array" type="any" required="true">
-	<cfargument name="maxRecordsPerPage" type="numeric" required="false">
-
-	<cfset variables.records = arguments.array />
-		
-	<cfif structKeyExists(arguments,"maxRecordsPerPage") and isNumeric(arguments.maxRecordsPerPage)>
-		<cfset variables.maxRecordsPerPage = arguments.maxRecordsPerPage />
-	<cfelse>
-		<cfset variables.maxRecordsPerPage = arrayLen(variables.records) />
-	</cfif>
-	<cfreturn this>
-</cffunction>
-	
-<cffunction name="getArray" output="false" returntype="any">
-	<cfset var array=arrayNew(1)>
-	<cfset var i=1>
-	
-	<cfif isArray(variables.records)>
-		<cfreturn variables.records>
-	<cfelseif isQuery(variables.records)>
-		<cfloop query="variables.records">
-			<cfset arrayAppend(array,queryRowToStruct(variables.records,variables.records.currentRow))>
-		</cfloop>
-	<cfelse>
-		<cfthrow message="The records have not been set.">
-	</cfif>
-</cffunction>
-
-<cffunction name="getQuery" output="false" returntype="any">
-	<cfif isQuery(variables.records)>
-		<cfreturn variables.records>
-	<cfelseif isArray(variables.records)>
-		<cfreturn getBean("utility").arrayToQuery(variables.records)>
-	<cfelse>
-		<cfthrow message="The records have not been set.">
-	</cfif>
 </cffunction>
 
 </cfcomponent>

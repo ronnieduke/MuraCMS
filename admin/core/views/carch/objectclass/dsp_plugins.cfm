@@ -51,19 +51,21 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cfset rc.rsPlugins = application.pluginManager.getDisplayObjectsBySiteID(siteID=rc.siteid, 
                                                                               modulesOnly=true)/>
 <cfoutput>
+<div class="control-group">
+	<div class="controls">
 	<select name="subClassSelector" 
-	        onchange="loadObjectClass('#rc.siteid#','plugins',this.value,'#rc.contentid#','#rc.parentid#','#rc.contenthistid#',0,0);" 
+	        onchange="siteManager.loadObjectClass('#rc.siteid#','plugins',this.value,'#rc.contentid#','#rc.parentid#','#rc.contenthistid#',0,0);" 
 	        class="dropdown">
 		<option value="">
 			#application.rbFactory.getKeyValue(session.rb, 'sitemanager.content.fields.selectplugin')#
 		</option>
 		<cfloop query="rc.rsPlugins">
 			<cfif application.permUtility.getModulePerm(rc.rsPlugins.moduleID, rc.siteid)>
-				<option value="#rc.rsPlugins.moduleID#" <cfif rc.rsPlugins.moduleID eq rc.subclassid>selected</cfif>>#HTMLEditFormat(rc.rsPlugins.title)#</option>
+				<option title="#esapiEncode('html_attr',rc.rsPlugins.title)#" value="#rc.rsPlugins.moduleID#" <cfif rc.rsPlugins.moduleID eq rc.subclassid>selected</cfif>>#esapiEncode('html',rc.rsPlugins.title)#</option>
 			</cfif>
 		</cfloop>
 	</select>
-	<br/>
+	</div>
 </cfoutput>
 
 <cfif len(rc.subclassid)>
@@ -111,8 +113,9 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 			)
 		</cfquery>
 		<cfoutput>
+		<div class="controls">
 			<select name="customObjectSelector" 
-			        onchange="loadObjectClass('#rc.siteid#','plugins',this.value,'#rc.contentid#','#rc.parentid#','#rc.contenthistid#',0,0);" 
+			        onchange="siteManager.loadObjectClass('#rc.siteid#','plugins',this.value,'#rc.contentid#','#rc.parentid#','#rc.contenthistid#',0,0);" 
 			        class="dropdown">
 				<option value="">
 					#application.rbFactory.getKeyValue(session.rb, 
@@ -120,11 +123,11 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 				</option>
 				<cfloop query="rs">
 					<cfif application.permUtility.getModulePerm(rs.moduleID, rc.siteid)>
-						<option value="#rs.moduleID#,#rs.objectID#" <cfif rs.objectID eq rc.objectID>selected</cfif>>#HTMLEditFormat(rs.name)#</option>
+						<option title="#esapiEncode('html_attr',rs.name)#" value="#rs.moduleID#,#rs.objectID#" <cfif rs.objectID eq rc.objectID>selected</cfif>>#esapiEncode('html',rs.name)#</option>
 					</cfif>
 				</cfloop>
 			</select>
-			<br/>
+			</div>
 		</cfoutput>
 	</cfif>
 	<cfif not len(customOutput)>
@@ -137,20 +140,24 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 			)
 		</cfquery>
 		<cfif rs.recordcount>
+			<div class="controls">
 			<cfoutput>
 				<select name="availableObjects" id="availableObjects" class="multiSelect" 
 				        size="#evaluate((application.settingsManager.getSite(rc.siteid).getcolumnCount() * 6)-4)#" 
 				        style="width:310px;">
 			</cfoutput>
 			<cfoutput query="rs">
-				<option value="{'object':'plugin','name':'#JSStringFormat('#rs.title# - #rs.name#')#','objectid':'#rs.objectID#'}">
+				<option value="{'object':'plugin','name':'#esapiEncode('javascript','#rs.title# - #rs.name#')#','objectid':'#rs.objectID#'}">
 					#rs.name#					
 				</option>
 			</cfoutput>
 			<cfoutput>
-				</select></cfoutput>
+				</select>
+			</cfoutput>
+			</div>
 		</cfif>
 	<cfelse>
 		<cfoutput>#customOutput#</cfoutput>
 	</cfif>
 </cfif>
+</div>

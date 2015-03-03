@@ -44,29 +44,33 @@ For clarity, if you create a modified version of Mura CMS, you are not obligated
 modified version; it is your choice whether to do so, or to make such modified version available under the GNU General Public License 
 version 2 without this exception.  You may, if you choose, apply this exception to your own modified versions of Mura CMS.
 --->
-<cfcomponent extends="mura.bean.beanExtendable" output="false">
+<cfcomponent extends="mura.bean.beanExtendable" entityName="address" table="tuseraddresses" output="false">
 
-<cfproperty name="addressID" type="string" default="" required="true" />
-<cfproperty name="userID" type="string" default="" required="true" />
-<cfproperty name="siteID" type="string" default="" required="true" />
-<cfproperty name="isPrimary" type="numeric" default="0" required="true" />
-<cfproperty name="address1" type="string" default="" required="true" />
-<cfproperty name="address2" type="string" default="" required="true" />
-<cfproperty name="fax" type="string" default="" required="true" />
-<cfproperty name="city" type="string" default="" required="true" />
-<cfproperty name="state" type="string" default="" required="true" />
-<cfproperty name="zip" type="string" default="" required="true" />
-<cfproperty name="phone" type="string" default="" required="true" />
-<cfproperty name="country" type="string" default="" required="true" />
-<cfproperty name="addressName" type="string" default="" required="true" />
-<cfproperty name="addressEmail" type="string" default="" required="true" />
-<cfproperty name="addressNotes" type="string" default="" required="true" />
-<cfproperty name="addressURL" type="string" default="" required="true" />
-<cfproperty name="hours" type="string" default="" required="true" />
-<cfproperty name="longitude" type="numeric" default="0" required="true" />
-<cfproperty name="latitude" type="numeric" default="0" required="true" />
-<cfproperty name="extendDataTable" type="string" default="tclassextenddatauseractivity" required="true" />
-<cfproperty name="isNew" type="numeric" default="0" required="true" />
+<cfproperty name="addressID" fieldtype="id" type="string" default="" />
+<cfproperty name="userID" type="string" default="" />
+<cfproperty name="siteID" type="string" default="" />
+<cfproperty name="isPrimary" type="numeric" default="0" />
+<cfproperty name="address1" type="string" default="" />
+<cfproperty name="address2" type="string" default="" />
+<cfproperty name="fax" type="string" default="" />
+<cfproperty name="city" type="string" default="" />
+<cfproperty name="state" type="string" default="" />
+<cfproperty name="zip" type="string" default="" />
+<cfproperty name="phone" type="string" default="" />
+<cfproperty name="country" type="string" default="" />
+<cfproperty name="addressName" type="string" default="" />
+<cfproperty name="addressEmail" type="string" default="" />
+<cfproperty name="addressNotes" type="string" default="" />
+<cfproperty name="addressURL" type="string" default="" />
+<cfproperty name="hours" type="string" default="" />
+<cfproperty name="longitude" type="numeric" default="0" />
+<cfproperty name="latitude" type="numeric" default="0" />
+<cfproperty name="extendDataTable" type="string" default="tclassextenddatauseractivity" />
+<cfproperty name="isNew" type="numeric" default="0" />
+
+<cfset variables.primaryKey = 'addressid'>
+<cfset variables.entityName = 'address'>
+<cfset variables.instanceName= 'addressname'>
 
 <cffunction name="init" returntype="any" output="false" access="public">
 	
@@ -120,7 +124,16 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 </cffunction>
 
 <cffunction name="set" returnType="any" output="false" access="public">
-	<cfargument name="args" type="any" required="true">
+	<cfargument name="property" required="true">
+    <cfargument name="propertyValue">
+    
+    <cfif not isDefined('arguments.args')>
+	    <cfif isSimpleValue(arguments.property)>
+	      <cfreturn setValue(argumentCollection=arguments)>
+	    </cfif>
+
+	    <cfset arguments.args=arguments.property>
+    </cfif>
 
 	<cfset var prop=""/>
 		
@@ -212,7 +225,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<cfset extErrors=variables.configBean.getClassExtensionManager().validateExtendedData(getAllValues())>
 	</cfif>
 	
-	<cfset variables.instance.errors=structnew() />
+	<cfset super.validate()>
 		
 	<cfif not structIsEmpty(extErrors)>
 		<cfset structAppend(variables.instance.errors,extErrors)>
@@ -246,7 +259,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 
 <cffunction name="save" output="false" access="public" returntype="any">
 	<cfset var rs="">
-	<cfquery name="rs" datasource="#variables.configBean.getReadOnlyDatasource()#" username="#variables.configBean.getReadOnlyDbUsername()#" password="#variables.configBean.getReadOnlyDbPassword()#">
+	<cfquery attributeCollection="#variables.configBean.getReadOnlyQRYAttrs(name='rs')#">
 	select addressID from tuseraddresses where addressID=<cfqueryparam cfsqltype="cf_sql_varchar" value="#getAddressID()#">
 	</cfquery>
 	
@@ -265,5 +278,9 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 
 <cffunction name="clone" output="false">
 	<cfreturn getBean("addressBean").setAllValues(structCopy(getAllValues()))>
+</cffunction>
+
+<cffunction name="getPrimaryKey" output="false">
+	<cfreturn "addressID">
 </cffunction>
 </cfcomponent>

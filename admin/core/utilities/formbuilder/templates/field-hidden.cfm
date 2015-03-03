@@ -48,9 +48,9 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cfoutput><span>
 		<div class="mura-tb-form">
 			<div class="mura-tb-header hiddenfield">
-				<h3><!---#mmRBF.getKeyValue(session.rb,'formbuilder.field.textfield')#:---><span id="mura-tb-form-label"></span></h3>
+				<h2><!---#mmRBF.getKeyValue(session.rb,'formbuilder.field.textfield')#:---><span id="mura-tb-form-label"></span></h2>
 				<ul class="mura-tb-nav-utility">
-					<li><div class="ui-button" id="button-trash" title="#mmRBF.getKeyValue(session.rb,'formbuilder.delete')#"></div></li>
+					<li><div id="button-trash" title="#mmRBF.getKeyValue(session.rb,'formbuilder.delete')#"></div></li>
 				</ul>
 			</div>
 			
@@ -75,6 +75,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 							<label for="value">#mmRBF.getKeyValue(session.rb,'formbuilder.field.value')#</label>
 							<input class="text long" type="text" name="value" value="" maxlength="250" />
 						</li>
+						#application.serviceFactory.getBean('$').init(session.siteid).renderEvent('onFormElementBasicTabRender')#
 					</ul>
 			</div>		
 		</div>

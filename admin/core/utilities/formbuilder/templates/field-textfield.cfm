@@ -47,9 +47,9 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cfoutput><span>
 		<div class="mura-tb-form">
 			<div class="mura-tb-header textfield">
-				<h3><!---#mmRBF.getKeyValue(session.rb,'formbuilder.field.textfield')#:---><span id="mura-tb-form-label"></span></h3>
+				<h2><!---#mmRBF.getKeyValue(session.rb,'formbuilder.field.textfield')#:---><span id="mura-tb-form-label"></span></h2>
 				<ul class="mura-tb-nav-utility">
-					<li><div class="ui-button" id="button-trash" title="#mmRBF.getKeyValue(session.rb,'formbuilder.delete')#"></div></li>
+					<li><div id="button-trash" title="#mmRBF.getKeyValue(session.rb,'formbuilder.delete')#"></div></li>
 				</ul>
 			</div>
 			
@@ -76,6 +76,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 							<label for="value">#mmRBF.getKeyValue(session.rb,'formbuilder.field.value')#</label>
 							<input class="text long" type="text" name="value" value="" maxlength="250" />
 						</li>
+						#application.serviceFactory.getBean('$').init(session.siteid).renderEvent('onFormElementBasicTabRender')#
 					</ul>
 			</div>
 			
@@ -92,6 +93,14 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 						<li>
 							<label for="cssclass">#mmRBF.getKeyValue(session.rb,'formbuilder.field.cssclass')#</label>
 							<input class="text " type="text" name="cssclass" value="" maxlength="50" data-required='false' />
+						</li>
+						<li>
+							<label for="wrappercssclass">#mmRBF.getKeyValue(session.rb,'formbuilder.field.wrappercssclass')#</label>
+							<input class="text " type="text" name="wrappercssclass" value="" maxlength="50" data-required='false' />
+						</li>
+						<li>
+							<label for="placeholder">#mmRBF.getKeyValue(session.rb,'formbuilder.field.placeholder')#</label>
+							<input class="text " type="text" name="placeholder" value="" maxlength="255" data-required='false' />
 						</li>
 						<li>
 							<label for="tooltip">#mmRBF.getKeyValue(session.rb,'formbuilder.field.tooltip')#</label>
@@ -114,7 +123,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 						</li>
 						<li>
 							<label for="validateregex">#mmRBF.getKeyValue(session.rb,'formbuilder.field.validateregex')#</label>
-							<input class="text long" type="text" name="validateregex" value="" maxlength="250" />
+							<input class="text long" type="text" name="validateregex" value="" maxlength="350" />
 						</li>
 						<li>
 							<label for="validatemessage">#mmRBF.getKeyValue(session.rb,'formbuilder.field.validatemessage')#</label>

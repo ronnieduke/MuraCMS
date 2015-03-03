@@ -45,33 +45,90 @@ modified version; it is your choice whether to do so, or to make such modified v
 version 2 without this exception.  You may, if you choose, apply this exception to your own modified versions of Mura CMS.
 --->
 <cfparam name="local" default="#structNew()#">
+<cfparam name="application.setupComplete" default="false">
+<cfparam name="application.appInitialized" default="false">
+<cfparam name="application.instanceID" default="#createUUID()#" />
+<cfheader name="Generator" value="Mura CMS" />
+<cfprocessingdirective pageencoding="utf-8"/>
+<cfset setEncoding("url", "utf-8")>
+<cfset setEncoding("form", "utf-8")> 
 
-<cfif ( NOT structKeyExists( application, "setupComplete" ) or not application.appInitialized or structKeyExists(url,application.appReloadKey)) and isDefined("onApplicationStart")>
-	<cfset onApplicationStart()>
+<cfif left(server.coldfusion.productversion,5) eq "9,0,0" or listFirst(server.coldfusion.productversion) lt 9>
+	<cfoutput>Mura CMS requires Adobe Coldfusion 9.0.1 or greater compatibility</cfoutput>
+	<cfabort>
+</cfif>
+
+<!--- Double check that the application has started properly.
+If it has not, set application.appInitialized=false. --->
+<cftry>
+	<cfif not (
+			structKeyExists(application.settingsManager,'validate') 
+			and application.settingsManager.validate()
+			and structKeyExists(application.contentManager,'validate') 
+			and application.contentManager.validate()
+			and application.serviceFactory.containsBean('contentManager') 
+			and isStruct(application.configBean.getAllValues())
+		)>
+		<cfset application.appInitialized=false>
+		<cfset application.broadcastInit=false/>
+	</cfif>
+	<cfset application.clusterManager.runCommands()>
+	<cfif not application.appInitialized>
+		<cfset request.muraAppreloaded=false>
+	</cfif>
+	<cfcatch>
+		<cfset application.appInitialized=false>
+		<cfset request.muraAppreloaded=false>
+		<cfset application.broadcastInit=false/>
+	</cfcatch>
+</cftry>
+
+<cfif isDefined("onApplicationStart") >
+	<cfif (
+			not application.setupComplete
+		OR
+		(
+			not request.muraAppreloaded
+			and 
+				( 
+					not application.appInitialized 
+					or structKeyExists(url,application.appReloadKey)
+				)
+		)
+	)
+	>
+		<cflock name="appInitBlock#application.instanceID#" type="exclusive" timeout="200">
+			<!--- Since the request may have had to wait twice, this code still needs to run --->
+			<cfif (not application.appInitialized or structKeyExists(url,application.appReloadKey))>
+				<cfinclude template="onApplicationStart_include.cfm">
+				<cfif isdefined("setupApplication")>
+					<cfset setupApplication()>
+				</cfif>
+			</cfif>
+		</cflock>
+	</cfif>
+
+	<cfif not application.setupComplete>
+		<cfset renderSetup = true />
+		<!--- go to the index.cfm page (setup) --->
+		<cfinclude template="/muraWRM/config/setup/index.cfm">	
+		<cfabort>
+	</cfif>
 </cfif>
 
 <cfset application.userManager.setUserStructDefaults()>
 
-<cfif not isDefined("session.mura.showTrace")>
+<cfif isDefined("url.showTrace") and isBoolean(url.showTrace)>
+	<cfset session.mura.showTrace=url.showTrace>
+<cfelseif not isDefined("session.mura.showTrace")>
 	<cfset session.mura.showTrace=false>
 </cfif>
+
+<cfset request.muraShowTrace=session.mura.showTrace>
 
 <cfif not isDefined("application.cfstatic")>
 	<cfset application.cfstatic=structNew()>
 </cfif>
-
-<cfprocessingdirective pageencoding="utf-8"/>
-<cfsetting requestTimeout = "1000">
-
-<cfif not StructKeyExists(cookie, 'userid')>
-	  <cfcookie name="userid" expires="never" value="">
-</cfif>
-
-<cfif isDefined("url.showTrace") and isBoolean(url.showTrace)>
-	<cfset session.mura.showTrace=url.showTrace>
-</cfif>
-
-<cfset request.muraShowTrace=session.mura.showTrace>
 	
 <!--- Making sure that session is valid --->
 <cftry>
@@ -83,22 +140,16 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		
 		<cfset variables.tempcookieuserID=cookie.userID>
 		<cfset application.loginManager.logout()>
-		<cfcookie name="userid" expires="never" value="#variables.tempcookieuserID#">	
 	</cfif>
 </cfif>
 <cfcatch>
 	<cfset application.loginManager.logout()>
-	<cfcookie name="userid" expires="never" value="">
 </cfcatch>
 </cftry>
 
 <!---settings.custom.vars.cfm reference is for backwards compatability --->
 <cfif fileExists(expandPath("/muraWRM/config/settings.custom.vars.cfm"))>
 	<cfinclude template="/muraWRM/config/settings.custom.vars.cfm">
-</cfif>
-
-<cfif not StructKeyExists(cookie, 'userHash')>
-   <cfcookie name="userHash" expires="never" value="">
 </cfif>
 	
 <!---<cfif not IsDefined("Cookie.CFID") AND IsDefined("Session.CFID")>
@@ -107,38 +158,38 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 </cfif>
 --->
 <cftry>
-	<cfif cookie.userid eq '' and structKeyExists(session,"rememberMe") and session.rememberMe eq 1 and session.mura.isLoggedIn>
-	<cfcookie name="userid" value="#session.mura.userID#" expires="never" />
-	<cfcookie name="userHash" value="#encrypt(application.userManager.readUserHash(session.mura.userID).userHash,application.configBean.getEncryptionKey(),'cfmx_compat','hex')#" expires="never" />
+	<cfif (not isdefined('cookie.userid') or cookie.userid eq '') and structKeyExists(session,"rememberMe") and session.rememberMe eq 1 and session.mura.isLoggedIn>
+	<cfcookie name="userid" value="#session.mura.userID#" expires="never" httponly="true" secure="#application.configBean.getValue(property='secureCookies',defaultValue=false)#"/>
+	<cfcookie name="userHash" value="#encrypt(application.userManager.readUserHash(session.mura.userID).userHash,application.userManager.readUserPassword(cookie.userid),'cfmx_compat','hex')#" expires="never" httponly="true" secure="#application.configBean.getSecureCookies()#"/>
 	</cfif>
 <cfcatch>
-	<cfcookie name="userid" value="" expires="never" />
-	<cfcookie name="userHash" value="" expires="never" />
+	<cfset structDelete(cookie,"userid")>
+	<cfset structDelete(cookie,"userhash")>
 </cfcatch>
 </cftry>
 
 <cftry>
-	<cfif cookie.userid neq '' and not session.mura.isLoggedIn>
-	<cfset application.loginManager.rememberMe(cookie.userid,decrypt(cookie.userHash,application.configBean.getEncryptionKey(),"cfmx_compat",'hex')) />
+	<cfif isDefined('cookie.userid') and cookie.userid neq '' and not session.mura.isLoggedIn>
+	<cfset application.loginManager.rememberMe(cookie.userid,decrypt(cookie.userHash,application.userManager.readUserPassword(cookie.userid),"cfmx_compat",'hex')) />
 	</cfif>
 <cfcatch></cfcatch>
 </cftry>
 
 <cftry>
-	<cfif cookie.userid neq '' and structKeyExists(session,"rememberMe") and session.rememberMe eq 0 and session.mura.isLoggedIn>
-	<cfcookie name="userid" value="" expires="never" />
-	<cfcookie name="userHash" value="" expires="never" />
+	<cfif isDefined('cookie.userid') and cookie.userid neq '' and structKeyExists(session,"rememberMe") and session.rememberMe eq 0 and session.mura.isLoggedIn>
+	<cfset structDelete(cookie,"userid")>
+	<cfset structDelete(cookie,"userhash")>
 	</cfif>
 <cfcatch>
-	<cfcookie name="userid" value="" expires="never" />
-	<cfcookie name="userHash" value="" expires="never" />
+	<cfset structDelete(cookie,"userid")>
+	<cfset structDelete(cookie,"userhash")>
 </cfcatch>
 </cftry>
 
 <cftry>
 	<cfif not structKeyExists(cookie,"originalURLToken")>
 	<cfparam name="session.trackingID" default="#application.utility.getUUID()#">
-	<cfcookie name="originalURLToken" value="#session.trackingID#" expires="never" />
+	<cfcookie name="originalURLToken" value="#session.trackingID#" expires="never" httponly="true" secure="#application.configBean.getSecureCookies()#"/>
 	</cfif>
 <cfcatch></cfcatch>
 </cftry>
@@ -158,47 +209,55 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfset request.remoteAddr = CGI.REMOTE_ADDR>
 </cfif>
 
-<cfif isDefined("form.mobileFormat") and isBoolean(form.mobileFormat)>
-	<cfcookie name="mobileFormat" value="#form.mobileFormat#" />	
-<cfelseif isDefined("url.mobileFormat") and isBoolean(url.mobileFormat)>
-	<cfcookie name="mobileFormat" value="#url.mobileFormat#" />
-</cfif>
+<cfif not isdefined('url.muraadminpreview')>
+	<cfif isDefined("form.mobileFormat") and isBoolean(form.mobileFormat)>
+		<cfcookie name="mobileFormat" value="#form.mobileFormat#" httponly="true" secure="#application.configBean.getSecureCookies()#"/>	
+	<cfelseif isDefined("url.mobileFormat") and isBoolean(url.mobileFormat)>
+		<cfcookie name="mobileFormat" value="#url.mobileFormat#" httponly="true" secure="#application.configBean.getSecureCookies()#"/>
+	</cfif>
 
-<cfif not isdefined("cookie.mobileFormat")>
-	<cfif 
-		findNoCase("iphone",CGI.HTTP_USER_AGENT)
-		or
-			(
-				findNoCase("mobile",CGI.HTTP_USER_AGENT)
-				and not reFindNoCase("tablet|ipad|xoom",CGI.HTTP_USER_AGENT)
-			)>
-		<cfcookie name="mobileFormat" value="true" />
-	<cfelse>	
-		<cfcookie name="mobileFormat" value="false" />
-	</cfif>	
-</cfif>
+	<cfif not isdefined("cookie.mobileFormat")>
+		<cfset application.pluginManager.executeScripts('onGlobalMobileDetection')>
 
-<cfset request.muraMobileRequest=cookie.mobileFormat>
+		<cfif not isdefined("cookie.mobileFormat")>
+			<cfif 
+				findNoCase("iphone",CGI.HTTP_USER_AGENT)
+				or
+					(
+						findNoCase("mobile",CGI.HTTP_USER_AGENT)
+						and not reFindNoCase("tablet|ipad|xoom",CGI.HTTP_USER_AGENT)
+					)>
+				<cfcookie name="mobileFormat" value="true" httponly="true" secure="#application.configBean.getSecureCookies()#"/>
+			<cfelse>	
+				<cfcookie name="mobileFormat" value="false" httponly="true" secure="#application.configBean.getSecureCookies()#" />
+			</cfif>	
+		</cfif>
+	</cfif>
+
+	<cfif not isBoolean(cookie.mobileFormat)>
+		<cfcookie name="mobileFormat" value="false" httponly="true" secure="#application.configBean.getSecureCookies()#"/>
+	</cfif>
+
+	<cfset request.muraMobileRequest=cookie.mobileFormat>
+<cfelse>
+	<cfparam name="url.mobileFormat" default="false">
+	<cfset request.muraMobileRequest=url.mobileFormat>
+</cfif>
 
 <cfif not request.hasCFApplicationCFM and not fileExists("#expandPath('/muraWRM/config')#/cfapplication.cfm")>
+	<cfset variables.tracePoint=initTracePoint("Writing config/cfapplication.cfm")>
 	<cfset application.serviceFactory.getBean("fileWriter").writeFile(file="#expandPath('/muraWRM/config')#/cfapplication.cfm", output='<!--- Add Custom Application.cfc Vars Here --->')>	
+	<cfset commitTracePoint(variables.tracePoint)>
 </cfif>
 
-<cfif isDefined("application.changesetManager") and not 
-	(
-		findNoCase("MuraProxy.cfc",cgi.script_name)
-		and isDefined("url.method")
-		and (
-				findNoCase("purge",url.method)
-				or 
-				url.method eq "reload"
-			)
-	)>
-	<cfset application.changesetManager.publishBySchedule()>
-</cfif>
+<cfparam name="session.mura.requestcount" default="0">
+<cfset session.mura.requestcount=session.mura.requestcount+1>
 
+<cfparam name="session.mura.csrfsecretkey" default="#createUUID()#">
+<cfparam name="session.mura.csrfusedtokens" default="#structNew()#">
 
 <cfif structKeyExists(request,"doMuraGlobalSessionStart")>
+	<cfset application.utility.setSessionCookies()>
 	<cfset application.pluginManager.executeScripts('onGlobalSessionStart')>
 </cfif>
 <cfset application.pluginManager.executeScripts('onGlobalRequestStart')>

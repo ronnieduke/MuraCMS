@@ -50,19 +50,31 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 
 <cffunction name="init" returntype="any" access="public" output="false">
 	<cfargument name="data"  type="any" default="#structNew()#">
+	<cfargument name="$">
+
+	<cfif isStruct(arguments.data)>
+		<cfset variables.event=arguments.data />
+	</cfif>
 	
-	<cfset variables.event=arguments.data />
-	<cfif isdefined("form")><cfset structAppend(variables.event,form,false)/></cfif>
+	<cfif isdefined("form")>
+		<cfset structAppend(variables.event,form,false)/>
+	</cfif>
+	
 	<cfset structAppend(variables.event,url,false)/>
+	
+	<cfif structKeyExists(arguments,"$")>
+		<cfset setValue("MuraScope",arguments.$)>
+	<cfelse>
+		<cfset setValue("MuraScope",createObject("component","mura.MuraScope"))>
+	</cfif>
+	
+	<cfset getValue('MuraScope').setEvent(this)>
 	
 	<cfif len(getValue('siteid')) and application.settingsManager.siteExists(getValue('siteid'))>
 		<cfset loadSiteRelatedObjects()/>
 	<cfelse>
 		<cfset setValue("contentRenderer",getBean('contentRenderer'))>
 	</cfif>
-	
-	<cfset setValue("MuraScope",createObject("component","mura.MuraScope"))>
-	<cfset getValue('MuraScope').setEvent(this)>
 	
 	<cfreturn this />
 </cffunction>
@@ -73,6 +85,12 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	
 	<cfset variables.event["#arguments.property#"]=arguments.propertyValue />
 	<cfreturn this>
+</cffunction>
+
+<cffunction name="set" output="false">
+	<cfargument name="property"  type="string" required="true">
+	<cfargument name="defaultValue">
+	<cfreturn setValue(argumentCollection=arguments)>
 </cffunction>
 
 <cffunction name="getValue" returntype="any" access="public" output="false">
@@ -88,6 +106,12 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<cfreturn "" />
 	</cfif>
 
+</cffunction>
+
+<cffunction name="get" output="false">
+	<cfargument name="property"  type="string" required="true">
+	<cfargument name="defaultValue">
+	<cfreturn getValue(argumentCollection=arguments)>
 </cffunction>
 
 <cffunction name="valueExists" returntype="any" access="public" output="false">
@@ -141,8 +165,8 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfreturn getValue('contentRenderer') />	
 </cffunction>
 
-<cffunction name="getThemeRenderer" returntype="any" access="public" output="false">
-	<cfreturn getValue('themeRenderer') />	
+<cffunction name="getThemeRenderer" returntype="any" access="public" output="false" hint="deprecated: use getContentRenderer()">
+	<cfreturn getContentRenderer() />	
 </cffunction> 
 
 <cffunction name="getSite" returntype="any" access="public" output="false">
@@ -154,7 +178,12 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 </cffunction>
 
 <cffunction name="getServiceFactory" returntype="any" access="public" output="false">
-	<cfreturn application.serviceFactory />	
+	<cfif isDefined('application') and structKeyExists(application,'serviceFactory')>
+		<cfreturn application.serviceFactory />
+	<cfelseif structKeyExists(variables,'applicationScope')><!--- in case this is called in the onRequestEnd() --->
+		<cfreturn variables.applicationScope />
+	</cfif>
+	
 </cffunction>
 
 <cffunction name="getMuraScope" returntype="any" access="public" output="false">
@@ -177,22 +206,13 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 </cffunction>
 
 <cffunction name="loadSiteRelatedObjects" returntype="any" access="public" output="false">
-	<cfset var localHandler="">
-	
 	<cfif not valueExists("HandlerFactory")>
 		<cfset setValue('HandlerFactory',application.pluginManager.getStandardEventFactory(getValue('siteid')))>
 	</cfif>
 	<cfif not valueExists("contentRenderer")>
-		<cfset setValue("contentRenderer",createObject("component","#application.settingsManager.getSite(getValue('siteid')).getAssetMap()#.includes.contentRenderer").init(event=this,$=getValue('MuraScope'),mura=getValue('MuraScope')))>
+		<cfset getBean('settingsManager').getSite(getValue('siteID')).getContentRenderer(getValue('MuraScope'))>
 	</cfif>
-	<cfif not valueExists("themeRenderer") and fileExists(expandPath(getSite().getThemeIncludePath()) & "/contentRenderer.cfc")>
-		<cfset setValue("themeRenderer",createObject("component","#getSite().getThemeAssetMap()#.contentRenderer").init(event=this,$=getValue('MuraScope'),mura=getValue('MuraScope')))>
-	</cfif>	
-	<cfif not valueExists("localHandler") and fileExists(expandPath("/#application.configBean.getWebRootMap()#") & "/#getValue('siteid')#/includes/eventHandler.cfc")>
-		<cfset localHandler=createObject("component","#application.configBean.getWebRootMap()#.#getValue('siteid')#.includes.eventHandler").init()>
-		<cfset localHandler._objectName="#application.configBean.getWebRootMap()#.#getValue('siteid')#.includes.eventHandler">
-		<cfset setValue("localHandler",localHandler)>
-	</cfif>
+	<cfset setValue('localHandler',application.settingsManager.getSite(getValue('siteID')).getLocalHandler())>
 	
 	<cfreturn this>
 </cffunction>

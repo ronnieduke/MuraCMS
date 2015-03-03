@@ -1,4 +1,4 @@
-<!--- This file is part of Mura CMS.
+/*This file is part of Mura CMS.
 
 Mura CMS is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -43,350 +43,476 @@ requires distribution of source code.
 For clarity, if you create a modified version of Mura CMS, you are not obligated to grant this special exception for your 
 modified version; it is your choice whether to do so, or to make such modified version available under the GNU General Public License 
 version 2 without this exception.  You may, if you choose, apply this exception to your own modified versions of Mura CMS.
---->
-<cfcomponent extends="framework">
+*/
+component extends="framework" output="false" {
 
-	<cfsetting showdebugoutput="no">
-	
-	<cfinclude template="../config/applicationSettings.cfm">
-	
-	<cfif not hasMainMappings>
-		<!--- Try and include global mappings --->
-		<cfset canWriteMode=true>
-		<cfset canWriteMappings=true>
-		<cfset hasMappings=true>
-		
-		<cftry>
-			<cfinclude template="../config/mappings.cfm">
-			<cfcatch type="missingInclude">
-				<cfset hasMappings=false>
-			</cfcatch>
-		</cftry>
-		
-		<cfif not hasMappings>	
-			<cfinclude template="../config/buildMainMappings.cfm">
-		</cfif>
-		
-	</cfif>
-	
-	<cfif not hasPluginMappings>
-		<!--- Try and include plugin mappings --->
-		<cfset canWriteMode=true>
-		<cfset hasMappings=true>
-		<cfset canWriteMappings=true>
-		<cftry>
-			<cfinclude template="../plugins/mappings.cfm">
-			<cfcatch type="missingInclude">
-				<cfset hasMappings=false>
-			</cfcatch>
-		</cftry>
-		
-		<cfif not hasMappings>
-			<cfinclude template="../config/buildPluginMappings.cfm">
-		</cfif>
-		
-	</cfif>
-	
-	<cfif not hasPluginCFApplication>
-		<!--- Try and include plugin mappings --->
-		<cfset canWriteMode=true>
-		<cfset hasMappings=true>
-		<cfset canWriteMappings=true>
-		<cftry>
-			<cfinclude template="../plugins/cfapplication.cfm">
-			<cfcatch type="missingInclude">
-				<cfset hasMappings=false>
-			</cfcatch>
-		</cftry>
-		
-		<cfif not hasMappings>
-			<cfinclude template="../config/buildPluginCFApplication.cfm">
-		</cfif>
-		
-	</cfif>
-	
-	<cfset variables.framework=structNew()>
-	<cfset variables.framework.home = "home.redirect">
-	<cfset variables.framework.action="muraAction">
-	<cfset variables.framework.base="/muraWRM/admin/">
-	<cfset variables.framework.defaultSubsystem="core">
-	<cfset variables.framework.usingSubsystems=true>
-	<cfset variables.framework.applicationKey="muraAdmin">
-	<cfset variables.framework.siteWideLayoutSubsystem='common'>
+	include "../config/applicationSettings.cfm";
 
-	<cfif structKeyExists(form,"fuseaction")>
-		<cfset form.muraAction=form.fuseaction>
-	</cfif>
-
-	<cfif structKeyExists(url,"fuseaction")>
-		<cfset url.muraAction=url.fuseaction>
-	</cfif>
 	
-	<cffunction name="setupApplication" output="false">
-		<cfset var local = structNew() />
-		
-		<cfinclude template="../config/appcfc/onApplicationStart_include.cfm">
+	if(server.coldfusion.productname != 'ColdFusion Server'){
+		backportdir='';
+		include "../requirements/mura/backport/backport.cfm";
+	} else {
+		backportdir='../requirements/mura/backport/';
+		include "#backportdir#backport.cfm";
+	}
 	
-		<cfif not structKeyExists(application,"muraAdmin") or not hasBeanFactory()>
-			<cfscript>
-				variables.framework.cache = structNew();
-				variables.framework.cache.lastReload = now();
-				variables.framework.cache.controllers = structNew();
-				variables.framework.cache.services = structNew();
-				application[variables.framework.applicationKey] = variables.framework;
-				variables.framework.password=application.appreloadkey;
-				setBeanFactory( application.serviceFactory );
-			</cfscript>
-		</cfif>
+	if(not hasMainMappings){
+		//Try and include global mappings;
+		canWriteMode=true;
+		canWriteMappings=true;
+		hasMappings=true;
 		
-	</cffunction>
-	
-	<cffunction name="setupRequest" output="false">
-		
-		<cfset var siteCheck="">
-		<cfset var theParam="">
-		<cfset var temp="">
-		<cfset var page="">
-		<cfset var i="">
-		<cfset var site="">
-		<cfset var local = structNew() />
-		
-		<cfinclude template="../config/appcfc/onRequestStart_include.cfm">
-				
-		<cfif right(cgi.script_name, Len("index.cfm")) NEQ "index.cfm" and right(cgi.script_name, Len("error.cfm")) NEQ "error.cfm" AND right(cgi.script_name, 3) NEQ "cfc">
-			<cflocation url="index.cfm" addtoken="false">
-		</cfif>	
-
-		<cfscript>
-			StructAppend(request.context, url, "no");
-			StructAppend(request.context, form, "no");
-			
-			if (IsDefined("request.muraGlobalEvent")){
-				StructAppend(request, request.muraGlobalEvent.getAllValues(), "no");
-				StructDelete(request,"muraGlobalEvent");	
+		try{
+			include "../config/mappings.cfm";
+		}
+		catch(any e){
+			if(e.type eq 'missingInclude'){
+				hasMappings=false;
 			}
-		</cfscript>
+		}
 		
-		<cfparam name="request.context.moduleid" default="">
-		<cfparam name="request.context.siteid" default="">
-		<cfparam name="request.context.muraAction" default="">
-		<cfparam name="request.context.layout" default=""/>
-		<cfparam name="request.context.activetab" default="0"/>
-		<cfparam name="request.context.activepanel" default="0"/>
-		<cfparam name="request.context.ajax" default="">
-		<cfparam name="request.context.rb" default="">
-		<cfparam name="request.context.closeCompactDisplay" default="false">
-		<cfparam name="request.context.compactDisplay" default="false">
-		<cfparam name="session.siteid" default="">
-		<cfparam name="session.keywords" default="">
-		<cfparam name="cookie.rb" default="">
+		if(not hasMappings){
+			include "../config/buildMainMappings.cfm";
+		}
+		
+	}
 	
-		<cfif len(request.context.rb)>
-			<cfset session.rb=request.context.rb>
-			<cfcookie name="rb" value="#session.rb#" expires="never" />
-		</cfif>
+	if(not hasPluginMappings){
+		//Try and include plugin mappings
+		canWriteMode=true;
+		hasMappings=true;
+		canWriteMappings=true;
+		try{
+			include "../plugins/mappings.cfm";
+		}
+		catch(any e){
+			if(e.type eq 'missingInclude'){
+				hasMappings=false;
+			}
+		}
 		
-		<cfif not application.configBean.getSessionHistory()  or application.configBean.getSessionHistory() gte 30>
-			<cfparam name="session.dashboardSpan" default="30">
-		<cfelse>
-			<cfparam name="session.dashboardSpan" default="#application.configBean.getSessionHistory()#">
-		</cfif>
+		if(not hasMappings){
+			include "../config/buildPluginMappings.cfm";
+		}
 		
-		<cfif not application.configBean.getSessionHistory()  or application.configBean.getSessionHistory() gte 30>
-			<cfset session.dashboardSpan=30>
-		<cfelse>
-			<cfset session.dashboardSpan=application.configBean.getSessionHistory()>
-		</cfif>
+	}
+	
+	if(not hasPluginCFApplication){
+		//Try and include plugin mappings
+		canWriteMode=true;
+		hasMappings=true;
+		canWriteMappings=true;
+		try{
+			include "../plugins/cfapplication.cfm";
+		}
+		catch(any e){
+			if(e.type eq 'missingInclude'){
+				hasMappings=false;
+			}
+		}
 		
-		<cfif request.context.siteid neq '' and (session.siteid neq request.context.siteID)>
-			<cfset siteCheck=application.settingsManager.getSites()>
-			<cfif structKeyExists(siteCheck,request.context.siteID)>
-				<cfset session.siteid = request.context.siteid>
-				<cfset session.userFilesPath = "#application.configBean.getAssetPath()#/#request.context.siteid#/assets/">
-				<cfset session.topID="00000000000000000000000000000000001">
-				<cfset session.openSectionList="">
-			</cfif>
-		<cfelseif not len(session.siteID)>
-			<cfset session.siteID="default">
-			<cfset session.userFilesPath = "#application.configBean.getAssetPath()#/default/assets/">	
-			<cfset session.topID="00000000000000000000000000000000001">
-			<cfset session.openSectionList="">
-		</cfif>
+		if(not hasMappings){
+			include "../config/buildPluginCFApplication.cfm";
+		}
 		
-		<cfset application.rbFactory.resetSessionLocale()>
+	}
+
+	variables.framework=structNew();
+	variables.framework.home = "core:home.redirect";
+	variables.framework.action="muraAction";
+	variables.framework.base="/muraWRM/admin/";
+	variables.framework.defaultSubsystem="core";
+	variables.framework.usingSubsystems=true;
+	variables.framework.applicationKey="muraAdmin";
+	variables.framework.siteWideLayoutSubsystem='common';
+
+	if(structKeyExists(form,"fuseaction")){
+		form.muraAction=form.fuseaction;
+	}
+
+	if(structKeyExists(url,"fuseaction")){
+		url.muraAction=url.fuseaction;
+	}
+	
+	function setupApplication() output="false"{
+
+		param name="application.appInitialized" default=false;
 		
-		<cfif not structKeyExists(request.context,"siteid")>
-			<cfset request.context.siteID=session.siteID>
-		</cfif>
+		if(!application.appInitialized){
+			param name="application.instanceID" default=createUUID();
+			lock name="appInitBlock#application.instanceID#" type="exclusive" timeout="200" {
+				include "../config/appcfc/onApplicationStart_include.cfm";
+			}
+		}
+
+		if(not structKeyExists(application,"muraAdmin") or not hasBeanFactory()){
+			setupFrameworkDefaults();
+			setupRequestDefaults();
+			variables.framework.cache = structNew();
+			variables.framework.cache.lastReload = now();
+			variables.framework.cache.controllers = structNew();
+			variables.framework.cache.services = structNew();
+			application[variables.framework.applicationKey] = variables.framework;
+			variables.framework.password=application.appreloadkey;
+			setBeanFactory( application.serviceFactory );
+		}
 		
-		<cfset request.event=createObject("component", "mura.event").init(request.context)>
+	}
+
+	function onRequestStart() output="false"{
+
+		include "../config/appcfc/onRequestStart_include.cfm";
+
+		try{
+			if(not (structKeyExists(application.settingsManager,'validate') and application.settingsManager.validate() and isStruct(application.configBean.getAllValues()))){
+				application.appInitialized=false;
+			}
+		} catch(any e){
+			application.appInitialized=false;
+			request.muraAppreloaded=false;
+		} 
+
+		try{
+
+			if(application.appInitialized and isDefined('application.scriptProtectionFilter') and application.configBean.getScriptProtect()){
+
+				variables.remoteIPHeader=application.configBean.getValue("remoteIPHeader");
+				
+				if(len(variables.remoteIPHeader)){
+					try{
+						if(StructKeyExists(GetHttpRequestData().headers, variables.remoteIPHeader)){
+					    	request.remoteAddr = GetHttpRequestData().headers[remoteIPHeader];
+					   	} else {
+							request.remoteAddr = CGI.REMOTE_ADDR;
+					   	}
+					   }
+						catch(any e){
+							request.remoteAddr = CGI.REMOTE_ADDR;
+						}
+				} else {
+					request.remoteAddr = CGI.REMOTE_ADDR;
+				}
+
+				if(application.configBean.getScriptProtect()){
+
+					for(var u in url){
+						//url['#u#']=tempCanonicalize(url['#u#'],true,false);
+					}
+
+					if(isDefined("url")){
+						application.scriptProtectionFilter.scan(
+													object=url,
+													objectname="url",
+													ipAddress=request.remoteAddr,
+													useTagFilter=true,
+													useWordFilter=true);
+					}
+
+					for(var f in form){
+						//form['#f#']=tempCanonicalize(form['#f#'],true,false);
+					}
+
+					if(isDefined("form")){
+						application.scriptProtectionFilter.scan(
+													object=form,
+													objectname="form",
+													ipAddress=request.remoteAddr,
+													useTagFilter=true,
+													useWordFilter=true);
+					}
+					try{	
+						if(isDefined("cgi")){
+							application.scriptProtectionFilter.scan(
+														object=cgi,
+														objectname="cgi",
+														ipAddress=request.remoteAddr,
+														useTagFilter=true,
+														useWordFilter=true,
+														fixValues=false);
+						}
+
+						for(var c in cookie){
+							//cookie['#c#']=tempCanonicalize(cookie['#c#'],true,false);		
+						}
+
+						if(isDefined("cookie")){
+							application.scriptProtectionFilter.scan(
+														object=cookie,
+														objectname="cookie",
+														ipAddress=request.remoteAddr,
+														useTagFilter=true,
+														useWordFilter=true,
+														fixValues=false);
+						}
+					} catch(any e){}
+						
+				}
+				
+			}
+		} catch(any e){}
+
+		super.onRequestStart(argumentCollection=arguments);
+	}
+
+	function setupRequest() output="false"{
 		
-		<cfif request.context.moduleid neq ''>
-			<cfset session.moduleid = request.context.moduleid>
-		</cfif>
+		var siteCheck="";
+		var theParam="";
+		var temp="";
+		var page="";
+		var i="";
+		var site="";
 		
-		<cfif application.serviceFactory.containsBean("userUtility")>
-			<cfset application.serviceFactory.getBean("userUtility").returnLoginCheck(request.event.getValue("MuraScope"))>
-		</cfif>
+				
+		if(right(cgi.script_name, Len("index.cfm")) NEQ "index.cfm" and right(cgi.script_name, Len("error.cfm")) NEQ "error.cfm" AND right(cgi.script_name, 3) NEQ "cfc"){
+			location(url="./", addtoken="false");
+		}
 		
-		<!---<cfif application.configBean.getAdminDomain() neq '' and application.configBean.getAdminDomain() neq listFirst(cgi.http_host,":") and not yesNoFormat(request.context.compactDisplay) and not yesNoFormat(request.context.closeCompactDisplay)>--->
-		<cfif application.configBean.getAdminDomain() neq '' and application.configBean.getAdminDomain() neq listFirst(cgi.http_host,":")>
-			<cfset application.contentServer.renderFilename("/admin/",false)>
-			<cfabort>
-			<!---<cflocation url="#application.configBean.getContext()#/" addtoken="false">--->
-		</cfif>
+		request.context.currentURL="./";
+	
+		var qrystr="";
+		var item="";
+
+		for(item in url){
+			try{
+				qrystr="#qrystr#&#item#=#url[item]#";	
+			}
+			catch(any e){}
+		}
+
+		if(len(qrystr)){
+			request.context.currentURL=request.context.currentURL & "?" & qrystr;
+		}
+
+		StructAppend(request.context, url, "no");
+		StructAppend(request.context, form, "no");
+			
+		if (IsDefined("request.muraGlobalEvent")){
+			StructAppend(request, request.muraGlobalEvent.getAllValues(), "no");
+			StructDelete(request,"muraGlobalEvent");	
+		}
 		
-		<cfif session.mura.isLoggedIn and not structKeyExists(session,"siteArray")>
-			<cfset session.siteArray=arrayNew(1) />
-			<cfloop collection="#application.settingsManager.getSites()#" item="site">
-				<cfif application.permUtility.getModulePerm("00000000000000000000000000000000000","#site#")>
-					<cfset arrayAppend(session.siteArray,site) />
-				</cfif>
-			</cfloop>
-		</cfif>
+		param name="request.context.moduleid" default="";
+		param name="request.context.siteid" default="";
+		param name="request.context.muraAction" default="";
+		param name="request.context.layout" default="";
+		param name="request.context.activetab" default="0";
+		param name="request.context.activepanel" default="0";
+		param name="request.context.ajax" default="";
+		param name="request.context.rb" default="";
+		param name="request.context.closeCompactDisplay" default="false";
+		param name="request.context.compactDisplay" default="false";
+		param name="session.siteid" default="";
+		param name="session.keywords" default="";
+		param name="session.showdashboard" default=application.configBean.getDashboard();
+		param name="session.alerts" default=structNew();
+
+		request.muraAdminRequest=true;
+
+		if(ListFirst(server.coldfusion.productVersion) >= 10){
+			param name="cookie.rb" default={value='',expires='never',httponly=true,secure=application.configBean.getSecureCookies()};
+		} else {
+			param name="cookie.rb" default='';
+		}
 		
-		<cfif session.mura.isLoggedIn and structKeyExists(session,"siteArray") and not arrayLen(session.siteArray)>
-			<cfif not listFind(session.mura.memberships,'S2IsPrivate')>
-				<cflocation url="#application.configBean.getContext()#/" addtoken="false">
-			<cfelseif not len(request.context.muraAction) 
+		application.serviceFactory.getBean('utility').suppressDebugging();
+
+		if(len(request.context.rb)){
+			session.rb=request.context.rb;
+			if(ListFirst(server.coldfusion.productVersion) >= 10){
+				cookie.rb={value="#session.rb#",expires="never",httponly=true,secure=application.configBean.getSecureCookies()};
+			}
+		}
+		
+		if(not application.configBean.getSessionHistory()  or application.configBean.getSessionHistory() gte 30){
+			param name="session.dashboardSpan" default="30";
+		} else {
+			param name="session.dashboardSpan" default="#application.configBean.getSessionHistory()#";
+		}
+		
+		if(not application.configBean.getSessionHistory()  or application.configBean.getSessionHistory() gte 30){
+			session.dashboardSpan=30;
+		} else {
+			session.dashboardSpan=application.configBean.getSessionHistory();
+		}
+		
+		if(request.context.siteid neq '' and (session.siteid neq request.context.siteID)){
+			siteCheck=application.settingsManager.getSites();
+			if(structKeyExists(siteCheck,request.context.siteID)){
+				session.siteid = request.context.siteid;
+				session.userFilesPath = "#application.configBean.getAssetPath()#/#request.context.siteid#/assets/";
+				session.topID="00000000000000000000000000000000001";
+				session.openSectionList="";
+			}
+		} else if(not len(session.siteID)){
+			session.siteID="default";
+			session.userFilesPath = "#application.configBean.getAssetPath()#/default/assets/";	
+			session.topID="00000000000000000000000000000000001";
+			session.openSectionList="";
+		}
+		
+		application.rbFactory.resetSessionLocale();
+		
+		if(not structKeyExists(request.context,"siteid")){
+			request.context.siteID=session.siteID;
+		}
+
+		if(not structKeyExists(session.alerts,'#session.siteid#')){
+			session.alerts['#session.siteid#']=structNew();
+		}
+			
+		request.event=createObject("component", "mura.event").init(request.context);
+		request.context.$=request.event.getValue('MuraScope');
+		request.muraScope=request.context.$;
+		
+		if(request.context.moduleid neq ''){
+			session.moduleid = request.context.moduleid;
+		}
+		
+		if(application.serviceFactory.containsBean("userUtility")){
+			application.serviceFactory.getBean("userUtility").returnLoginCheck(request.event.getValue("MuraScope"));
+		}		
+		
+		if(application.configBean.getAdminDomain() neq '' and application.configBean.getAdminDomain() neq listFirst(cgi.http_host,":")){
+			application.contentServer.renderFilename("/admin/",false);
+			abort;
+		}
+		
+		if(session.mura.isLoggedIn and not structKeyExists(session,"siteArray")){
+			session.siteArray=[];
+			
+			for(site in application.settingsManager.getSites()){
+				if(application.permUtility.getModulePerm("00000000000000000000000000000000000","#site#")){
+					arrayAppend(session.siteArray,site);
+				}
+			}
+		}
+		
+		if(session.mura.isLoggedIn and structKeyExists(session,"siteArray") and not arrayLen(session.siteArray)){
+			if(not listFind(session.mura.memberships,'S2IsPrivate') and not listLast(listFirst(request.context.muraAction,"."),":") eq 'clogin'){
+				location(url="#application.configBean.getContext()#/admin/?muraAction=clogin.logout", addtoken="false");
+			} else if(not len(request.context.muraAction)
 					or (
 							len(request.context.muraAction) 
 							and not listfindNoCase("clogin,cMessage,cEditprofile",listLast(listFirst(request.context.muraAction,"."),":") )
-						)>
-				<cflocation url="#application.configBean.getContext()#/admin/index.cfm?muraAction=cMessage.noaccess" addtoken="false">
-			</cfif>
-		</cfif>
+						)){
+				location(url="#application.configBean.getContext()#/admin/?muraAction=cMessage.noaccess", addtoken="false");
+			}
+		}
 		
-		<cfif not structKeyExists(session,"siteArray")>
-			<cfset session.siteArray=arrayNew(1) />
-		</cfif>
+		if(not structKeyExists(session,"siteArray")){
+			session.siteArray=[];
+		}
 			
-		<cfparam name="session.paramArray" default="#arrayNew(1)#" />
-		<cfparam name="session.paramCount" default="0" />
-		<cfparam name="session.paramCircuit" default="" />
-		<cfparam name="session.paramCategories" default="" />
-		<cfparam name="session.paramGroups" default="" />
-		<cfparam name="session.inActive" default="" />
-		<cfparam name="session.membersOnly" default="false" />
-		<cfparam name="session.visitorStatus" default="All" />
-		<cfparam name="request.context.param" default="" />
-		<cfparam name="request.context.inActive" default="0" />
-		<cfparam name="request.context.categoryID" default="" />
-		<cfparam name="request.context.groupID" default="" />
-		<cfparam name="request.context.membersOnly" default="false" />
-		<cfparam name="request.context.visitorStatus" default="All" />
+		param name="session.paramArray" default="#arrayNew(1)#";
+		param name="session.paramCount" default="0";
+		param name="session.paramCircuit" default="";
+		param name="session.paramCategories" default="";
+		param name="session.paramGroups" default="";
+		param name="session.inActive" default="";
+		param name="session.membersOnly" default="false";
+		param name="session.visitorStatus" default="All";
+		param name="request.context.param" default="";
+		param name="request.context.inActive" default="0";
+		param name="request.context.categoryID" default="";
+		param name="request.context.groupID" default="";
+		param name="request.context.membersOnly" default="false";
+		param name="request.context.visitorStatus" default="All";
 		
-			<cfif request.context.param neq ''>
-				<cfset session.paramArray=arrayNew(1) />
-				<cfset session.paramCircuit=listLast(listFirst(request.context.muraAction,'.'),':') />
-				<cfloop from="1" to="#listLen(request.context.param)#" index="i">
-					<cfset theParam=listGetAt(request.context.param,i) />
-					<cfif evaluate('request.context.paramField#theParam#') neq 'Select Field'
-					and evaluate('request.context.paramField#theParam#') neq ''
-					and evaluate('request.context.paramCriteria#theParam#') neq ''>
-					<cfset temp=structNew() />
-					<cfset temp.Field=evaluate('request.context.paramField#theParam#') />
-					<cfset temp.Relationship=evaluate('request.context.paramRelationship#theParam#') />
-					<cfset temp.Criteria=evaluate('request.context.paramCriteria#theParam#') />
-					<cfset temp.Condition=evaluate('request.context.paramCondition#theParam#') />
-					<cfset arrayAppend(session.paramArray,temp) />
-					</cfif>
-				</cfloop>
-				<cfset session.paramCount =arrayLen(session.paramArray)/>
-				<cfset session.inActive = request.context.inActive />
-				<cfset session.paramCategories = request.context.categoryID />
-				<cfset session.paramGroups = request.context.groupID />
-				<cfset session.membersOnly = request.context.membersOnly />
-				<cfset session.visitorStatus = request.context.visitorStatus />
+		if(request.context.param neq ''){
+			session.paramArray=arrayNew(1);
+			session.paramCircuit=listLast(listFirst(request.context.muraAction,'.'),':');
+			for(i=1;i lte listLen(request.context.param);i=i+1){
+				theParam=listGetAt(request.context.param,i);
+				if(evaluate('request.context.paramField#theParam#') neq 'Select Field'
+				and evaluate('request.context.paramField#theParam#') neq ''
+				and evaluate('request.context.paramCriteria#theParam#') neq ''){
+					temp={};
+					temp.Field=evaluate('request.context.paramField#theParam#');
+					temp.Relationship=evaluate('request.context.paramRelationship#theParam#');
+					temp.Criteria=evaluate('request.context.paramCriteria#theParam#');
+					temp.Condition=evaluate('request.context.paramCondition#theParam#');
+					arrayAppend(session.paramArray,temp);
+				}
+			}
 				
-			</cfif>
+			session.paramCount =arrayLen(session.paramArray);
+			session.inActive = request.context.inActive;
+			session.paramCategories = request.context.categoryID;
+			session.paramGroups = request.context.groupID;
+			session.membersOnly = request.context.membersOnly;
+			session.visitorStatus = request.context.visitorStatus;
+				
+		}
 		
-		<cfif application.configBean.getAdminSSL() and  not application.utility.isHTTPS()>
-			<cfif cgi.query_string eq ''>
-					<cfset page='#cgi.script_name#'>
-			<cfelse>
-					<cfset page='#cgi.script_name#?#cgi.QUERY_STRING#'>
-			</cfif>
-			
-			<cflocation addtoken="false" url="https://#listFirst(cgi.http_host,":")##page#">
-		</cfif>
-		
-		<cfset application.rbFactory.setAdminLocale()>
-		
-		<cfset application.pluginManager.announceEvent("onAdminRequestStart",request.event)/>
-		
-	</cffunction>
+		request.muraPreviewDomain=listFirst(cgi.http_host,":");
 	
-	<cffunction name="setupSession" output="false">
-		<cfset var local = structNew() />
-		<cfinclude template="../config/appcfc/onSessionStart_include.cfm">
-	</cffunction>
-	
-	<cffunction name="onSessionEnd" output="false">
-		<cfset var local = structNew() />
-		<cfinclude template="../config/appcfc/onSessionEnd_include.cfm">
-	</cffunction>
-	
-	<cffunction name="doFBInclude" output="false" hint="Returns the UI generated by the named view. Can be called from layouts.">
-		<cfargument name="path" />
+		if(!isDefined('request.muraPreviewDomain') || !len(request.muraPreviewDomain)){
+			request.muraPreviewDomain=cgi.server_name;
+		}
 
-		<cfset var rc = request.context />
-		<cfset var response = '' />
-		<cfset var local = structNew() />	
-		<cfset var event=request.event>
-		<cfset var attributes=rc>
-		<cfset var fusebox=structNew()>
-		<cfset var myfusebox=structNew()>
-		<cfset var key="">
-		<cfset var temp=structNew()>
-		<cfset fusebox.ajax=rc.ajax>
-		<cfset fusebox.layout=rc.layout>
-		<cfset myfusebox.originalfuseaction = listLast(listLast(request.action,":"),".")>
-		<cfset myfusebox.originalcircuit = listFirst(listLast(request.action,":"),".")>
-		
-		<cfif not structKeyExists(request,"requestappended")>
-			<cfif structKeyExists(request, 'layout')>
-				<cfset temp.layout=request.layout>
-			</cfif>
-			
-			<cfset structAppend(request,rc,false)>
-			
-			<cfif structKeyExists(temp, 'layout')>
-				<cfset request.layout=temp.layout>
-			<cfelse>
-				<cfset structDelete(request,"layout")>
-			</cfif>
-			
-			<cfset request.requestappended=true>
-		</cfif>
-		
-		<cfsavecontent variable='response'><cfinclude template="#arguments.path#"/></cfsavecontent>
+		if(!application.settingsManager.getSite(session.siteid).isValidDomain(domain=request.muraPreviewDomain,mode='complete')){
+			request.muraPreviewDomain=application.settingsManager.getSite(session.siteid).getDomain();
+		}
 
-		<cfreturn response />
+		if(application.configBean.getAdminSSL() and application.configBean.getForceAdminSSL() and not application.utility.isHTTPS()){
+			if(cgi.query_string eq ''){
+				page='#cgi.script_name#';
+			} else {
+				page='#cgi.script_name#?#cgi.QUERY_STRING#';
+			}
+			
+			location(addtoken="false", url="https://#listFirst(cgi.http_host,":")##page#");
+		}
 
-	</cffunction>
+		if(yesNoFormat(application.configBean.getAccessControlHeaders()) 
+		){
+			var headers = getHttpRequestData().headers;
+		  	var origin = '';
+		  	var PC = getpagecontext().getresponse();
+		 
+		  	// Find the Origin of the request
+		  	if( structKeyExists( headers, 'Origin' ) ) {
+		   		origin = headers['Origin'];
+		  	}
+		 
+		  	// If the Origin is okay, then echo it back, otherwise leave out the header key
+		  	if(listFindNoCase(application.settingsManager.getSite(session.siteid).getAccessControlOriginList(), origin )) {
+		   		PC.setHeader( 'Access-Control-Allow-Origin', origin );
+		   		
+		   		if(yesNoFormat(application.configBean.getAccessControlCredentials())){
+		   			PC.setHeader( 'Access-Control-Allow-Credentials', 'true' );
+		   		}
+		  	}
+	  	}
+
+		application.rbFactory.setAdminLocale();
+		application.pluginManager.announceEvent("onAdminRequestStart",request.event);
+		
+	}
+
+	function setupSession() output="false"{
+		include "../config/appcfc/onSessionStart_include.cfm";
+	}
+
+	include "../config/appcfc/onSessionEnd_method.cfm";
 	
-	<cffunction name="onError"  returnType="void"  output="true">
-	    <cfargument name="exception" required="true">
-	   	<cfargument name="eventname" type="string" required="true">
-	  	<cfset var local = structNew() />
-		<cfinclude template="../config/appcfc/onError_include.cfm">
-	</cffunction>
-	
-	<cffunction name="onMissingTemplate" output="true">
-	    <cfargument name="targetPage" required="true">
-		<cfset var local = structNew() />
-		<cfinclude template="../config/appcfc/onMissingTemplate_include.cfm">
-		<cfreturn false>
-	</cffunction>
-	
-	<cffunction name="onRequestEnd"  returnType="void"  output="true">
-	   <cfargument name="targetPage" required="true">
-	  	<cfset var local = structNew() />
-		 <cfif isdefined("request.event")>
-			<cfset application.pluginManager.announceEvent("onAdminRequestEnd",request.event)/>
-			<cfinclude template="../config/appcfc/onRequestEnd_include.cfm">
-		 </cfif>
-	</cffunction>
-	
-</cfcomponent>
+	function onError(exception,eventname) output="false"{
+		include "../config/appcfc/onError_include.cfm";
+	}
+
+	include "../config/appcfc/onMissingTemplate_method.cfm";
+
+	function onRequestEnd(targetPage) output="false"{
+		if(isdefined("request.event")){
+			application.pluginManager.announceEvent("onAdminRequestEnd",request.event);
+			include "../config/appcfc/onRequestEnd_include.cfm";
+		}
+	}
+
+	function rbKey(key){
+		return application.rbFactory.getKeyValue(session.rb,arguments.key);
+	}
+
+}

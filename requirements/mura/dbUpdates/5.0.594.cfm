@@ -2,24 +2,7 @@
 <cfcase value="mssql">
 <cftransaction>
 
-<cfquery name="MSSQLversion" datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
-	EXEC sp_MSgetversion
-</cfquery>
-	
-<cftry>
-	<cfset MSSQLversion=left(MSSQLversion.CHARACTER_VALUE,1)>
-	<cfcatch>
-		<cfset MSSQLversion=mid(MSSQLversion.COMPUTED_COLUMN_1,1,find(".",MSSQLversion.COMPUTED_COLUMN_1)-1)>
-	</cfcatch>
-</cftry>
-
-<cfif MSSQLversion neq 8>
-	<cfset MSSQLlob="[nvarchar](max) NULL">
-<cfelse>
-	<cfset MSSQLlob="[ntext]">
-</cfif>
-	
-<cfquery datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
+<cfquery>
 IF NOT EXISTS (SELECT * FROM sysobjects WHERE id = object_id(N'[dbo].[tplugins]')
 AND OBJECTPROPERTY(id, N'IsUserTable') = 1)
 CREATE TABLE [dbo].[tplugins] ( 
@@ -35,7 +18,7 @@ CREATE TABLE [dbo].[tplugins] (
 ) on [PRIMARY]
 </cfquery>
 
-<cfquery datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
+<cfquery>
 IF NOT EXISTS (SELECT 1
 				FROM sysindexes
 				WHERE id = object_id(N'[dbo].[tplugins]') 
@@ -47,7 +30,7 @@ ALTER TABLE [dbo].[tplugins] WITH NOCHECK ADD
 	)  ON [PRIMARY] 
 </cfquery>
 
-<cfquery datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
+<cfquery>
 IF NOT EXISTS (SELECT * FROM sysobjects WHERE id = object_id(N'[dbo].[tplugindisplayobjects]')
 AND OBJECTPROPERTY(id, N'IsUserTable') = 1)
 CREATE TABLE [dbo].[tplugindisplayobjects] (
@@ -59,7 +42,7 @@ CREATE TABLE [dbo].[tplugindisplayobjects] (
 	) on [PRIMARY]
 </cfquery>
 
-<cfquery datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
+<cfquery>
 IF NOT EXISTS (SELECT 1
 				FROM sysindexes
 				WHERE id = object_id(N'[dbo].[tplugindisplayobjects]') 
@@ -71,7 +54,7 @@ ALTER TABLE [dbo].[tplugindisplayobjects] WITH NOCHECK ADD
 	)  ON [PRIMARY] 
 </cfquery>
 
-<cfquery datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
+<cfquery>
 IF NOT EXISTS (SELECT * FROM sysobjects WHERE id = object_id(N'[dbo].[tpluginscripts]')
 AND OBJECTPROPERTY(id, N'IsUserTable') = 1)
 CREATE TABLE [dbo].[tpluginscripts] (
@@ -82,7 +65,7 @@ CREATE TABLE [dbo].[tpluginscripts] (
 	) on [PRIMARY]
 </cfquery>
 
-<cfquery datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
+<cfquery>
 IF NOT EXISTS (SELECT 1
 				FROM sysindexes
 				WHERE id = object_id(N'[dbo].[tpluginscripts]') 
@@ -94,7 +77,7 @@ ALTER TABLE [dbo].[tpluginscripts] WITH NOCHECK ADD
 	)  ON [PRIMARY] 
 </cfquery>
 
-<cfquery datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
+<cfquery>
 IF NOT EXISTS (SELECT * FROM sysobjects WHERE id = object_id(N'[dbo].[tpluginsettings]')
 AND OBJECTPROPERTY(id, N'IsUserTable') = 1)
 CREATE TABLE [dbo].[tpluginsettings] (
@@ -104,7 +87,7 @@ CREATE TABLE [dbo].[tpluginsettings] (
 	) on [PRIMARY]
 </cfquery>
 
-<cfquery datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
+<cfquery>
 IF NOT EXISTS (SELECT 1
 				FROM sysindexes
 				WHERE id = object_id(N'[dbo].[tpluginsettings]') 
@@ -121,7 +104,7 @@ ALTER TABLE [dbo].[tpluginsettings] WITH NOCHECK ADD
 <cfcase value="mysql">
 	<cfset variables.RUNDBUPDATE=false/>
 	<cftry>
-	<cfquery datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
+	<cfquery>
 	select pluginID as CheckIfTableExists from tplugins limit 1
 	</cfquery>
 	<cfcatch>
@@ -132,7 +115,7 @@ ALTER TABLE [dbo].[tpluginsettings] WITH NOCHECK ADD
 	<cfif variables.RUNDBUPDATE>
 	<cftry>
 	<cftransaction>
-	<cfquery datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
+	<cfquery>
 	CREATE TABLE IF NOT EXISTS  `tplugins` (
 	  `pluginID` int(11) NOT NULL auto_increment,
 	  `moduleID` char(35) default NULL,
@@ -147,7 +130,7 @@ ALTER TABLE [dbo].[tpluginsettings] WITH NOCHECK ADD
 	) ENGINE=#variables.instance.MYSQLEngine# AUTO_INCREMENT=16 DEFAULT CHARSET=utf8
 	</cfquery>
 	
-	<cfquery datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
+	<cfquery>
 		CREATE TABLE IF NOT EXISTS `tplugindisplayobjects` (
 	  `objectID` char(35) NOT NULL default '',
 	  `moduleID` char(35) default NULL,
@@ -158,7 +141,7 @@ ALTER TABLE [dbo].[tpluginsettings] WITH NOCHECK ADD
 	) ENGINE=#variables.instance.MYSQLEngine# DEFAULT CHARSET=utf8
 	</cfquery>
 	
-	<cfquery datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
+	<cfquery>
 		CREATE TABLE IF NOT EXISTS `tpluginscripts` (
 	  `scriptID` char(35) NOT NULL default '',
 	  `moduleID` char(35) default NULL,
@@ -168,7 +151,7 @@ ALTER TABLE [dbo].[tpluginsettings] WITH NOCHECK ADD
 	) ENGINE=#variables.instance.MYSQLEngine# DEFAULT CHARSET=utf8
 	</cfquery>
 	
-	<cfquery datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
+	<cfquery>
 		CREATE TABLE IF NOT EXISTS `tpluginsettings` (
 	  `moduleID` char(35) NOT NULL default '',
 	  `name` varchar(100) NOT NULL default '',
@@ -179,7 +162,7 @@ ALTER TABLE [dbo].[tpluginsettings] WITH NOCHECK ADD
 	</cftransaction>
 	<cfcatch>
 		<cftransaction>
-		<cfquery datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
+		<cfquery>
 		CREATE TABLE IF NOT EXISTS  `tplugins` (
 		  `pluginID` INTEGER NOT NULL AUTO_INCREMENT,
 		  `moduleID` char(35) default NULL,
@@ -194,7 +177,7 @@ ALTER TABLE [dbo].[tpluginsettings] WITH NOCHECK ADD
 		) 
 		</cfquery>
 	
-		<cfquery datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
+		<cfquery>
 			CREATE TABLE IF NOT EXISTS `tplugindisplayobjects` (
 		  `objectID` char(35) NOT NULL default '',
 		  `moduleID` char(35) default NULL,
@@ -205,7 +188,7 @@ ALTER TABLE [dbo].[tpluginsettings] WITH NOCHECK ADD
 		) 
 		</cfquery>
 	
-		<cfquery datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
+		<cfquery>
 			CREATE TABLE IF NOT EXISTS `tpluginscripts` (
 		  `scriptID` char(35) NOT NULL default '',
 		  `moduleID` char(35) default NULL,
@@ -215,7 +198,7 @@ ALTER TABLE [dbo].[tpluginsettings] WITH NOCHECK ADD
 		) 
 		</cfquery>
 	
-		<cfquery datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
+		<cfquery>
 			CREATE TABLE IF NOT EXISTS `tpluginsettings` (
 		  `moduleID` char(35) NOT NULL default '',
 		  `name` varchar(100) NOT NULL default '',
@@ -228,10 +211,119 @@ ALTER TABLE [dbo].[tpluginsettings] WITH NOCHECK ADD
 	</cftry>
 	</cfif>
 </cfcase>
+
+<cfcase value="postgresql">
+	<cftransaction>
+
+	<cfquery>
+		CREATE TABLE IF NOT EXISTS tplugins (
+			pluginID SERIAL,
+			moduleID char(35),
+			name varchar(50),
+			created timestamp NOT NULL ,
+			provider varchar(100),
+			providerURL varchar(100),
+			category varchar(50),
+			version varchar(50),
+			deployed smallint,
+			CONSTRAINT PK_tplugins_pluginID PRIMARY KEY (pluginID)
+		)
+	</cfquery>
+
+	<cfquery>
+		CREATE TABLE IF NOT EXISTS tplugindisplayobjects (
+			objectID char(35) NOT NULL default '',
+			moduleID char(35),
+			name varchar(50),
+			location varchar(50),
+			displayObjectFile varchar(200),
+			CONSTRAINT PK_tplugindisplayobjects_objectID PRIMARY KEY (objectID)
+		)
+	</cfquery>
+
+	<cfquery>
+		CREATE TABLE IF NOT EXISTS tpluginscripts (
+			scriptID char(35) NOT NULL default '',
+			moduleID char(35),
+			runat varchar(50),
+			scriptfile varchar(200),
+			CONSTRAINT PK_tpluginscripts_scriptID PRIMARY KEY (scriptID)
+		)
+	</cfquery>
+
+	<cfquery>
+		CREATE TABLE IF NOT EXISTS tpluginsettings (
+			moduleID char(35) NOT NULL default '',
+			name varchar(100) NOT NULL default '',
+			settingValue text,
+			CONSTRAINT PK_tpluginsettings_ID PRIMARY KEY (moduleID, name)
+		)
+	</cfquery>
+
+	</cftransaction>
+</cfcase>
+
+<cfcase value="nuodb">
+	<cftransaction>
+	<cfif not dbUtility.tableExists('tplugins')>
+
+	<cfquery>
+	CREATE TABLE tplugins (
+	  pluginID integer generated always as identity (seq_tplugins),
+	  moduleID char(35) default NULL,
+	  name varchar(50) default NULL,
+	  created timestamp NOT NULL default ('now'),
+	  provider varchar(100) default NULL,
+	  providerURL varchar(100) default NULL,
+	  category varchar(50) default NULL,
+	  version varchar(50) default NULL,
+	  deployed smallint default NULL,
+	  PRIMARY KEY  (pluginID)
+	)
+	</cfquery>
+	</cfif>
+	
+	<cfif not dbUtility.tableExists('tplugindisplayobjects')>
+	<cfquery>
+		CREATE TABLE  tplugindisplayobjects (
+	  objectID char(35) NOT NULL default '',
+	  moduleID char(35) default NULL,
+	  name varchar(50) default NULL,
+	  location varchar(50) default NULL,
+	  displayObjectFile varchar(200) default NULL,
+	  PRIMARY KEY  (objectID)
+	) 
+	</cfquery>
+	</cfif>
+	
+	<cfif not dbUtility.tableExists('tpluginscripts')>
+	<cfquery>
+		CREATE TABLE tpluginscripts (
+	  scriptID char(35) NOT NULL default '',
+	  moduleID char(35) default NULL,
+	  runat varchar(50) default NULL,
+	  scriptfile varchar(200) default NULL,
+	  PRIMARY KEY  (scriptID)
+	) 
+	</cfquery>
+	</cfif>
+
+	<cfif not dbUtility.tableExists('tpluginsettings')>
+	<cfquery>
+		CREATE TABLE tpluginsettings (
+	  moduleID char(35) NOT NULL default '',
+	  name varchar(100) NOT NULL default '',
+	  settingValue clob,
+	  PRIMARY KEY  (moduleID,name)
+	) 
+	</cfquery>
+	</cfif>
+	</cftransaction>
+</cfcase>
 <cfcase value="oracle">
 <cfset variables.RUNDBUPDATE=false/>
 <cftry>
-<cfquery datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
+<cfquery>
 select * from (select pluginID as CheckIfTableExists from tplugins) where ROWNUM <=1
 </cfquery>
 <cfcatch>
@@ -241,7 +333,7 @@ select * from (select pluginID as CheckIfTableExists from tplugins) where ROWNUM
 
 <cfif variables.RUNDBUPDATE>
 	<cftransaction>
-	<cfquery datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
+	<cfquery>
 	CREATE TABLE "TPLUGINS" (
 	  "PLUGINID" NUMBER(10,0),
 	  "MODULEID" CHAR(35) ,
@@ -255,15 +347,15 @@ select * from (select pluginID as CheckIfTableExists from tplugins) where ROWNUM
 	) 
 	</cfquery>
 	
-	<cfquery datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
+	<cfquery>
 	 CREATE SEQUENCE  "TPLUGINS_PLUGINID_SEQ"  MINVALUE 1 MAXVALUE 999999999999999999999999 INCREMENT BY 1 START WITH 221 CACHE 20 NOORDER  NOCYCLE
 	</cfquery>
 	
-	<cfquery datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
+	<cfquery>
 	ALTER TABLE "TPLUGINS" ADD CONSTRAINT "TPLUGINS_PRIMARY" PRIMARY KEY ("PLUGINID") ENABLE
 	</cfquery>
 
-	<cfquery datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
+	<cfquery>
 	create or replace TRIGGER "TPLUGINS_PLUGINID_TRG" BEFORE INSERT ON tplugins
 	FOR EACH ROW
 	BEGIN
@@ -271,11 +363,11 @@ select * from (select pluginID as CheckIfTableExists from tplugins) where ROWNUM
 	END;
 	</cfquery>
 	
-	<cfquery datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
+	<cfquery>
 	ALTER TRIGGER "TPLUGINS_PLUGINID_TRG" ENABLE
 	</cfquery>
 	
-	<cfquery datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
+	<cfquery>
 		CREATE TABLE "TPLUGINDISPLAYOBJECTS" (
 	  "OBJECTID" CHAR(35),
 	  "MODULEID" CHAR(35),
@@ -285,11 +377,11 @@ select * from (select pluginID as CheckIfTableExists from tplugins) where ROWNUM
 	) 
 	</cfquery>
 	
-	<cfquery datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
+	<cfquery>
 	ALTER TABLE "TPLUGINDISPLAYOBJECTS" ADD CONSTRAINT "TPLUGINDISPLAYOBJECTS_PRIMARY" PRIMARY KEY ("OBJECTID") ENABLE
 	</cfquery>
 	
-	<cfquery datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
+	<cfquery>
 		CREATE TABLE "TPLUGINSCRIPTS" (
 	  "SCRIPTID" CHAR(35),
 	  "MODULEID" CHAR(35),
@@ -298,24 +390,24 @@ select * from (select pluginID as CheckIfTableExists from tplugins) where ROWNUM
 	) 
 	</cfquery>
 	
-	<cfquery datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
+	<cfquery>
 	ALTER TABLE "TPLUGINSCRIPTS" ADD CONSTRAINT "TPLUGINSCRIPTS_PRIMARY" PRIMARY KEY ("SCRIPTID") ENABLE
 	</cfquery>
 	
-	<cfquery datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
+	<cfquery>
 		CREATE TABLE "TPLUGINSETTINGS" (
 	  "MODULEID" CHAR(35),
 	  "NAME" varchar2(100),
 	  "SETTINGVALUE" clob
 	) 
 		lob (SETTINGVALUE) STORE AS (
-		TABLESPACE "USERS" ENABLE STORAGE IN ROW CHUNK 8192 PCTVERSION 10
+		TABLESPACE "#getDbTablespace()#" ENABLE STORAGE IN ROW CHUNK 8192 PCTVERSION 10
 		NOCACHE LOGGING
 		STORAGE(INITIAL 65536 NEXT 1048576 MINEXTENTS 1 MAXEXTENTS 2147483645
 		PCTINCREASE 0 FREELISTS 1 FREELIST GROUPS 1 BUFFER_POOL DEFAULT))
 	</cfquery>
 	
-	<cfquery datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
+	<cfquery>
 	ALTER TABLE "TPLUGINSETTINGS" ADD CONSTRAINT "TPLUGINSETTINGS_PRIMARY" PRIMARY KEY ("NAME","MODULEID") ENABLE
 	</cfquery>
 	</cftransaction>

@@ -45,6 +45,17 @@ modified version; it is your choice whether to do so, or to make such modified v
 version 2 without this exception.  You may, if you choose, apply this exception to your own modified versions of Mura CMS.
 --->
 <cfcomponent output="false">
+
+<cfscript>
+	if(server.ColdFusion.ProductName != 'Coldfusion Server'){
+		backportdir='';
+		include "/mura/backport/backport.cfm";
+	} else {
+		backportdir='/mura/backport/';
+		include "#backportdir#backport.cfm";
+	}
+</cfscript>
+
 <cfset variables.translator=""/>
 
 <cffunction name="init" returntype="any" access="public" output="false">
@@ -54,9 +65,14 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cffunction name="setValue" returntype="any" access="public" output="false">
 <cfargument name="property"  type="string" required="true">
 <cfargument name="propertyValue" default="" >
-
 	<cfset variables["#arguments.property#"]=arguments.propertyValue />
 	<cfreturn this>
+</cffunction>
+
+<cffunction name="set" returntype="any" access="public" output="false">
+<cfargument name="property"  type="string" required="true">
+<cfargument name="propertyValue" default="" >
+	<cfreturn setValue(argumentCollection=arguments)>
 </cffunction>
 
 <cffunction name="getValue" returntype="any" access="public" output="false">
@@ -72,6 +88,12 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<cfreturn "" />
 	</cfif>
 
+</cffunction>
+
+<cffunction name="get" returntype="any" access="public" output="false">
+<cfargument name="property"  type="string" required="true">
+<cfargument name="defaultValue">
+	<cfreturn getValue(argumentCollection=arguments)>
 </cffunction>
 
 <cffunction name="valueExists" returntype="any" access="public" output="false">
@@ -100,13 +122,11 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	
 	<cfset bean=getServiceFactory().getBean(arguments.beanName) />
 
-	<cfif structKeyExists(bean,"setSiteID")>		
+	<cfif structKeyExists(bean,'valueExists') and bean.valueExists('siteid')>
 		<cfif len(arguments.siteID)>
-			<cfset bean.setSiteID(arguments.siteID)>			
-		<cfelseif isDefined("getSiteID")>
-			<cfset bean.setSiteID(getSiteID())>
+			<cfset bean.setValue('siteid',arguments.siteID)>	
 		<cfelseif len(getValue("siteID"))>
-			<cfset bean.setSiteID(getValue("siteID"))>		
+			<cfset bean.setValue('siteid',getValue("siteID"))>	
 		</cfif>		
 	</cfif>
 	
@@ -147,8 +167,8 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 
 <cffunction name="deleteMethod" access="public" output="false">
 	<cfargument name="methodName" type="any" required="true" />
-	<cfset structKeyDelete(this,arguments.methodName)>
-	<cfset structKeyDelete(variables,arguments.methodName)>
+	<cfset StructDelete(this,arguments.methodName)>
+	<cfset StructDelete(variables,arguments.methodName)>
 </cffunction>
 
 <cffunction name="getAsJSON" access="public" output="false" returntype="String" >
@@ -214,7 +234,30 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<cfset tracePoint=request.muraTraceRoute[arguments.tracePointID]>
 		<cfset tracePoint.stop=getTickCount()>
 		<cfset tracePoint.duration=tracePoint.stop-tracePoint.start>
+		<cfset tracePoint.total=tracePoint.stop-request.muraRequestStart>
 	</cfif>	
 </cffunction>
+
+<cfscript>
+	public any function invokeMethod(required string methodName, struct methodArguments={}) {
+		if(structKeyExists(this, arguments.methodName)) {
+			var theMethod = this[ arguments.methodName ];
+			return theMethod(argumentCollection = methodArguments);
+		}
+		if(structKeyExists(this, "onMissingMethod")) {
+			return this.onMissingMethod(missingMethodName=arguments.methodName, missingMethodArguments=arguments.methodArguments);	
+		}
+		throw("You have attempted to call the method #arguments.methodName# which does not exist in #getClassFullName()#");
+	}
+
+	function getQueryService(){
+		if (structKeyExists(arguments, "readOnly")) {
+			return new Query(argumentCollection=getBean('configBean').getReadOnlyQRYAttrs(argumentCollection=arguments));
+		} else {
+			return new Query(argumentCollection=arguments);
+		}
+	}
+
+</cfscript>
 
 </cfcomponent>

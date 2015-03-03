@@ -48,6 +48,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cfparam name="rc.contentid" default="">
 <cfparam name="rc.parentid" default="">
 <cfparam name="rc.contenthistid" default="">
+<cfparam name="rc.objectid" default=""/>
 <cfswitch expression="#rc.classid#">
 	<cfcase value="component">
 		<cfinclude template="objectclass/dsp_components.cfm">
@@ -58,14 +59,17 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfcase value="system">
 		<cfinclude template="objectclass/dsp_system.cfm">
 	</cfcase>
+	<cfcase value="navigation">
+		<cfinclude template="objectclass/dsp_navigation.cfm">
+	</cfcase>
 	<cfcase value="form">
 		<cfinclude template="objectclass/dsp_forms.cfm">
 	</cfcase>
 	<cfcase value="adzone">
 		<cfinclude template="objectclass/dsp_adzones.cfm">
 	</cfcase>
-	<cfcase value="portal">
-		<cfinclude template="objectclass/dsp_portals.cfm">
+	<cfcase value="Folder">
+		<cfinclude template="objectclass/dsp_Folders.cfm">
 	</cfcase>
 	<cfcase value="calendar">
 		<cfinclude template="objectclass/dsp_calendars.cfm">
@@ -87,7 +91,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	</cfcase>
 </cfswitch>
 
-<cfif fileExists("#application.configBean.getWebRoot()##application.configBean.getFileDelim()##rc.siteid##application.configBean.getFileDelim()#includes#application.configBean.getFileDelim()#display_objects#application.configBean.getFileDelim()#custom#application.configBean.getFileDelim()#admin#application.configBean.getFileDelim()#dsp_objectClass.cfm")>
+<cfif fileExists("#application.configBean.getWebRoot()#/#rc.siteid#/includes/display_objects/custom/admin/dsp_objectClass.cfm")>
 	<cfinclude template="/#application.configBean.getWebRootMap()#/#rc.siteID#/includes/display_objects/custom/admin/dsp_objectClass.cfm">
 </cfif>
 

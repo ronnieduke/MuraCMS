@@ -62,97 +62,97 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfargument name="activeOnly" type="boolean" required="true" default="false">
 	<cfargument name="InterestsOnly" type="boolean" required="true" default="false">
 	
-	<cfset var rs ="" />
+	<cfset var rsCategories ="" />
 
-	<cfquery name="rs" datasource="#variables.configBean.getReadOnlyDatasource()#"  username="#variables.configBean.getReadOnlyDbUsername()#" password="#variables.configBean.getReadOnlyDbPassword()#">
-	select tcontentcategories.categoryID,tcontentcategories.name,tcontentcategories.parentID,tcontentcategories.isActive,tcontentcategories.isInterestGroup,tcontentcategories.isOpen, count(tcontentcategories2.parentid) as hasKids 
-	,tcontentcategories.restrictGroups from 
+	<cfquery attributeCollection="#variables.configBean.getReadOnlyQRYAttrs(name='rsCategories')#">
+	select tcontentcategories.siteID,tcontentcategories.categoryID,tcontentcategories.name,tcontentcategories.filename,tcontentcategories.urltitle,tcontentcategories.parentID,tcontentcategories.isActive,tcontentcategories.isInterestGroup,tcontentcategories.isOpen, count(tcontentcategories2.parentid) as hasKids 
+	,tcontentcategories.restrictGroups,tcontentcategories.isfeatureable from 
 	tcontentcategories left join tcontentcategories tcontentcategories2 ON
 	(tcontentcategories.categoryID = tcontentcategories2.parentID)
-	where tcontentcategories.siteid=<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#" />
+	where tcontentcategories.siteid=<cfqueryparam cfsqltype="cf_sql_varchar" value="#application.settingsManager.getSite(arguments.siteID).getCategoryPoolID()#" />
 	and tcontentcategories.parentID <cfif arguments.parentID neq ''> = <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.parentID#" /><cfelse> is null </cfif>
 	<cfif arguments.keywords neq ''>and tcontentcategories.name like <cfqueryparam cfsqltype="cf_sql_varchar" value="%#arguments.keywords#%" /></cfif> 
 	<cfif arguments.activeOnly>and tcontentcategories.isActive=1</cfif>
 	<cfif arguments.InterestsOnly>and tcontentcategories.isInterestGroup=1</cfif>
-	group by tcontentcategories.categoryID,tcontentcategories.name,tcontentcategories.parentID,tcontentcategories.isActive,tcontentcategories.isInterestGroup,tcontentcategories.isOpen,tcontentcategories.restrictGroups
+	group by tcontentcategories.siteID,tcontentcategories.categoryID,tcontentcategories.name,tcontentcategories.filename,tcontentcategories.urltitle,tcontentcategories.parentID,tcontentcategories.isActive,tcontentcategories.isInterestGroup,tcontentcategories.isOpen,tcontentcategories.restrictGroups, tcontentcategories.isfeatureable
 	order by tcontentcategories.name
 	</cfquery>
 	
-	<cfreturn rs />
+	<cfreturn rsCategories />
 </cffunction>
 
 <cffunction name="getInterestGroupCount" access="public" output="false" returntype="numeric">
 	<cfargument name="siteID" type="String">
 	<cfargument name="activeOnly" type="boolean" required="true" default="false">
 	
-	<cfset var rs ="" />
+	<cfset var rsInterestGroupCount ="" />
 
-	<cfquery name="rs" datasource="#variables.configBean.getReadOnlyDatasource()#"  username="#variables.configBean.getReadOnlyDbUsername()#" password="#variables.configBean.getReadOnlyDbPassword()#">
+	<cfquery attributeCollection="#variables.configBean.getReadOnlyQRYAttrs(name='rsInterestGroupCount')#">
 	select count(*) as theCount from tcontentcategories
-	where siteid=<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#" />
+	where siteid=<cfqueryparam cfsqltype="cf_sql_varchar" value="#application.settingsManager.getSite(arguments.siteID).getCategoryPoolID()#" />
 	and isInterestGroup=1
 	<cfif arguments.activeOnly>
 	and isactive=1
 	</cfif>
 	</cfquery>
 	
-	<cfreturn rs.theCount />
+	<cfreturn rsInterestGroupCount.theCount />
 </cffunction>
 
 <cffunction name="getCategoryCount" access="public" output="false" returntype="numeric">
 	<cfargument name="siteID" type="String">
 	<cfargument name="activeOnly" type="boolean" required="true" default="false">
 	
-	<cfset var rs ="" />
+	<cfset var rsCategoryCount ="" />
 
-	<cfquery name="rs" datasource="#variables.configBean.getReadOnlyDatasource()#"  username="#variables.configBean.getReadOnlyDbUsername()#" password="#variables.configBean.getReadOnlyDbPassword()#">
+	<cfquery attributeCollection="#variables.configBean.getReadOnlyQRYAttrs(name='rsCategoryCount')#">
 	select count(*) as theCount from tcontentcategories
-	where siteid=<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#" />
+	where siteid=<cfqueryparam cfsqltype="cf_sql_varchar" value="#application.settingsManager.getSite(arguments.siteID).getCategoryPoolID()#" />
 	<cfif arguments.activeOnly>
 	and isactive=1
 	</cfif>
 	</cfquery>
 	
-	<cfreturn rs.theCount />
+	<cfreturn rsCategoryCount.theCount />
 </cffunction>
 
 <cffunction name="getCategoriesBySiteID" access="public" output="false" returntype="query">
 	<cfargument name="siteID" type="String">
 	<cfargument name="keywords"  type="string" required="true" default=""/>
 	
-	<cfset var rs ="" />
+	<cfset var rsCategoriesBySiteID ="" />
 
-	<cfquery name="rs" datasource="#variables.configBean.getReadOnlyDatasource()#"  username="#variables.configBean.getReadOnlyDbUsername()#" password="#variables.configBean.getReadOnlyDbPassword()#">
-	select * from tcontentcategories where siteid=<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#" />
+	<cfquery attributeCollection="#variables.configBean.getReadOnlyQRYAttrs(name='rsCategoriesBySiteID')#">
+	select * from tcontentcategories where siteid=<cfqueryparam cfsqltype="cf_sql_varchar" value="#application.settingsManager.getSite(arguments.siteID).getCategoryPoolID()#" />
 	<cfif arguments.keywords neq ''>and tcontentcategories.name like <cfqueryparam cfsqltype="cf_sql_varchar" value="%#arguments.keywords#%" /></cfif> 
 	order by name
 	</cfquery>
 	
-	<cfreturn rs />
+	<cfreturn rsCategoriesBySiteID />
 </cffunction>
 
 <cffunction name="getInterestGroupsBySiteID" access="public" output="false" returntype="query">
 	<cfargument name="siteID" type="String">
 	<cfargument name="keywords"  type="string" required="true" default=""/>
 	
-	<cfset var rs ="" />
+	<cfset var rsInterestGroupsBySiteID ="" />
 
-	<cfquery name="rs" datasource="#variables.configBean.getReadOnlyDatasource()#"  username="#variables.configBean.getReadOnlyDbUsername()#" password="#variables.configBean.getReadOnlyDbPassword()#">
-	select * from tcontentcategories where siteid=<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#" />
+	<cfquery attributeCollection="#variables.configBean.getReadOnlyQRYAttrs(name='rsInterestGroupsBySiteID')#">
+	select * from tcontentcategories where siteid=<cfqueryparam cfsqltype="cf_sql_varchar" value="#application.settingsManager.getSite(arguments.siteID).getCategoryPoolID()#" />
 	and isInterestGroup=1
 	<cfif arguments.keywords neq ''>and tcontentcategories.name like <cfqueryparam cfsqltype="cf_sql_varchar" value="%#arguments.keywords#%" /></cfif> 
 	order by name
 	</cfquery>
 	
-	<cfreturn rs />
+	<cfreturn rsInterestGroupsBySiteID />
 </cffunction>
 
 <cffunction name="getCategoryfeatures" access="public" output="false" returntype="query">
 	<cfargument name="categoryBean" type="any">
 	
-	<cfset var rs ="" />
+	<cfset var rsCategoryfeatures ="" />
 
-	<cfquery name="rs" datasource="#variables.configBean.getReadOnlyDatasource()#"  username="#variables.configBean.getReadOnlyDbUsername()#" password="#variables.configBean.getReadOnlyDbPassword()#">
+	<cfquery attributeCollection="#variables.configBean.getReadOnlyQRYAttrs(name='rsCategoryfeatures')#">
 	select tcontent.title, tcontent.releasedate, tcontent.menuTitle, tcontent.lastupdate, tcontent.summary, 
 	tcontent.filename, tcontent.type, tcontent.contentid, tcontent.target, tcontent.targetParams, 							
 	tcontent.restricted, tcontent.restrictgroups, tcontent.displaystart, tcontent.displaystop, 0 as comments,
@@ -174,15 +174,15 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	</cfif>
 	</cfquery>
 	
-	<cfreturn rs />
+	<cfreturn rsCategoryfeatures />
 </cffunction>
 
 <cffunction name="getLiveCategoryfeatures" access="public" output="false" returntype="query">
 	<cfargument name="categoryBean" type="any">
 	
-	<cfset var rs ="" />
+	<cfset var rsLiveCategoryfeatures ="" />
 
-	<cfquery name="rs" datasource="#variables.configBean.getReadOnlyDatasource()#"  username="#variables.configBean.getReadOnlyDbUsername()#" password="#variables.configBean.getReadOnlyDbPassword()#">
+	<cfquery attributeCollection="#variables.configBean.getReadOnlyQRYAttrs(name='rsLiveCategoryfeatures')#">
 	select tcontent.title, tcontent.releasedate, tcontent.menuTitle, tcontent.lastupdate, tcontent.summary, 
 	tcontent.filename, tcontent.type, tcontent.contentid, tcontent.target, tcontent.targetParams, 							
 	tcontent.restricted, tcontent.restrictgroups, tcontent.displaystart, tcontent.displaystop, 0 as comments,
@@ -231,15 +231,15 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	</cfif>
 	</cfquery>
 	
-	<cfreturn rs />
+	<cfreturn rsLiveCategoryfeatures />
 </cffunction>
 
 <cffunction name="getPrivateInterestGroups" returntype="query" access="public" output="false">
 	<cfargument name="siteid" type="string" default="" />
 	<cfargument name="parentid" type="string" default="" />
 	<cfset var rs = "" />
-	<cfquery name="rs" datasource="#variables.configBean.getReadOnlyDatasource()#"  username="#variables.configBean.getReadOnlyDbUsername()#" password="#variables.configBean.getReadOnlyDbPassword()#">
-	SELECT tsettings.Site, tcontentcategories.categoryID, tcontentcategories.name,tcontentcategories.isOpen,
+	<cfquery attributeCollection="#variables.configBean.getReadOnlyQRYAttrs(name='rsPrivateInterestGroups')#">
+	SELECT tsettings.Site, tcontentcategories.categoryID, tcontentcategories.name,tcontentcategories.filename,tcontentcategories.urltitle,tcontentcategories.isOpen,
 	count(tcontentcategories2.parentid) as hasKids
 	FROM tsettings INNER JOIN tcontentcategories ON tsettings.SiteID = tcontentcategories.SiteID
 	left join tcontentcategories tcontentcategories2 ON(
@@ -247,18 +247,18 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	WHERE tcontentcategories.isInterestGroup=1
 	and tcontentcategories.parentID <cfif arguments.parentID neq ''> = <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.parentID#" /><cfelse> is null </cfif>
 	and tsettings.PrivateUserPoolID = '#variables.settingsManager.getSite(arguments.siteid).getPrivateUserPoolID()#'
-	group by  tsettings.Site, tcontentcategories.categoryID, tcontentcategories.name,tcontentcategories.isOpen
+	group by  tsettings.Site, tcontentcategories.categoryID, tcontentcategories.name,tcontentcategories.filename,tcontentcategories.urltitle,tcontentcategories.isOpen
 	ORDER BY tsettings.Site, tcontentcategories.name
 	</cfquery>
-	<cfreturn rs />
+	<cfreturn rsPrivateInterestGroups />
 </cffunction>
 
 <cffunction name="getPublicInterestGroups" returntype="query" access="public" output="false">
 	<cfargument name="siteid" type="string" default="" />
 	<cfargument name="parentid" type="string" default="" />
-	<cfset var rs = "" />
-	<cfquery name="rs" datasource="#variables.configBean.getReadOnlyDatasource()#"  username="#variables.configBean.getReadOnlyDbUsername()#" password="#variables.configBean.getReadOnlyDbPassword()#">
-	SELECT tsettings.Site, tcontentcategories.categoryID, tcontentcategories.name,tcontentcategories.isOpen,
+	<cfset var rsPublicInterestGroups = "" />
+	<cfquery attributeCollection="#variables.configBean.getReadOnlyQRYAttrs(name='rsPublicInterestGroups')#">
+	SELECT tsettings.Site, tcontentcategories.categoryID, tcontentcategories.name,tcontentcategories.filename,tcontentcategories.urltitle,tcontentcategories.isOpen,
 	count(tcontentcategories2.parentid) as hasKids
 	FROM tsettings INNER JOIN tcontentcategories ON tsettings.SiteID = tcontentcategories.SiteID
 	left join tcontentcategories tcontentcategories2 ON(
@@ -266,19 +266,19 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	WHERE tcontentcategories.isInterestGroup =1 
 	and tcontentcategories.parentID <cfif arguments.parentID neq ''> = <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.parentID#" /><cfelse> is null </cfif>
 	and tsettings.PublicUserPoolID = '#variables.settingsManager.getSite(arguments.siteid).getPublicUserPoolID()#'
-	group by  tsettings.Site, tcontentcategories.categoryID, tcontentcategories.name,tcontentcategories.isOpen
+	group by  tsettings.Site, tcontentcategories.categoryID, tcontentcategories.name,tcontentcategories.filename,tcontentcategories.urltitle,tcontentcategories.isOpen
 	ORDER BY tsettings.Site, tcontentcategories.name
 	</cfquery>
-	<cfreturn rs />
+	<cfreturn rsPublicInterestGroups />
 </cffunction>
 
 <cffunction name="getCrumbQuery" output="false" returntype="any">
 	<cfargument name="path" required="true">
 	<cfargument name="siteID" required="true">
 	<cfargument name="sort" required="true" default="asc">
-	<cfset var rs="">
+	<cfset var rsCategoryCrumbData="">
 		
-	<cfquery name="rs" datasource="#variables.configBean.getReadOnlyDatasource()#"  username="#variables.configBean.getReadOnlyDbUsername()#" password="#variables.configBean.getReadOnlyDbPassword()#">
+	<cfquery attributeCollection="#variables.configBean.getReadOnlyQRYAttrs(name='rsCategoryCrumbData')#">
 		select categoryID,siteID,dateCreated,lastUpdate,lastUpdateBy,name,isInterestGroup,parentID,isActive,isOpen,notes,sortBy,sortDirection,restrictGroups,path,remoteID,remoteSourceURL,remotePubDate, 
 		<cfif variables.configBean.getDBType() eq "MSSQL">
 		len(Cast(path as varchar(1000))) depth
@@ -287,10 +287,10 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		</cfif> 
 		from tcontentcategories where 
 		categoryID in (<cfqueryparam cfsqltype="cf_sql_varchar" list="true" value="#arguments.path#">)
-		and siteid= <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteIDs#"/>
+		and siteid= <cfqueryparam cfsqltype="cf_sql_varchar" value="#application.settingsManager.getSite(arguments.siteID).getCategoryPoolID()#"/>
 		order by depth <cfif arguments.sort eq "desc">desc<cfelse>asc</cfif>
 	</cfquery>	
 	
-	<cfreturn rs>
+	<cfreturn rsCategoryCrumbData>
 </cffunction>
 </cfcomponent>

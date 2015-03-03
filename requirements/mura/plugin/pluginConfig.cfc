@@ -285,9 +285,25 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 
 <cffunction name="addEventHandler" output="false" returntype="void">
 	<cfargument name="component" required="true">
+
+	<cfif not isDefined('arguments.component.injectMethod')>
+		<cfset arguments.component.injectMethod=injectMethod>
+	</cfif>
+
+	<cfif not isDefined('arguments.component.getValue')>
+		<cfset arguments.component.injectMethod('getValue',getValue)>
+	</cfif>
+
+	<cfif not isDefined('arguments.component.setValue')>
+		<cfset arguments.component.injectMethod('setValue',setValue)>
+	</cfif>
+
+	<cfset arguments.component.setValue('pluginName',getName())>
     <cfset var rsSites=getPluginManager().getAssignedSites(getModuleID())>
+    <cfset var applyglobal=true>
     <cfloop query="rsSites">
-    <cfset getPluginManager().addEventHandler(arguments.component,rsSites.siteID)>
+    <cfset getPluginManager().addEventHandler(component=arguments.component,siteid=rsSites.siteID,applyglobal=applyglobal)>
+     <cfset var applyglobal=false>
     </cfloop>
 </cffunction>
 
@@ -369,7 +385,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfif arrayLen(clobArray)>
 		<cfloop query="arguments.rs">
 			<cfloop from="1" to="#arrayLen(clobArray)#" index="i">
-				 <cfset QuerySetCell(arguments.rs, clobArray[i],evaluate('arguments.rs.#clobArray[i]#'), arguments.rs.currentRow)>
+				 <cfset QuerySetCell(arguments.rs, clobArray[i],arguments.rs['#clobArray[i]#'], arguments.rs.currentRow)>
 			</cfloop>
 		</cfloop>
 	</cfif>
@@ -399,6 +415,21 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 
 <cffunction name="getFullPath" output="false">
 	<cfreturn application.configBean.getPluginDir() & "/" & getDirectory()>
+</cffunction>
+
+<cffunction name="renderAdminTemplate" returntype="any" output="false">
+<cfargument name="body">
+<cfargument name="pageTitle" default="#getName()#">
+<cfargument name="jsLib" required="true" default="jquery">
+<cfargument name="jsLibLoaded" required="true" default="false">
+<cfargument name="compactDisplay" required="false" default="false" />
+<cfargument name="moduleid" required="false" default="#getModuleID()#" />
+
+	<cfreturn getBean('pluginManager').renderAdminTemplate(argumentCollection=arguments)>
+</cffunction>
+
+<cffunction name="currentUserAccess" output="false">
+	<cfreturn isDefined('session.siteID') and getBean('permUtility').getModulePerm(getModuleID(),session.siteID)>
 </cffunction>
 
 </cfcomponent>

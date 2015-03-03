@@ -45,29 +45,34 @@ modified version; it is your choice whether to do so, or to make such modified v
 version 2 without this exception.  You may, if you choose, apply this exception to your own modified versions of Mura CMS.
 --->
 
-<cfcomponent extends="mura.bean.bean" output="false">
+<cfcomponent extends="mura.bean.bean" entityName="category" table="tcontentcategories" output="false">
 
-<cfproperty name="categoryID" type="string" default="" required="true" />
-<cfproperty name="siteID" type="string" default="" required="true" />
-<cfproperty name="dateCreated" type="date" default="" required="true" />
-<cfproperty name="lastUpdate" type="date" default="" required="true" />
-<cfproperty name="lastUpdateBy" type="string" default="" required="true" />
-<cfproperty name="name" type="string" default="" required="true" />
-<cfproperty name="isInterestGroup" type="numeric" default="1" required="true" />
-<cfproperty name="parentID" type="string" default="" required="true" />
-<cfproperty name="isActive" type="numeric" default="1" required="true" />
-<cfproperty name="isOpen" type="numeric" default="1" required="true" />
-<cfproperty name="note" type="string" default="" required="true" />
-<cfproperty name="sortBy" type="string" default="orderno" required="true" />
-<cfproperty name="sortDirection" type="string" default="asc" required="true" />
-<cfproperty name="restrictGroups" type="string" default="" required="true" />
-<cfproperty name="path" type="string" default="" required="true" />
-<cfproperty name="remoteID" type="string" default="" required="true" />
-<cfproperty name="remoteSourceURL" type="string" default="" required="true" />
-<cfproperty name="remotePubDate" type="date" default="" required="true" />
-<cfproperty name="URLtitle" type="string" default="" required="true" />
-<cfproperty name="filename" type="string" default="" required="true" />
-<cfproperty name="isNew" type="numeric" default="1" required="true" />
+<cfproperty name="categoryID" fieldtype="id" type="string" default="" />
+<cfproperty name="kids" fieldtype="one-to-many" cfc="category" nested=true orderby="name asc" cascade="delete"/>
+<cfproperty name="parent" fieldtype="many-to-one" cfc="category" fkcolumn="parentid"/>
+<cfproperty name="site" fieldtype="one-to-many" cfc="site" fkcolumn="siteid" />
+<cfproperty name="dateCreated" type="date" default="" />
+<cfproperty name="lastUpdate" type="date" default="" />
+<cfproperty name="lastUpdateBy" type="string" default="" />
+<cfproperty name="name" type="string" default="" required="true"/>
+<cfproperty name="isInterestGroup" type="numeric" default="1" required="true"/>
+<cfproperty name="isActive" type="numeric" default="1" required="true"/>
+<cfproperty name="isOpen" type="numeric" default="1" />
+<cfproperty name="note" type="string" default="" />
+<cfproperty name="sortBy" type="string" default="orderno" required="true"/>
+<cfproperty name="sortDirection" type="string" default="asc" required="true"/>
+<cfproperty name="restrictGroups" type="string" default=""/>
+<cfproperty name="path" type="string" default="" />
+<cfproperty name="remoteID" type="string" default="" />
+<cfproperty name="remoteSourceURL" type="string" default="" />
+<cfproperty name="remotePubDate" type="date" default="" />
+<cfproperty name="URLtitle" type="string" default="" />
+<cfproperty name="filename" type="string" default="" />
+<cfproperty name="isNew" type="numeric" default="1" required="true"/>
+<cfproperty name="isFeatureable" type="numeric" default="1" required="true"/>
+
+<cfset variables.primaryKey = 'categoryid'>
+<cfset variables.entityName = 'category'>
 
 <cffunction name="init" returntype="any" output="false" access="public">
 	
@@ -94,6 +99,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfset variables.instance.URLTitle = "">
 	<cfset variables.instance.filename = "">
 	<cfset variables.instance.isNew=1 />
+	<cfset variables.instance.isFeatureable=1 />
 	
 	<cfset variables.kids = arrayNew(1) />
 
@@ -220,9 +226,17 @@ version 2 without this exception.  You may, if you choose, apply this exception 
     <cfset variables.instance.filename = left(trim(arguments.filename),255) />
     <cfreturn this>
 </cffunction>
+
+<cffunction name="setIsFeatureable" output="false" access="public">
+    <cfargument name="IsFeatureable">
+    <cfif isNumeric(arguments.IsFeatureable)>
+    	<cfset variables.instance.IsFeatureable = arguments.IsFeatureable />
+    </cfif>
+    <cfreturn this>
+</cffunction>
 	
 <cffunction name="getParent" output="false" returntype="any">
-	<cfif len(getParentID())>
+	<cfif len(getValue('parentid'))>
 		<cfreturn getBean('category').loadBy(categoryID=variables.instance.parentID, siteid=variables.instance.siteID )>
 	<cfelse>
 		<cfthrow message="Parent category does not exist.">
@@ -251,13 +265,18 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfreturn returnStr>
 </cffunction> 
 
-	<cffunction name="hasParent" output="false">
+<cffunction name="hasParent" output="false">
 	<cfreturn listLen(variables.instance.path) gt 1>
-	</cffunction>
+</cffunction>
 	
-	<cffunction name="clone" output="false">
+<cffunction name="clone" output="false">
 	<cfreturn getBean("category").setAllValues(structCopy(getAllValues()))>
-	</cffunction>
+</cffunction>
+
+<cffunction name="getPrimaryKey" output="false">
+	<cfreturn "categoryID">
+</cffunction>
+
 </cfcomponent>
 
 

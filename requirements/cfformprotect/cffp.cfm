@@ -1,9 +1,14 @@
 <!--- This path should start from the web root and work forward from
 			there, if you don't have it in the web root --->
+
+<!--- Custom For Mura --->
 <cfset cffpPath = "#application.configBean.getContext()#/requirements/cfformprotect">
+<!--- End Custom --->
 
 <!--- load the file that grabs all values from the ini file --->
-<cfinclude template="cffpConfig.cfm">
+<cfinclude template="#cffpPath#/cffpConfig.cfm">
+
+<div style="display:none" class="cffm_applied"></div>
 
 <!--- Bas van der Graaf (bvdgraaf@e-dynamics.nl): Make sure JS is only included once when securing multiple forms with cfformprotect. --->
 <cfif not structkeyExists(request,"cffpJS")>
@@ -25,7 +30,6 @@
 				bot won't trigger this --->
 	<input id="fp<cfoutput>#createuuid()#</cfoutput>" type="hidden" name="formfield1234567892" class="cffp_kp" value="" />
 </cfif>
-
 <cfif cffpConfig.timedFormSubmission>
 	<!--- in cffpVerify.cfm I will verify that the amount of time it took to
 				fill out this form is 'normal' (the time limits are set in the ini file)--->
@@ -42,5 +46,5 @@
 	<!--- A lot of spam bots automatically fill in all form fields.  cffpVerify.cfm will
 				test to see if this field is blank. The "leave this empty" text is there for blind people,
 				who might see this hidden field --->
-	<span style="display:none">Leave this field empty <input id="fp<cfoutput>#createuuid()#</cfoutput>" type="text" name="formfield1234567894" value="" /></span>
+	<label style="display:none">Leave this field empty <input id="fp<cfoutput>#createuuid()#</cfoutput>" type="text" name="formfield1234567894" value="" /></label>
 </cfif>

@@ -44,44 +44,76 @@ For clarity, if you create a modified version of Mura CMS, you are not obligated
 modified version; it is your choice whether to do so, or to make such modified version available under the GNU General Public License 
 version 2 without this exception.  You may, if you choose, apply this exception to your own modified versions of Mura CMS.
 --->
+<cfsilent>
 <cfset rc.rsSections = application.contentManager.getSections(rc.siteid, 'Gallery')/>
+
+<cfset pathStrings=arrayNew(1)>
+<cfloop query="rc.rsSections">
+	<cfset arrayAppend(pathStrings, $.dspZoomText(application.contentGateway.getCrumblist(contentid=rc.rsSections.contentid,siteid=rc.rsSections.siteid, path=rc.rsSections.path)))>
+</cfloop>
+
+<cfset queryAddColumn(rc.rsSections, "pathString", "cf_sql_varchar",pathStrings)>
+
+<cfquery name="rc.rsSections" dbtype="query">
+	select * from rc.rsSections order by pathString
+</cfquery>
+</cfsilent>
 <cfoutput>
-	<select name="subClassSelector" 
-	        onchange="loadObjectClass('#rc.siteid#','gallery',this.value,'#rc.contentid#','#rc.parentid#','#rc.contenthistid#',0,0);" 
-	        class="dropdown">
-		<option value="">
-			#application.rbFactory.getKeyValue(session.rb, 'sitemanager.content.fields.selectgallery')#
-		</option>
-		<cfloop query="rc.rsSections">
-			<option value="#rc.rsSections.contentID#" <cfif rc.rsSections.contentID eq rc.subclassid>selected</cfif>>#HTMLEditFormat(rc.rsSections.menutitle)#</option>
-		</cfloop>
-	</select>
-	<br/>
-	
+	<div class="control-group">
+		<div class="controls">
+			<select name="subClassSelector" 
+			        onchange="siteManager.loadObjectClass('#rc.siteid#','gallery',this.value,'#rc.contentid#','#rc.parentid#','#rc.contenthistid#',0,0);" 
+			        class="dropdown">
+				<option value="">
+					#application.rbFactory.getKeyValue(session.rb, 'sitemanager.content.fields.selectgallery')#
+				</option>
+				<cfloop query="rc.rsSections">
+					<cfsilent>
+				<cfset pathString=$.dspZoomText(application.contentGateway.getCrumblist(contentid=rc.rsSections.contentid,siteid=rc.rsSections.siteid, path=rc.rsSections.path))>
+			</cfsilent>
+					<option value="#rc.rsSections.contentID#" <cfif rc.rsSections.contentID eq rc.subclassid>selected</cfif>>#esapiEncode('html',rc.rsSections.pathString)#</option>
+				</cfloop>
+			</select>
+		</div>
 	<cfif rc.subclassid neq ''>
-		<select name="availableObjects" id="availableObjects" class="multiSelect" 
-		        size="#evaluate((application.settingsManager.getSite(rc.siteid).getcolumnCount() * 6)-4)#" 
-		        style="width:310px;">
-			<cfloop query="rc.rsSections">
-				<cfif rc.rsSections.contentID eq rc.subclassid>
-					<option value="{'object':'category_summary','name':'#JSStringFormat(rc.rsSections.menutitle)# - #application.rbFactory.getKeyValue(session.rb,'sitemanager.content.fields.categorysummary')#','objectid':'#rc.rsSections.contentid#'}">
-						#HTMLEditFormat(rc.rsSections.menutitle)# 
-						- 
-						#application.rbFactory.getKeyValue(session.rb, 'sitemanager.content.fields.categorysummary')#
-					</option>
-					<option value="{'object':'related_section_content','name':'#JSStringFormat(rc.rsSections.menutitle)# - #application.rbFactory.getKeyValue(session.rb,'sitemanager.content.fields.relatedcontent')#','objectid':'#rc.rsSections.contentid#'}">
-						#HTMLEditFormat(rc.rsSections.menutitle)# 
-						- 
-						#application.rbFactory.getKeyValue(session.rb, 
-					                                    'sitemanager.content.fields.relatedcontent')#
-					</option>
-					<option value="calendar_nav~#HTMLEditFormat(rc.rsSections.menutitle)# - #application.rbFactory.getKeyValue(session.rb,'sitemanager.content.fields.calendarnavigation')#~#rc.rsSections.contentid#">
-						#HTMLEditFormat(rc.rsSections.menutitle)# 
-						- 
-						#application.rbFactory.getKeyValue(session.rb, 'sitemanager.content.fields.calendarnavigation')#
-					</option>
-				</cfif>
-			</cfloop>
-		</select>
+		<div class="controls">
+			<select name="availableObjects" id="availableObjects" class="multiSelect" 
+			        size="#evaluate((application.settingsManager.getSite(rc.siteid).getcolumnCount() * 6)-4)#" 
+			        style="width:310px;">
+				<cfloop query="rc.rsSections">
+					<cfif rc.rsSections.contentID eq rc.subclassid>
+						<cfsilent>
+						<cfset pathString=$.dspZoomText(application.contentGateway.getCrumblist(contentid=rc.rsSections.contentid,siteid=rc.rsSections.siteid, path=rc.rsSections.path))>
+						</cfsilent>
+
+						<cfset title=rc.rsSections.pathString
+								& ' - ' 
+								& application.rbFactory.getKeyValue(session.rb, 'sitemanager.content.fields.categorysummary')>
+
+						<option title="#esapiEncode('html_attr',title)#" value="{'object':'category_summary','name':'#esapiEncode('javascript',title)#','objectid':'#rc.rsSections.contentid#'}">
+							#esapiEncode('html',title)# 
+						</option>
+
+						<cfset title=rc.rsSections.pathString
+							& ' - ' 
+							& application.rbFactory.getKeyValue(session.rb, 
+						                                    'sitemanager.content.fields.relatedcontent')>
+
+						<option title="#esapiEncode('html_attr',title)#" value="{'object':'related_section_content','name':'#esapiEncode('javascript',title)#','objectid':'#rc.rsSections.contentid#'}">
+							#esapiEncode('html',title)#
+						</option>
+
+						<cfset title=rc.rsSections.pathString
+							& ' - ' 
+							& application.rbFactory.getKeyValue(session.rb, 'sitemanager.content.fields.calendarnavigation')>
+
+						<option title="#esapiEncode('html_attr',title)#" value="calendar_nav~#esapiEncode('html',title)#~#rc.rsSections.contentid#">
+							#esapiEncode('html',title)#
+						</option>
+					</cfif>
+				</cfloop>
+			</select>
+		</div>
 	</cfif>
+	</div>
 </cfoutput>

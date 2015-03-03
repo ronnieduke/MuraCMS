@@ -48,10 +48,8 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cffunction name="init" access="public" returntype="any" output="false">
 <cfargument name="configBean" type="any" required="yes"/>
 <cfargument name="utility" type="any" required="yes"/>
-		<cfset var fileDelim="/"/>
 		<cfset variables.configBean=arguments.configBean />
 		<cfset variables.utility=arguments.utility />
-		<cfset fileDelim=variables.configBean.getFileDelim() />
 		<cfreturn this />
 </cffunction>
 
@@ -64,7 +62,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfset var data="">
 	<cfset var I=0/>
 	
-	<cffile  action="upload" destination="#variables.configBean.getTempDir()#"  filefield="listfile" nameconflict="makeunique"  accept="text/*">
+	<cffile  action="upload" destination="#variables.configBean.getTempDir()#"  filefield="listfile" nameconflict="makeunique">
 	
 	<cffile 
 	file="#variables.configBean.getTempDir()##cffile.serverfile#"
@@ -106,7 +104,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<cfset application.mailinglistManager.createMember(data) />
 	
 		<cfelseif  arguments.direction eq 'remove'>
-			<cfquery datasource="#variables.configBean.getDatasource()#"  username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
+			<cfquery>
 			delete from tmailinglistmembers where email=<cfqueryparam cfsqltype="cf_sql_varchar" value="#listFirst(i,chr(9))#" /> and mlid=<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.listBean.getMLID()#" /> and siteid=<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.listBean.getSiteID()#" />
 			</cfquery>
 		</cfif>

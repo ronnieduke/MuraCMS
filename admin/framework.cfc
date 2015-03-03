@@ -445,7 +445,7 @@
 	 * note: you need to rename / disable onError() on OpenBD since it does
 	 * not seem to be passed exception or event correctly when something fails
 	 * in the code...
-	 */
+	*/
 	function onError( exception, event ) {
 
 		try {
@@ -741,13 +741,13 @@
 			<cfif arguments.append is "all">
 				<cfloop item="key" collection="#request.context#">
 					<cfif isSimpleValue( request.context[key] )>
-						<cfset baseQueryString = listAppend( baseQueryString, key & "=" & urlEncodedFormat( request.context[key] ), '&' ) />
+						<cfset baseQueryString = listAppend( baseQueryString, key & "=" & esapiEncode('url', request.context[key] ), '&' ) />
 					</cfif>
 				</cfloop>
 			<cfelse>
 				<cfloop index="key" list="#arguments.append#">
 					<cfif structKeyExists( request.context, key ) and isSimpleValue( request.context[key] )>
-						<cfset baseQueryString = listAppend( baseQueryString, key & "=" & urlEncodedFormat( request.context[key] ), '&' ) />
+						<cfset baseQueryString = listAppend( baseQueryString, key & "=" & esapiEncode('url', request.context[key] ), '&' ) />
 					</cfif>
 				</cfloop>
 			</cfif>

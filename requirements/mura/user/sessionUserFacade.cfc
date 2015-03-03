@@ -52,7 +52,8 @@
 	<cfargument name="property">	
 	<cfset var theValue="">
 	<cfif isDefined('get#arguments.property#')>
-		<cfreturn evaluate('get#arguments.property#()')>
+		<cfset var tempFunc=this["get#arguments.property#"]>
+        <cfreturn tempFunc()>
 	<cfelseif not structKeyExists(session.mura,arguments.property)>
 		<cfset theValue=getUserBean().getValue(arguments.property)>
 		<cfif isSimpleValue(theValue)>
@@ -150,6 +151,14 @@
 	</cfif>
 </cffunction>
 
+<cffunction name="isAdminUser" access="public" returntype="boolean" output="false">
+	<cfif hasSession()>
+		<cfreturn isInGroup('Admin',0) />
+	<cfelse>
+		<cfreturn false>
+	</cfif>
+</cffunction>
+
 <cffunction name="isLoggedIn" access="public" returntype="boolean" output="false">	
 	<cfif hasSession()>
 		<cfreturn session.mura.isLoggedIn>
@@ -158,13 +167,84 @@
 	</cfif>
 </cffunction>
 
+<cffunction name="isPassedLockdown" access="public" returntype="boolean" output="false">	
+	<cfif not structKeyExists(cookie, "passedLockdown")>
+		<cfcookie name="passedLockdown" value="false" expires="never" httpOnly="true" secure="#application.configBean.getValue('secureCookies')#">
+	</cfif>
+	<cfreturn cookie.passedLockdown>
+</cffunction>
+
 <cffunction name="hasSession" output="false" returntype="boolean">
 	<cfreturn isDefined("session.mura")>
 </cffunction>
 
 <cffunction name="logout" access="public" returntype="any" output="false">
-	
 	<cfset getBean('loginManager').logout()>
 	<cfreturn this>
 </cffunction>
+
+<cffunction name="getAllValues" output="false">
+	<cfreturn getUserBean().getAllValues()>
+</cffunction>
+
+<cffunction name="validateCSRFTokens" output="false">
+	<cfargument name="$" default="">
+	<cfargument name="context" default="">
+
+	<!---CLEAR OLD TOKENS--->
+	<cfloop collection="#session.mura.csrfusedtokens#" item="local.key">
+		<cfif session.mura.csrfusedtokens['#local.key#'] lt dateAdd('h',-3,now())>
+			<cfset structDelete(session.mura.csrfusedtokens,'#local.key#')>
+		</cfif>
+	</cfloop>
+
+	<!--- CAN ONLY USE TOKEN ONCE --->
+	<cfif not len(arguments.$.event('csrf_token')) or structKeyExists(session.mura.csrfusedtokens, "#arguments.$.event('csrf_token')#")>
+		<cfreturn false>
+	</cfif>
+
+	<cfif arguments.$.event('csrf_token_expires') gt (now() + 0) and arguments.$.event('csrf_token') eq hash(arguments.context & session.mura.csrfsecretkey & arguments.$.event('csrf_token_expires'))>
+		<cfset session.mura.csrfusedtokens["#arguments.$.event('csrf_token')#"]=now()>
+		<cfreturn true>
+	<cfelse>
+		<cfreturn false>
+	</cfif>
+</cffunction>
+
+<cffunction name="generateCSRFTokens" output="false">
+	<cfargument name="timespan" default="#createTimeSpan(0,3,0,0)#">
+	<cfargument name="context" default="">
+	<cfset var expires="#numberFormat((now() + arguments.timespan),'99999.9999999')#">
+
+	<cfreturn {
+		expires=expires,
+		token=hash(arguments.context & session.mura.csrfsecretkey & expires)
+	}>
+</cffunction>
+
+<cffunction name="renderCSRFTokens" output="false">
+	<cfargument name="timespan" default="#createTimeSpan(0,3,0,0)#">
+	<cfargument name="context" default="">
+	<cfargument name="format" default="form">
+	<cfset var csrf=generateCSRFTokens(argumentCollection=arguments)>
+	<cfswitch expression="#arguments.format#">
+		<cfcase value="url">
+			<cfreturn "&csrf_token=#csrf.token#&csrf_token_expires=#csrf.expires#">
+		</cfcase>
+		<cfcase value="json">
+			<cfreturn "{csrf_token:'#csrf.token#',csrf_token_expires:'#csrf.expires#'}">
+		</cfcase>	
+		<cfdefaultcase>
+			<cfsavecontent variable="local.str">
+			<cfoutput>
+				<input type="hidden" name="csrf_token" value="#csrf.token#" />
+				<input type="hidden" name="csrf_token_expires" value="#csrf.expires#" />
+			</cfoutput>
+			</cfsavecontent>
+			<cfreturn local.str>
+		</cfdefaultcase>
+	</cfswitch>
+	
+</cffunction>
+
 </cfcomponent>

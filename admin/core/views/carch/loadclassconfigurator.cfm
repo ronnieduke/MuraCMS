@@ -58,6 +58,12 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfcase value="related_content,related_section_content">
 		<cfinclude template="objectclass/dsp_related_content_configurator.cfm">
 	</cfcase>
+	<cfcase value="tag_cloud">
+		<cfinclude template="objectclass/dsp_tagcloud_configurator.cfm">
+	</cfcase>
+	<cfcase value="site_map">
+		<cfinclude template="objectclass/dsp_sitemap_configurator.cfm">
+	</cfcase>
 	<cfdefaultcase>
 		<cfoutput>#rc.classid#</cfoutput>
 	</cfdefaultcase>

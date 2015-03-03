@@ -51,148 +51,190 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cfset variables.configBean=arguments.configBean />
 <cfset variables.broadcastCachePurges=variables.configBean.getValue("broadcastCachePurges")>
 <cfset variables.broadcastAppreloads=variables.configBean.getValue("broadcastAppreloads")>
-<cfset variables.broadcastWithProxy=variables.configBean.getValue("broadcastWithProxy")>
+
 <cfreturn this />
 </cffunction>
 
 <cffunction name="purgeCache" returntype="void" access="public" output="false">
 	<cfargument name="siteid" required="true" default="">
 	<cfargument name="name" required="true" default="both" hint="data, output or both">
-	<cfset var clusterList=getClusterList()>
-	<cfset var host="">
-	<cfset var remoteURL="">
-	
-	<cfif variables.broadcastCachePurges and len(clusterList)>
-		<cfloop list="#clusterList#" index="host">
-			<cfset remoteURL="#formatHost(host)#/MuraProxy.cfc?method=purgeSiteCache&siteID=#URLEncodedFormat(arguments.siteID)#&name=#URLEncodedFormat(arguments.name)#&appreloadkey=#URLEncodedFormat(application.appreloadkey)#&instanceID=#application.instanceID#">
-			<cfset doRemoteCall(remoteURL)>
-		</cfloop>
+
+	<cfif variables.broadcastCachePurges>
+		<cfif listFindNoCase('output,data',arguments.name)>
+			<cfset broadcastCommand("getBean('settingsManager').getSite('#arguments.siteID#').purgeCache(name='#arguments.name#',broadcast=false)")>
+		<cfelse>
+			<cfset broadcastCommand("getBean('settingsManager').getSite('#arguments.siteID#').purgeCache(name='output',broadcast=false)")>
+			<cfset broadcastCommand("getBean('settingsManager').getSite('#arguments.siteID#').purgeCache(name='data',broadcast=false)")>
+		</cfif>
+		
 	</cfif>
-	
 </cffunction>
 
 <cffunction name="purgeUserCache" returntype="void" access="public" output="false">
 	<cfargument name="userID" required="true" default="">
-	<cfset var clusterList=getClusterList()>
-	<cfset var host="">
-	<cfset var remoteURL="">
 	
-	<cfif variables.broadcastCachePurges and len(clusterList)>
-		<cfloop list="#clusterList#" index="host">
-			<cfset remoteURL="#formatHost(host)#/MuraProxy.cfc?method=purgeUserCache&userID=#URLEncodedFormat(arguments.userID)#&appreloadkey=#URLEncodedFormat(application.appreloadkey)#&instanceID=#application.instanceID#">
-			<cfset doRemoteCall(remoteURL)>
-		</cfloop>
+	<cfif variables.broadcastCachePurges>
+		<cfset broadcastCommand("getBean('userManager').purgeUserCache(userID='#arguments.userID#',broadcast=false)")>
 	</cfif>
-	
 </cffunction>
 
 <cffunction name="purgeCategoryCache" returntype="void" access="public" output="false">
 	<cfargument name="categoryID" required="true" default="">
-	<cfset var clusterList=getClusterList()>
-	<cfset var host="">
-	<cfset var remoteURL="">
 	
-	<cfif variables.broadcastCachePurges and len(clusterList)>
-		<cfloop list="#clusterList#" index="host">
-			<cfset remoteURL="#formatHost(host)#/MuraProxy.cfc?method=purgeCategoryCache&categoryID=#URLEncodedFormat(arguments.categoryID)#&appreloadkey=#URLEncodedFormat(application.appreloadkey)#&instanceID=#application.instanceID#">
-			<cfset doRemoteCall(remoteURL)>
-		</cfloop>
+	<cfif variables.broadcastCachePurges>
+		<cfset broadcastCommand("getBean('categoryManager').purgeCategoryCache(categoryID='#arguments.categoryID#',broadcast=false)")>
 	</cfif>
-	
 </cffunction>
 
 <cffunction name="purgeCategoryDescendentsCache" returntype="void" access="public" output="false">
 	<cfargument name="categoryID" required="true" default="">
-	<cfset var clusterList=getClusterList()>
-	<cfset var host="">
-	<cfset var remoteURL="">
-	
-	<cfif variables.broadcastCachePurges and len(clusterList)>
-		<cfloop list="#clusterList#" index="host">
-			<cfset remoteURL="#formatHost(host)#/MuraProxy.cfc?method=purgeCategoryDescendentsCache&categoryID=#URLEncodedFormat(arguments.categoryID)#&appreloadkey=#URLEncodedFormat(application.appreloadkey)#&instanceID=#application.instanceID#">
-			<cfset doRemoteCall(remoteURL)>
-		</cfloop>
+
+	<cfif variables.broadcastCachePurges>
+		<cfset broadcastCommand("getBean('categoryManager').purgeCategoryDescendentsCache(categoryID='#arguments.categoryID#',broadcast=false)")>
 	</cfif>
-	
 </cffunction>
 
 <cffunction name="purgeContentCache" returntype="void" access="public" output="false">
 	<cfargument name="contentID" required="true" default="">
 	<cfargument name="siteID" required="true" default="">
-	<cfset var clusterList=getClusterList()>
-	<cfset var host="">
-	<cfset var remoteURL="">
 	
-	<cfif variables.broadcastCachePurges and len(clusterList)>
-		<cfloop list="#clusterList#" index="host">
-			<cfset remoteURL="#formatHost(host)#/MuraProxy.cfc?method=purgeContentCache&contentID=#URLEncodedFormat(arguments.contentID)#&siteID=#URLEncodedFormat(arguments.siteID)#&appreloadkey=#URLEncodedFormat(application.appreloadkey)#&instanceID=#application.instanceID#">
-			<cfset doRemoteCall(remoteURL)>
-		</cfloop>
+	<cfif variables.broadcastCachePurges>
+		<cfset broadcastCommand("getBean('contentManager').purgeContentCache(contentID='#arguments.contentID#',siteID='#arguments.siteID#',broadcast=false)")>
 	</cfif>
+</cffunction>
+
+<cffunction name="purgeCacheKey" returntype="void" access="public" output="false">
+	<cfargument name="cacheName" required="true" default="data">
+	<cfargument name="cacheKey" required="true" default="">
+	<cfargument name="siteid" required="true" default="">
 	
+	<cfif variables.broadcastCachePurges>
+		<cfset broadcastCommand("getBean('settingsManager').getSite('#arguments.siteid#').getCacheFactory(name='#arguments.cacheName#').purge(key='#arguments.cacheKey#')")>
+	</cfif>
 </cffunction>
 
 <cffunction name="purgeContentDescendentsCache" returntype="void" access="public" output="false">
 	<cfargument name="contentID" required="true" default="">
 	<cfargument name="siteID" required="true" default="">
-	<cfset var clusterList=getClusterList()>
-	<cfset var host="">
-	<cfset var remoteURL="">
-	
-	<cfif variables.broadcastCachePurges and len(clusterList)>
-		<cfloop list="#clusterList#" index="host">
-			<cfset remoteURL="#formatHost(host)#/MuraProxy.cfc?method=purgeContentDescendentsCache&contentID=#URLEncodedFormat(arguments.contentID)#&siteID=#URLEncodedFormat(arguments.siteID)#&appreloadkey=#URLEncodedFormat(application.appreloadkey)#&instanceID=#application.instanceID#">
-			<cfset doRemoteCall(remoteURL)>
+
+	<cfif variables.broadcastCachePurges>
+		<cfset broadcastCommand("getBean('contentManager').purgeContentDescendentsCache(contentID='#arguments.contentID#',siteID='#arguments.siteID#',broadcast=false)")>
+	</cfif>
+</cffunction>
+
+<cffunction name="runCommands" output="false">	
+	<cfset var rsCommands="">
+
+	<cfquery attributeCollection="#variables.configBean.getReadOnlyQRYAttrs(name='rsCommands')#">
+		select * from tclustercommands where instanceID=<cfqueryparam cfsqltype="cf_sql_varchar" value="#application.instanceID#">
+	</cfquery>
+
+	<cfloop query="rsCommands">
+		<cftry>
+			<cfset evaluate("#rsCommands.command#")>
+			<cfcatch>
+				<cflog 
+					type="error"
+					file="exception"
+					text="Cluster Communication Error -- Command: #rsCommands.command#">
+			</cfcatch>
+		</cftry>
+		<cfquery>
+			delete from tclustercommands where commandID=<cfqueryparam cfsqltype="cf_sql_varchar" value="#rsCommands.commandID#">
+		</cfquery>
+	</cfloop>
+</cffunction>	
+
+<cffunction name="broadcastCommand" returntype="void" access="public" output="false">
+	<cfargument name="command" required="true" default="">
+	<cfset var rsPeers=getPeers()>
+
+	<cfif rsPeers.recordcount>
+		<cfloop query="rsPeers">
+			<cfquery>
+				insert into tclustercommands (commandID,instanceID,command,created) 
+					values(
+					'#createUUID()#',
+					<cfqueryparam cfsqltype="cf_sql_varchar" value="#rsPeers.instanceID#">,
+					<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.command#">,
+					<cfqueryparam cfsqltype="cf_sql_timestamp" value="#now()#">
+					)
+			</cfquery>
 		</cfloop>
 	</cfif>
 	
 </cffunction>
 
 <cffunction name="reload" output="false" returntype="void">	
-	<cfset var clusterList=getClusterList()>
-	<cfset var host="">
-	<cfset var remoteURL="">
-	<cfif variables.broadcastAppreloads and len(clusterList)>
-		<cfloop list="#clusterList#" index="host">
-			<cfset remoteURL="#formatHost(host)#/MuraProxy.cfc?method=reload&&appreloadkey=#URLEncodedFormat(application.appreloadkey)#&instanceID=#application.instanceID#">
-			<cfset doRemoteCall(remoteURL)>
-		</cfloop>
-	</cfif>
+	<cfargument name="broadcast" default="true">
+
+	<cfset touchInstance()>
 	
-</cffunction>	
-
-<cffunction name="getClusterList" output="false">
-	<cfset var clusterList=variables.configBean.getValue("clusterList")>
-	<!--- for backward compatbility look for clusterIPlist if clusterList is not set --->
-	<cfif not len(clusterList)>
-		<cfset  clusterList=variables.configBean.getValue("clusterIPList")>
+	<cfif arguments.broadcast and variables.broadcastAppreloads>
+		<cfset broadcastCommand("getBean('settingsManager').remoteReload()")>
+		<cfquery>
+			delete from tclustercommands where instanceid not in (select instanceid from tclusterpeers)
+			and created < <cfqueryparam cfsqltype="cf_sql_timestamp" value="#dateAdd('d',-1,now())#">
+		</cfquery>
+		<cfquery>
+			delete from tclusterpeers where instanceid <> <cfqueryparam cfsqltype="cf_sql_varchar" value="#application.instanceID#">
+		</cfquery>	
 	</cfif>
-	<cfreturn clusterList>
+
 </cffunction>
 
-<cffunction name="doRemoteCall" output="false">
-<cfargument name="remoteURL">
-	<cftry>
-	<cfif variables.broadcastWithProxy and len(variables.configBean.getProxyServer())>
-		<cfhttp url="#remoteURL#" timeout="1"
-				proxyUser="#variables.configBean.getProxyUser()#" proxyPassword="#variables.configBean.getProxyPassword()#"
-				proxyServer="#variables.configBean.getProxyServer()#" proxyPort="#variables.configBean.getProxyPort()#">
-	<cfelse>
-		<cfhttp url="#remoteURL#" timeout="1">
+<cffunction name="touchInstance" output="false">
+	<cfif not hasInstance()>
+		<cfquery>
+			insert into tclusterpeers (instanceID) values(<cfqueryparam cfsqltype="cf_sql_varchar" value="#application.instanceID#">)
+		</cfquery>
 	</cfif>
-	<cfcatch></cfcatch>
-	</cftry>
 </cffunction>
 
-<cffunction name="formatHost" output="false">
-	<cfargument name="host">
-	<cfif left(arguments.host,4) neq "http">
-		<cfset arguments.host="http://" & arguments.host>
-	</cfif>
-	<cfif listLen(host,":") neq 3>
-		<cfset arguments.host = arguments.host & variables.configBean.getServerPort()>
-	</cfif>
-	<cfreturn arguments.host & variables.configBean.getContext()>
+<cffunction name="purgeInstance" output="false">
+
+	<cfquery>
+		delete from tclusterpeers where instanceid=<cfqueryparam cfsqltype="cf_sql_varchar" value="#application.instanceID#">
+	</cfquery>
+	<cfquery>
+		delete from tclustercommands where instanceid=<cfqueryparam cfsqltype="cf_sql_varchar" value="#application.instanceID#">
+	</cfquery>
+	
+</cffunction>
+
+<cffunction name="hasInstance" output="false">	
+	<cfset var rsInstance="">
+
+	<cfquery attributeCollection="#variables.configBean.getReadOnlyQRYAttrs(name='rsInstance')#">
+		select instanceID from tclusterpeers where instanceID=<cfqueryparam cfsqltype="cf_sql_varchar" value="#application.instanceID#">
+	</cfquery>
+
+	<cfreturn rsInstance.recordcount>
+</cffunction>		
+
+<cffunction name="getPeers" output="false">
+	<cfset var rsPeers="">
+
+	<cfquery attributeCollection="#variables.configBean.getReadOnlyQRYAttrs(name='rsPeers')#">
+		select instanceID from tclusterpeers where instanceID <> <cfqueryparam cfsqltype="cf_sql_varchar" value="#application.instanceID#">
+	</cfquery>
+
+	<cfreturn rsPeers>
+</cffunction>
+
+<cffunction name="clearOldCommands" output="false">
+	<cfquery>
+		delete from tclusterpeers 
+		where instanceid in (select instanceid from 
+							tclustercommands 
+							where created <= <cfqueryparam cfsqltype="cf_sql_timestamp" value="#dateAdd('d',-1,now())#">
+							)
+	</cfquery>
+
+	<cfquery>
+		delete from tclustercommands 
+		where created <= <cfqueryparam cfsqltype="cf_sql_timestamp" value="#dateAdd('d',-1,now())#">
+	</cfquery>
 </cffunction>
 
 </cfcomponent>

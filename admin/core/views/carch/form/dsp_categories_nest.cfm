@@ -44,59 +44,163 @@ For clarity, if you create a modified version of Mura CMS, you are not obligated
 modified version; it is your choice whether to do so, or to make such modified version available under the GNU General Public License 
 version 2 without this exception.  You may, if you choose, apply this exception to your own modified versions of Mura CMS.
 --->
-
-<cfsilent><cfparam name="attributes.siteID" default="">
-<cfparam name="attributes.parentID" default="">
-<cfparam name="attributes.nestLevel" default="1">
-<cfparam name="request.catNo" default="0">
-<cfset rslist=application.categoryManager.getCategories(attributes.siteID,attributes.ParentID) />
-</cfsilent>
-
-<cfif rslist.recordcount>
-<ul>
-<cfoutput query="rslist">
 <cfsilent>
-<cfset request.catNo=request.catNo+1 />	
-<cfquery name="rsIsMember" dbtype="query">
-select * from attributes.rsCategoryAssign
-where categoryID='#rslist.categoryID#' and ContentHistID='#attributes.contentBean.getcontentHistID()#'
-</cfquery>
-<cfset catTrim=replace(rslist.categoryID,'-','','ALL') />
-<cfif not application.permUtility.getCategoryPerm(rslist.restrictGroups,attributes.siteid)>
-<cfset disabled="disabled" />
-<cfelse>
-<cfset disabled="" />
-</cfif>
+	<cfscript>
+	if(server.coldfusion.productname != 'ColdFusion Server'){
+		backportdir='';
+		include "/mura/backport/backport.cfm";
+	} else {
+		backportdir='/mura/backport/';
+		include "#backportdir#backport.cfm";
+	}
+	</cfscript>
+	<cfparam name="attributes.siteID" default="" />
+	<cfparam name="attributes.parentID" default="" />
+	<cfparam name="attributes.nestLevel" default="1" />
+	<cfparam name="attributes.disabled" default="false" />
+	<cfparam name="request.catNo" default="0" />
+	<cfset rslist=application.categoryManager.getCategories(attributes.siteID,attributes.ParentID) />
 </cfsilent>
-<li><div <cfif request.catNo mod 2>class="alt"</cfif>>#rslist.name#<cfif rslist.isOpen eq 1>
-<div class="column" <cfif request.catNo mod 2>class="alt"</cfif>>
-<select class="displayOptions" class="categoryid" categoryid="#rslist.categoryID#" name="categoryAssign#catTrim#" #disabled#  onchange="javascript: this.selectedIndex==3?loadCategoryFeatureStartStop('editDates#catTrim#',true,'#attributes.siteID#'):loadCategoryFeatureStartStop('editDates#catTrim#',false,'#attributes.siteID#');checkExtendSetTargeting(this.value);">
-<option <cfif not rsIsMember.recordcount>selected</cfif> value="">#application.rbFactory.getKeyValue(session.rb,'sitemanager.no')#</option>
-<option <cfif rsIsMember.recordcount and not rsIsMember.isFeature>selected</cfif> value="0">#application.rbFactory.getKeyValue(session.rb,'sitemanager.yes')#</option>
-<option value="1" <cfif rsIsMember.recordcount and rsIsMember.isFeature eq 1>selected</cfif>>#application.rbFactory.getKeyValue(session.rb,'sitemanager.content.fields.feature')#</option>
-<option value="2" <cfif rsIsMember.recordcount and rsIsMember.isFeature eq 2>selected</cfif>>#application.rbFactory.getKeyValue(session.rb,'sitemanager.content.fields.scheduledfeature')#</option>
-</select>
-	  <dl id="editDates#catTrim#" <cfif not (rsIsMember.recordcount and rsIsMember.isFeature eq 2)>style="display: none;"</cfif>>
-		<cfif rsIsMember.recordcount and rsIsMember.isFeature eq 2><dt class="start">#application.rbFactory.getKeyValue(session.rb,'sitemanager.content.fields.startdatetime')#</dt>
-		<dd class="start"><input type="text" name="featureStart#catTrim#" #disabled#  <cfif LSisDate(rsIsMember.featurestart)>value="#LSDateFormat(rsIsMember.featurestart,session.dateKeyFormat)#"<cfelse>value="#application.rbFactory.getKeyValue(session.rb,'sitemanager.content.fields.startdate')#" onclick="if(this.value=='Start Date'){this.value=''};"</cfif> class="textAlt datepicker"><!---<img class="calendar" type="image" src="images/icons/cal_24.png" #disabled#  hidefocus onclick="window.open('date_picker/index.cfm?form=contentForm&field=featureStart#catTrim#&format=MDY','refWin','toolbar=no,location=no,directories=no,status=no,menubar=no,resizable=yes,copyhistory=no,scrollbars=no,width=190,height=220,top=250,left=250');return false;">--->
-		<select name="starthour#catTrim#" #disabled#  class="dropdown"><cfloop from="1" to="12" index="h"><option value="#h#" <cfif not LSisDate(rsIsMember.featurestart)  and h eq 12 or (LSisDate(rsIsMember.featurestart) and (hour(rsIsMember.featurestart) eq h or (hour(rsIsMember.featurestart) - 12) eq h or hour(rsIsMember.featurestart) eq 0 and h eq 12))>selected</cfif>>#h#</option></cfloop></select>
-		<select name="startMinute#catTrim#" #disabled# class="dropdown"><cfloop from="0" to="59" index="m"><option value="#m#" <cfif LSisDate(rsIsMember.featurestart) and minute(rsIsMember.featurestart) eq m>selected</cfif>>#iif(len(m) eq 1,de('0#m#'),de('#m#'))#</option></cfloop></select>
-		<select name="startDayPart#catTrim#" class="dropdown"><option value="AM">AM</option><option value="PM" <cfif LSisDate(rsIsMember.featurestart) and hour(rsIsMember.featurestart) gte 12>selected</cfif>>PM</option></select>
-		</dd>
-		<dt class="stop">#application.rbFactory.getKeyValue(session.rb,'sitemanager.content.fields.stopdatetime')#</dt>
-		<dd class="stop"><input type="text" name="featureStop#catTrim#" #disabled# <cfif LSisDate(rsIsMember.featurestop)>value="#LSDateFormat(rsIsMember.featurestop,session.dateKeyFormat)#"<cfelse>value="#application.rbFactory.getKeyValue(session.rb,'sitemanager.content.fields.stopdate')#"  onclick="if(this.value=='Stop Date'){this.value=''};"</cfif> class="textAlt datepicker"><!---<img class="calendar" type="image" src="images/icons/cal_24.png" #disabled#  hidefocus onclick="window.open('date_picker/index.cfm?form=contentForm&field=featureStop#catTrim#&format=MDY','refWin','toolbar=no,location=no,directories=no,status=no,menubar=no,resizable=yes,copyhistory=no,scrollbars=no,width=190,height=220,top=250,left=250');return false;">--->
-	<select name="stophour#catTrim#" class="dropdown"><cfloop from="1" to="12" index="h"><option value="#h#" <cfif not LSisDate(rsIsMember.featurestop)  and h eq 11 or (LSisDate(rsIsMember.featurestop) and (hour(rsIsMember.featurestop) eq h or (hour(rsIsMember.featurestop) - 12) eq h or hour(rsIsMember.featurestop) eq 0 and h eq 12))>selected</cfif>>#h#</option></cfloop></select>
-		<select name="stopMinute#catTrim#" #disabled#  class="dropdown"><cfloop from="0" to="59" index="m"><option value="#m#" <cfif (not LSisDate(rsIsMember.featurestop) and m eq 59) or (LSisDate(rsIsMember.featurestop) and minute(rsIsMember.featurestop) eq m)>selected</cfif>>#iif(len(m) eq 1,de('0#m#'),de('#m#'))#</option></cfloop></select>
-		<select name="stopDayPart#catTrim#" #disabled# class="dropdown"><option value="AM">AM</option><option value="PM" <cfif (LSisDate(rsIsMember.featurestop) and (hour(rsIsMember.featurestop) gte 12)) or not LSisDate(rsIsMember.featurestop)>selected</cfif>>PM</option></select>
-		</dd></cfif>
-		</dl>
-		</div>
-</cfif></div>
-<cfif rslist.hasKids>
-<cf_dsp_categories_nest siteID="#attributes.siteID#" parentID="#rslist.categoryID#" nestLevel="#evaluate(attributes.nestLevel +1)#" contentBean="#attributes.contentBean#"
-rsCategoryAssign="#attributes.rsCategoryAssign#">
-</cfif>
-</li>
-</cfoutput>
-</ul>
+<cfif rslist.recordcount>
+	<ul class="categorylist"<cfif len(attributes.parentid)> style="display:none"<cfelse> id="mura-nodes"</cfif>>
+		<cfoutput query="rslist">
+			<cfsilent>
+				<cfset catTrim=replace(rslist.categoryID,'-','','ALL') />
+				<cfset request.catNo=request.catNo+1 />	
+				<cfif not len(attributes.contentBean.getValue('categoryAssign#catTrim#'))>
+					<cfquery name="rsIsMember" dbtype="query">
+					SELECT * 
+					FROM attributes.rsCategoryAssign
+					WHERE categoryID='#rslist.categoryID#'
+						AND ContentHistID='#attributes.contentBean.getcontentHistID()#'
+					</cfquery>
+				<cfelse>
+					<cfset rsIsMember={
+						recordcount=listFind(attributes.contentBean.getCategoryID(),rslist.categoryid),
+						isFeature=attributes.contentBean.getValue('categoryAssign#catTrim#'),
+						featureStart=attributes.contentBean.getValue('featureStart#catTrim#'),
+						featureStop=attributes.contentBean.getValue('featureStop#catTrim#'),
+						startHour=attributes.contentBean.getValue('startHour#catTrim#'),
+						startMinute=attributes.contentBean.getValue('startMinute#catTrim#'),
+						startDayPart=attributes.contentBean.getValue('startDayPart#catTrim#'),
+						stopHour=attributes.contentBean.getValue('stopHour#catTrim#'),
+						stopMinute=attributes.contentBean.getValue('stopMinute#catTrim#'),
+						stopDayPart=attributes.contentBean.getValue('stopDayPart#catTrim#')
+					}>
+				</cfif>
+				<cfparam name="request.opencategorylist" default="">
+
+				<cfif rsIsMember.recordcount>
+					<cfset request.opencategorylist=listAppend(request.opencategorylist,rslist.categoryid)>
+				</cfif>
+
+				<cfif not attributes.disabled and not application.permUtility.getCategoryPerm(rslist.restrictGroups,attributes.siteid)>
+					<cfset attributes.disabled=true />
+				</cfif>
+			</cfsilent>
+			<li data-siteID="#attributes.contentBean.getSiteID()#" data-categoryid="#rslist.categoryid#" data-cattrim="#catTrim#" data-disabled="#attributes.disabled#">
+				<dl class="categoryitem">
+					<!--- title --->
+					<dt class="categorytitle">
+						<span class="<cfif rslist.hasKids> hasChildren closed</cfif>"></span>
+						<label>
+							<cfif rslist.isOpen eq 1><input name="categoryid"<cfif attributes.disabled>
+								disabled="true"
+							</cfif> value="#rslist.categoryid#" type="checkbox" <cfif rsIsMember.recordcount>	checked="true"</cfif>/> </cfif>#esapiEncode('html',rslist.name)#</label>
+							<cfif attributes.disabled>
+								<input name="categoryid" value="#rslist.categoryid#" type="hidden" /> 
+							</cfif>
+					</dt>
+					<!--- assignment --->
+					<dd class="categoryassignmentwrapper">
+						<cfif rslist.isOpen eq 1 and rslist.isFeatureable eq 1 or rslist.isFeatureable eq ''>
+							<div id="categoryLabelContainer#cattrim#" class="categoryLabelContainer">
+								<div class="categoryassignment<cfif rsIsMember.recordcount and rsIsMember.isFeature eq 2> scheduled</cfif>">
+									<!--- Quick Edit --->
+									<a class="dropdown-toggle<cfif not attributes.disabled> mura-quickEditItem</cfif>"<cfif rsIsMember.isFeature eq 2> rel="tooltip" title="#esapiEncode('html_attr',LSDateFormat(rsIsMember.featurestart,"short"))#&nbsp;-&nbsp;#LSDateFormat(rsIsMember.featurestop,"short")#"</cfif>>
+										<cfswitch expression="#rsIsMember.isFeature#">
+											<cfcase value="0">
+											<i class="icon-ban-circle" title="#application.rbFactory.getKeyValue(session.rb,"sitemanager.no")#"></i>
+												<span>#application.rbFactory.getKeyValue(session.rb,"sitemanager.no")#</span>
+											</cfcase>
+											<cfcase value="1">
+												<i class="icon-ok" title="#application.rbFactory.getKeyValue(session.rb,'sitemanager.yes')#"></i>
+												<span>#application.rbFactory.getKeyValue(session.rb,'sitemanager.yes')#</span>
+											</cfcase>
+											<cfcase value="2">
+												<i class="icon-calendar" title="#esapiEncode('html_attr',LSDateFormat(rsIsMember.featurestart,"short"))#&nbsp;-&nbsp;#LSDateFormat(rsIsMember.featurestop,"short")#"></i>
+											</cfcase>
+											<cfdefaultcase>
+												<i class="icon-ban-circle" title="#application.rbFactory.getKeyValue(session.rb,"sitemanager.no")#"></i><span>#application.rbFactory.getKeyValue(session.rb,"sitemanager.no")#</span>
+											</cfdefaultcase>
+										</cfswitch>
+									</a><!--- /.mura-quickEditItem --->
+									<cfif not rsIsMember.recordcount or not yesNoFormat(rsIsMember.isFeature)>
+										<input type="hidden" id="categoryAssign#catTrim#" name="categoryAssign#catTrim#" value="0"/>
+									<cfelseif rsIsMember.recordcount and rsIsMember.isFeature eq 1>
+										<input type="hidden" id="categoryAssign#catTrim#" name="categoryAssign#catTrim#" value="1"/>
+									<cfelseif rsIsMember.recordcount and rsIsMember.isFeature eq 2>
+										<input type="hidden" id="categoryAssign#catTrim#" name="categoryAssign#catTrim#" value="2"/>
+											<input type="hidden" id="featureStart#catTrim#" name="featureStart#catTrim#" value="#LSDateFormat(rsIsMember.featurestart,session.dateKeyFormat)#">
+										<cfif isDate(rsIsMember.featurestart)>
+											<cfif session.localeHasDayParts>
+												<cfif hour(rsIsMember.featurestart) lt 12>
+													<input type="hidden" id="startHour#catTrim#" name="startHour#catTrim#" value="#hour(rsIsMember.featurestart)#">
+													<input type="hidden" id="startDayPart#catTrim#" name="startDayPart#catTrim#" value="AM">	
+												<cfelse>
+													<input type="hidden" id="startHour#catTrim#" name="startHour#catTrim#" value="#evaluate('hour(rsIsMember.featurestart)-12')#">
+													<input type="hidden" id="startDayPart#catTrim#" name="startDayPart#catTrim#" value="PM">	
+												</cfif>
+											<cfelse>
+												<input type="hidden" id="startHour#catTrim#" name="startHour#catTrim#" value="#hour(rsIsMember.featurestart)#">
+												<input type="hidden" id="startDayPart#catTrim#" name="startDayPart#catTrim#" value="">	
+											</cfif>
+											<input type="hidden" id="startMinute#catTrim#" name="startMinute#catTrim#" value="#minute(rsIsMember.featurestart)#">	
+										<cfelse>
+											<input type="hidden" id="startHour#catTrim#" name="startHour#catTrim#" value="">
+											<input type="hidden" id="startMinute#catTrim#" name="startMinute#catTrim#" value="">
+											<input type="hidden" id="startDayPart#catTrim#" name="startDayPart#catTrim#" value="">	
+										</cfif>
+										<!--- feature stop --->
+										<input type="hidden" id="featureStop#catTrim#" name="featureStop#catTrim#" value="#LSDateFormat(rsIsMember.featureStop,session.dateKeyFormat)#">
+										<cfif isDate(rsIsMember.featureStop)>
+											<cfif session.localeHasDayParts>
+												<cfif hour(rsIsMember.featureStop) lt 12>
+													<input type="hidden" id="stopHour#catTrim#" name="stopHour#catTrim#" value="#hour(rsIsMember.featureStop)#">
+													<input type="hidden" id="stopDayPart#catTrim#" name="stopDayPart#catTrim#" value="AM">	
+												<cfelse>
+													<input type="hidden" id="stopHour#catTrim#" name="stopHour#catTrim#" value="#evaluate('hour(rsIsMember.featureStop)-12')#">	
+													<input type="hidden" id="stopDayPart#catTrim#" name="stopDayPart#catTrim#" value="PM">
+												</cfif>
+											<cfelse>
+												<input type="hidden" id="stopHour#catTrim#" name="stopHour#catTrim#" value="#hour(rsIsMember.featureStop)#">
+													<input type="hidden" id="stopDayPart#catTrim#" name="stopDayPart#catTrim#" value="">	
+											</cfif>
+											<input type="hidden" id="stopMinute#catTrim#" name="stopMinute#catTrim#" value="#minute(rsIsMember.featureStop)#">	
+										<cfelse>
+											<input type="hidden" id="stopHour#catTrim#" name="stopHour#catTrim#" value="">
+											<input type="hidden" id="stopMinute#catTrim#" name="stopMinute#catTrim#" value="">
+											<input type="hidden" id="stopDayPart#catTrim#" name="stopDayPart#catTrim#" value="">	
+										</cfif>
+									</cfif>
+								</div><!--- /.categoryassignmentcontent --->
+							</div><!--- /.categoryLabelContainer --->
+
+						<cfelse>
+							<input type="hidden" id="categoryAssign#catTrim#" name="categoryAssign#catTrim#" value="0"/>
+						</cfif>
+					</dd><!--- /.categoryassignment --->
+				</dl><!--- /dl --->
+				<cfif rslist.hasKids>
+					<cf_dsp_categories_nest 
+						siteID="#attributes.siteID#" 
+						parentID="#rslist.categoryID#" 
+						nestLevel="#evaluate(attributes.nestLevel +1)#" 
+						contentBean="#attributes.contentBean#"
+						rsCategoryAssign="#attributes.rsCategoryAssign#"
+						disabled="#attributes.disabled#">
+				</cfif>
+			</li><!--- /.categoryitem --->
+		</cfoutput>
+	</ul><!--- /.categorylist --->
 </cfif>

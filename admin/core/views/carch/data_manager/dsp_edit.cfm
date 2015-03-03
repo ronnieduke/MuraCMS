@@ -50,38 +50,61 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 </cfsilent>
 <cfoutput>
 <form novalidate="novalidate" name="form1" action="index.cfm" method="post">
-<dl class="oneColumn">
+
+
+
 <cfsilent><cfwddx action="wddx2cfml" input="#rsdata.data#" output="info"></cfsilent>
-<dt>Date/Time Entered</dt>
-<dd>#rsdata.entered#</dd>
+
+<div class="control-group">
+  <label class="control-label">Date/Time Entered</label>
+  <div class="controls">#rsdata.entered#</div>
+</div>
+
 <cfloop list="#rc.fieldnames#" index="f">
-	<cftry><cfset fValue=info['#f#']><cfcatch><cfset fValue=""></cfcatch></cftry>
+	<cftry>
+		<cfset fValue=info['#f#']>
+		<cfcatch>
+			<cfset fValue="">
+		</cfcatch>
+	</cftry>
 	<cfif findNoCase('attachment',f) and isValid("UUID",fvalue)>
-	<input type="hidden" name="#f#" value="#fvalue#">
+		<input type="hidden" name="#esapiEncode('html_attr',f)#" value="#fvalue#">
 	<cfelse>
-	<dt>#f#</dt><dd><cfif len(fValue) gt 100><textarea name="#f#">#HTMLEditFormat(fvalue)#</textarea><cfelse><input type="text" name="#f#" value="#HTMLEditFormat(fvalue)#"></cfif></dd>
+		<div class="control-group">
+  			<label class="control-label">#esapiEncode('html',f)#</label>
+  			<div class="controls">
+  				<cfif len(fValue) gt 100>
+  					<textarea name="#esapiEncode('html_attr',f)#">#esapiEncode('html',fvalue)#</textarea>
+  				<cfelse>
+  					<input type="text" name="#esapiEncode('html_attr',f)#" value="#esapiEncode('html_attr',fvalue)#">
+  			</cfif>
+  		    </div>
+ 		 </div>
 	</cfif>
 </cfloop>
-</dl>
-<input type="button" class="submit" onclick="submitForm(document.forms.form1,'update');" value="#application.rbFactory.getKeyValue(session.rb,'sitemanager.content.fields.update')#" /><input type="button" class="submit" onclick="submitForm(document.forms.form1,'delete','This');" value="#application.rbFactory.getKeyValue(session.rb,'sitemanager.content.fields.deleteresponse')#" />
-<input type="hidden" name="formid" value="#HTMLEditFormat(rc.contentid)#">
-<input type="hidden" name="contentid" value="#HTMLEditFormat(rc.contentid)#">
-<input type="hidden" name="siteid" value="#HTMLEditFormat(rc.siteid)#">
+
+<div class="form-actions">
+<input type="button" class="btn" onclick="submitForm(document.forms.form1,'update');" value="#application.rbFactory.getKeyValue(session.rb,'sitemanager.content.fields.update')#" /><input type="button" class="btn" onclick="submitForm(document.forms.form1,'delete','This');" value="#application.rbFactory.getKeyValue(session.rb,'sitemanager.content.fields.deleteresponse')#" />
+</div>
+<input type="hidden" name="formid" value="#esapiEncode('html_attr',rc.contentid)#">
+<input type="hidden" name="contentid" value="#esapiEncode('html_attr',rc.contentid)#">
+<input type="hidden" name="siteid" value="#esapiEncode('html_attr',rc.siteid)#">
 <input type="hidden" name="muraAction" value="cArch.datamanager">
 <input type="hidden" name="responseID" value="#rsdata.responseID#">
-<input type="hidden" name="hour1" value="#rc.hour1#">
-<input type="hidden" name="hour2" value="#rc.hour2#">
-<input type="hidden" name="minute1" value="#rc.minute1#">
-<input type="hidden" name="minute2" value="#rc.minute2#">
-<input type="hidden" name="date1" value="#rc.date1#">
-<input type="hidden" name="date2" value="#rc.date2#">
-<input type="hidden" name="fieldlist" value="#rc.fieldnames#">
-<input type="hidden" name="sortBy" value="#rc.sortBy#">
-<input type="hidden" name="sortDirection" value="#rc.sortDirection#">
-<input type="hidden" name="filterBy" value="#rc.filterBy#">
-<input type="hidden" name="keywords" value="#HTMLEditFormat(rc.keywords)#">
+<input type="hidden" name="hour1" value="#esapiEncode('html_attr',rc.hour1)#">
+<input type="hidden" name="hour2" value="#esapiEncode('html_attr',rc.hour2)#">
+<input type="hidden" name="minute1" value="#esapiEncode('html_attr',rc.minute1)#">
+<input type="hidden" name="minute2" value="#esapiEncode('html_attr',rc.minute2)#">
+<input type="hidden" name="date1" value="#esapiEncode('html_attr',rc.date1)#">
+<input type="hidden" name="date2" value="#esapiEncode('html_attr',rc.date2)#">
+<input type="hidden" name="fieldlist" value="#esapiEncode('html_attr',rc.fieldnames)#">
+<input type="hidden" name="sortBy" value="#esapiEncode('html_attr',rc.sortBy)#">
+<input type="hidden" name="sortDirection" value="#esapiEncode('html_attr',rc.sortDirection)#">
+<input type="hidden" name="filterBy" value="#esapiEncode('html_attr',rc.filterBy)#">
+<input type="hidden" name="keywords" value="#esapiEncode('html_attr',rc.keywords)#">
 <input type="hidden" name="entered" value="#rsData.entered#">
-<input type="hidden" name="moduleid" value="#rc.moduleid#">
+<input type="hidden" name="moduleid" value="#esapiEncode('html_attr',rc.moduleid)#">
 <input type="hidden" name="action" value="update">
+#rc.$.renderCSRFTokens(context=rsdata.responseID,format="form")#
 </form>
 </cfoutput>

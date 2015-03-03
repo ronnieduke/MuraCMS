@@ -44,7 +44,9 @@ For clarity, if you create a modified version of Mura CMS, you are not obligated
 modified version; it is your choice whether to do so, or to make such modified version available under the GNU General Public License 
 version 2 without this exception.  You may, if you choose, apply this exception to your own modified versions of Mura CMS.
 --->
-<cfcomponent extends="mura.cfobject" output="false">
+<cfcomponent extends="mura.cfobject" accessors="true" output="false">
+
+	<cfproperty name="fw">
 
 	<cffunction name="init" output="false">
 		<cfargument name="fw" />
@@ -53,9 +55,11 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 
 	<cffunction name="secure" output="false">	
 		<cfargument name="rc">
+		
+		<cfset request.context.returnURL=request.context.currentURL>
+
 		<cfif not session.mura.isLoggedIn>
-			<cfset request.context.returnURL='index.cfm?#cgi.query_string#'>
-			<cfset variables.fw.redirect(action="cLogin.main",append="returnURL,compactDisplay")>
+			<cfset variables.fw.redirect(action="cLogin.main",append="returnURL,compactDisplay",path="./")>
 		<cfelse>
 			<cfset variables.utility.backUp()>
 		</cfif>

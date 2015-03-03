@@ -44,49 +44,138 @@ For clarity, if you create a modified version of Mura CMS, you are not obligated
 modified version; it is your choice whether to do so, or to make such modified version available under the GNU General Public License 
 version 2 without this exception.  You may, if you choose, apply this exception to your own modified versions of Mura CMS.
 --->
-<cfinclude template="js.cfm">
-<cfset rslist=application.classExtensionManager.getSubTypes(siteID=rc.siteID,activeOnly=false) />
-<h2>Class Extension Attribute Sets</h2>
-
 <cfoutput>
+	<cfinclude template="js.cfm">
+	<cfset rslist=application.classExtensionManager.getSubTypes(siteID=rc.siteID,activeOnly=false) />
+	<cfset subType=application.classExtensionManager.getSubTypeByID(rc.subTypeID)>
+	<cfset extendSets=subType.getExtendSets()/>
 
+	<cfset showRelatedContentSets = not listFindNoCase("1,2,User,Group,Address,Site,Component,Form", subType.getType())>
 
-<cfset subType=application.classExtensionManager.getSubTypeByID(rc.subTypeID)>
-<cfset extendSets=subType.getExtendSets()/>
+	<cfif showRelatedContentSets>
+		<cfset relatedContentsets = subType.getRelatedContentSets(includeInheritedSets=false)>
+	</cfif>
 
-<ul class="metadata">
-		<li><strong>Class Extension:</strong> #application.classExtensionManager.getTypeAsString(subType.getType())# / #subType.getSubType()#</li>
-</ul>
+	<h1>#rc.$.rbKey('sitemanager.extension.classextensionoverview')#</h1>
 
-<ul id="navTask">
-<li><a href="index.cfm?muraAction=cExtend.listSubTypes&siteid=#URLEncodedFormat(rc.siteid)#">List All Class Extensions</a></li>
-<li><a href="index.cfm?muraAction=cExtend.editSubType&subTypeID=#rc.subTypeID#&siteid=#URLEncodedFormat(rc.siteid)#">Edit Class Extension</a></li>
-<li><a href="index.cfm?muraAction=cExtend.editSet&subTypeID=#rc.subTypeID#&siteid=#URLEncodedFormat(rc.siteid)#&extendSetID=">Add Attribute Set</a></li>
-</ul>
+	<div id="nav-module-specific" class="btn-group">
+		<a class="btn" href="#rc.$.globalConfig('context')#/admin/?muraAction=cExtend.listSubTypes&amp;siteid=#esapiEncode('url',rc.siteid)#">
+			<i class="icon-circle-arrow-left"></i> 
+			#rc.$.rbKey('sitemanager.extension.backtoclassextensions')#
+		</a>
+		<a class="btn" href="#rc.$.globalConfig('context')#/admin/?muraAction=cExtend.editSubType&amp;subTypeID=#esapiEncode('url',rc.subTypeID)#&amp;siteid=#esapiEncode('url',rc.siteid)#">
+			<i class="icon-pencil"></i> 
+			#rc.$.rbKey('sitemanager.extension.editclassextension')#
+		</a>
 
+		<!--- Export --->
+		<cfif rc.$.currentUser().isSuperUser()>
+			<a class="btn" href="#rc.$.globalConfig('context')#/admin/?muraAction=cExtend.export&amp;exportClassExtensionID=#esapiEncode('url',rc.subTypeID)#&amp;siteid=#esapiEncode('url',rc.siteid)#">
+				<i class="icon-signout"></i> 
+				#rc.$.rbKey('sitemanager.extension.exportclassextension')#
+			</a>
+		</cfif>
+
+		<cfif showRelatedContentSets>
+			<div class="btn-group">
+				<a class="btn dropdown-toggle" data-toggle="dropdown" href="##">
+					<i class="icon-plus-sign"></i> 
+					#rc.$.rbKey('sitemanager.extension.add')# 
+					<span class="caret"></span>
+				</a>
+				<ul class="dropdown-menu">
+					<li>
+						<a href="#rc.$.globalConfig('context')#/admin/?muraAction=cExtend.editSet&amp;subTypeID=#esapiEncode('url',rc.subTypeID)#&amp;siteid=#esapiEncode('url',rc.siteid)#&amp;extendSetID=">
+							#rc.$.rbKey('sitemanager.extension.addattributeset')#
+						</a>
+					</li>
+					<li>
+						<a href="#rc.$.globalConfig('context')#/admin/?muraAction=cExtend.editRelatedContentSet&amp;subTypeID=#esapiEncode('url',rc.subTypeID)#&amp;siteid=#esapiEncode('url',rc.siteid)#&amp;relatedContentSetID=">
+							#rc.$.rbKey('sitemanager.extension.addrelatedcontentset')#
+						</a>
+					</li>
+				</ul>
+			</div>
+		<cfelse>
+			<a class="btn" href="#rc.$.globalConfig('context')#/admin/?muraAction=cExtend.editSet&amp;subTypeID=#esapiEncode('url',rc.subTypeID)#&amp;siteid=#esapiEncode('url',rc.siteid)#&amp;extendSetID=">
+				<i class="icon-plus-sign"></i> 
+				#rc.$.rbKey('sitemanager.extension.addattributeset')#
+			</a>
+		</cfif>
+	</div>
+
+	<h2>
+		<i class="#subtype.getIconClass(includeDefault=true)# icon-large"></i> 
+		#application.classExtensionManager.getTypeAsString(subType.getType())# / #subType.getSubType()#
+	</h2>
+
+	<h3>
+		#rc.$.rbKey('sitemanager.extension.extendedattributesets')# 
+		<cfif arrayLen(extendSets) gt 1>
+			(
+				<a href="javascript:;" style="display:none;" id="saveSort" onclick="extendManager.saveExtendSetSort('attr-set');return false;">
+					<i class="icon-check"></i> 
+					#rc.$.rbKey('sitemanager.extension.saveorder')#
+				</a>
+				<a href="javascript:;" id="showSort" onclick="extendManager.showSaveSort('attr-set');return false;">
+					<i class="icon-move"></i> 
+					#rc.$.rbKey('sitemanager.extension.reorder')#
+				</a>
+			)
+		</cfif>
+	</h3>
+
+	<cfif arrayLen(extendSets)>
+		<ul id="attr-set" class="attr-list">
+			<cfloop from="1" to="#arrayLen(extendSets)#" index="s">	
+				<cfset extendSetBean=extendSets[s]/>
+				<li extendSetID="#extendSetBean.getExtendSetID()#">
+					<span id="handle#s#" class="handle" style="display:none;"><i class="icon-move"></i></span>
+					<p>#extendSetBean.getName()#</p>
+					<div class="btns">
+						<a title="#rc.$.rbKey('sitemanager.extension.edit')#" href="#rc.$.globalConfig('context')#/admin/?muraAction=cExtend.editAttributes&amp;subTypeID=#esapiEncode('url',rc.subTypeID)#&amp;extendSetID=#extendSetBean.getExtendSetID()#&amp;siteid=#esapiEncode('url',rc.siteid)#"><i class="icon-pencil"></i></a>
+						<a title="#rc.$.rbKey('sitemanager.extension.delete')#" href="#rc.$.globalConfig('context')#/admin/?muraAction=cExtend.updateSet&amp;action=delete&amp;subTypeID=#esapiEncode('url',rc.subTypeID)#&amp;extendSetID=#extendSetBean.getExtendSetID()#&amp;siteid=#esapiEncode('url',rc.siteid)##rc.$.renderCSRFTokens(context=extendSetBean.getExtendSetID(),format='url')#" onclick="return confirmDialog('Delete  #esapiEncode("javascript","'#extendSetBean.getname()#'")#?',this.href)"><i class="icon-remove-sign"></i></a>
+					</div>
+				</li>
+			</cfloop>
+		</ul>
+	<cfelse>
+		<p class="alert">#rc.$.rbKey('sitemanager.extension.noattributesets')#</p>
+	</cfif>
+
+	<cfif showRelatedContentSets>
+		<cfif arrayLen(relatedContentsets)>
+			<hr />
+			<h3>
+				#rc.$.rbKey('sitemanager.extension.relatedcontentsets')# 
+				<cfif arrayLen(relatedContentsets) gt 1>
+					(
+						<a href="javascript:;" style="display:none;" id="saveRelatedSort" onclick="extendManager.saveRelatedSetSort('related-set');return false;">
+							<i class="icon-check"></i> 
+							#rc.$.rbKey('sitemanager.extension.saveorder')#
+						</a>
+						<a href="javascript:;" id="showRelatedSort" onclick="extendManager.showRelatedSaveSort('related-set');return false;">
+							<i class="icon-move"></i> 
+							#rc.$.rbKey('sitemanager.extension.reorder')#
+						</a>
+					)
+				</cfif>
+			</h3>
+			<ul id="related-set" class="attr-list">
+				<cfloop from="1" to="#arrayLen(relatedContentsets)#" index="s">	
+					<cfset rcsBean=relatedContentsets[s]/>
+					<li relatedContentSetID="#rcsBean.getRelatedContentSetID()#">
+						<span id="handleRelated#s#" class="handleRelated" style="display:none;"><i class="icon-move"></i></span>
+						<p>#rcsBean.getName()#</p>
+						<div class="btns">
+							<a title="#rc.$.rbKey('sitemanager.extension.edit')#" href="#rc.$.globalConfig('context')#/admin/?muraAction=cExtend.editRelatedContentSet&amp;subTypeID=#esapiEncode('url',rc.subTypeID)#&amp;relatedContentSetID=#rcsBean.getRelatedContentSetID()#&amp;siteid=#esapiEncode('url',rc.siteid)#"><i class="icon-pencil"></i></a>
+							<a title="#rc.$.rbKey('sitemanager.extension.delete')#" href="#rc.$.globalConfig('context')#/admin/?muraAction=cExtend.updateRelatedContentSet&amp;action=delete&amp;subTypeID=#esapiEncode('url',rc.subTypeID)#&amp;relatedContentSetID=#rcsBean.getRelatedContentSetID()#&amp;siteid=#esapiEncode('url',rc.siteid)##rc.$.renderCSRFTokens(context=rcsBean.getRelatedContentSetID(),format='url')#" onclick="return confirmDialog('Delete  #esapiEncode("javascript","'#rcsBean.getname()#'")#?',this.href)"><i class="icon-remove-sign"></i></a>
+						</div>
+					</li>
+				</cfloop>
+			</ul>
+		<cfelse>
+			<p class="alert">#rc.$.rbKey('sitemanager.extension.norelatedcontentsets')#</p>
+		</cfif>
+	</cfif>
 </cfoutput>
-<cfif arrayLen(extendSets)>
-<a href="javascript:;" style="display:none;" id="saveSort" onclick="saveExtendSetSort('setList');return false;">[Save Order]</a>
-<a href="javascript:;"  id="showSort" onclick="showSaveSort('setList');return false;">[Reorder]</a>
-</cfif>
-
-<cfif arrayLen(extendSets)>
-
-<ul id="setList">
-<cfloop from="1" to="#arrayLen(extendSets)#" index="s">	
-<cfset extendSetBean=extendSets[s]/>
-<cfoutput>
-	<li extendSetID="#extendSetBean.getExtendSetID()#">
-	<span id="handle#s#" class="handle" style="display:none;">[Drag]</span>
-	#extendSetBean.getName()#
-		<a title="Edit" href="index.cfm?muraAction=cExtend.editAttributes&subTypeID=#rc.subTypeID#&extendSetID=#extendSetBean.getExtendSetID()#&siteid=#URLEncodedFormat(rc.siteid)#">[Edit]</a>
-		<a title="Delete" href="index.cfm?muraAction=cExtend.updateSet&action=delete&subTypeID=#rc.subTypeID#&extendSetID=#extendSetBean.getExtendSetID()#&siteid=#URLEncodedFormat(rc.siteid)#" onclick="return confirmDialog('Delete  #jsStringFormat("'#extendSetBean.getname()#'")#?',this.href)">[Delete]</a>
-		</li>
-</cfoutput>
-</cfloop>
-</ul>
- 
-<cfelse>
-<p class="notice">There are currently no available attribute sets.</p>
-</cfif>
-

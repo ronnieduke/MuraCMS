@@ -48,8 +48,8 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cfset variables.resourceBundles=structNew() />
 <cfset variables.parentFactory=""/>
 <cfset variables.resourceDirectory=""/>
-<cfset variables.configBean=getBean("configBean") />
-<cfset variables.settingsManager=getBean("settingsManager") />
+<cfset variables.configBean="" />
+<cfset variables.settingsManager="" />
 <cfset variables.locale="" />
 
 <cffunction name="init" returntype="any" access="public" output="false">
@@ -59,6 +59,8 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	
 	<cfset variables.parentFactory = arguments.parentFactory />
 	<cfset variables.locale = arguments.locale />
+	<cfset variables.configBean=getBean("configBean") />
+	<cfset variables.settingsManager=getBean("settingsManager") />
 
 	<cfif not len(arguments.resourceDirectory)>
 		<cfset variables.resourceDirectory=getDirectoryFromPath(getCurrentTemplatePath()) & "resources/"  />
@@ -70,23 +72,18 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 </cffunction>
 
 <cffunction name="getResourceBundle" returntype="any" access="public" output="false">
-<cfargument name="locale"  type="string" required="true" default="#variables.locale#">
-
+	<cfargument name="locale"  type="string" required="true" default="#variables.locale#">
 
 	<cfif not structKeyExists(variables.resourceBundles,"#arguments.locale#")>
 		<cfset variables.resourceBundles["#arguments.locale#"]=createObject("component","mura.resourceBundle.resourceBundle").init(arguments.locale,variables.resourceDirectory) />
 	</cfif>	
 
 	<cfreturn variables.resourceBundles["#arguments.locale#"] />
-	
-
 </cffunction>
 
 <cffunction name="getUtils" returntype="any" access="public" output="false">
-<cfargument name="locale"  type="string" required="true" default="#variables.locale#">
-
+	<cfargument name="locale"  type="string" required="true" default="#variables.locale#">
 	<cfreturn getResourceBundle(arguments.locale).getUtils().init(arguments.locale) />
-	
 </cffunction>
 
 <cffunction name="getKeyValue" returnType="String" output="false">
@@ -104,7 +101,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 			<cfreturn keyValue />
 		</cfif>	
 	</cfif>
-	
+
 	<cfif arguments.locale neq "en_US">
 		<cfset keyValue = getResourceBundle("en_US").getKeyValue(arguments.key,true) />
 	 
@@ -127,9 +124,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 
 <cffunction name="getKey" returnType="String" output="false">
 	<cfargument name="key">
-	
 	<cfreturn getKeyValue(variables.locale,arguments.key)>
-
 </cffunction>
 
 <cffunction name="CF2Java" access="public" returnType="string" output="false" hint="Switches Java locale to CF locale (for CF6)">
@@ -230,6 +225,10 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 			<cfcase value="Spanish (Modern)">
 				<cfreturn "es_ES">
 			</cfcase>
+
+			<cfcase value="Spanish (United States)">
+				<cfreturn "es_US">
+			</cfcase>
 			
 			<cfcase value="Spanish (Standard)">
 				<cfreturn "es_ES">
@@ -259,7 +258,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 				<cfreturn "zh_TW">
 			</cfcase>
 			
-			<!--- Railo --->
+			<!--- Lucee--->
 			<cfcase value="arabic">
 					<cfreturn "ar">
 			</cfcase>
@@ -645,7 +644,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 			</cfcase>
 
 			<cfcase value="dutch">
-				<cfreturn "nl_BE">
+				<cfreturn "nl_NL">
 			</cfcase>
 
 			<cfcase value="dutch (belgium)">
@@ -653,15 +652,15 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 			</cfcase>
 
 			<cfcase value="dutch (netherlands)">
-				<cfreturn "nl_BE">
+				<cfreturn "nl_NL">
 			</cfcase>
 
 			<cfcase value="norwegian">
-				<cfreturn "no_NO_NY">
+				<cfreturn "no_NO">
 			</cfcase>
 
 			<cfcase value="norwegian (norway)">
-				<cfreturn "no_NO_NY">
+				<cfreturn "no_NO">
 			</cfcase>
 
 			<cfcase value="polish">
@@ -777,76 +776,78 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 </cffunction>
 
 <cffunction name="setAdminLocale" returnType="void" output="false">
-<cfargument name="mySession" required="true" default="#session#">
-<cfset var utils="">
-<!--- make sure that a locale and language resouce bundle have been set in the users session --->
+	<cfargument name="mySession" required="true" default="#session#">
+	<cfset var utils="">
+	<!--- make sure that a locale and language resouce bundle have been set in the users session --->
 
-<cfif not structKeyExists(arguments.mySession,"dateKey")>
-	<cfset arguments.mySession.dateKey="">
-</cfif>
-<cfif not structKeyExists(arguments.mySession,"dateKeyformat")>
-	<cfset arguments.mySession.dateKeyformat="">
-</cfif>
-<cfif not structKeyExists(arguments.mySession,"rb")>
-	<cfset arguments.mySession.rb="">
-</cfif>
-<cfif not structKeyExists(arguments.mySession,"locale")>
-	<cfset arguments.mySession.locale="">
-</cfif>
+	<cfif not structKeyExists(arguments.mySession,"dateKey")>
+		<cfset arguments.mySession.dateKey="">
+	</cfif>
+	<cfif not structKeyExists(arguments.mySession,"dateKeyformat")>
+		<cfset arguments.mySession.dateKeyformat="">
+	</cfif>
+	<cfif not structKeyExists(arguments.mySession,"rb")>
+		<cfset arguments.mySession.rb="">
+	</cfif>
+	<cfif not structKeyExists(arguments.mySession,"locale")>
+		<cfset arguments.mySession.locale="">
+	</cfif>
 
-<!---  session.rb is used to tell mura what resource bundle to use for lan translations --->
-<cfif not Len(arguments.mySession.rb)>
-	<cfif application.configBean.getDefaultLocale() neq "Server">
-		<cfif application.configBean.getDefaultLocale() eq "Client">
-			<cfset arguments.mySession.rb=listFirst(cgi.HTTP_ACCEPT_LANGUAGE,';') />		
-		<cfelse>
-			<cfif listFind(server.coldfusion.supportedlocales,application.configBean.getDefaultLocale())>
-				<cfset arguments.mySession.rb=application.configBean.getDefaultLocale() />
+	<!---  session.rb is used to tell mura what resource bundle to use for lan translations --->
+	<cfif not Len(arguments.mySession.rb)>
+		<cfif application.configBean.getDefaultLocale() neq "Server">
+			<cfif application.configBean.getDefaultLocale() eq "Client">
+				<cfset arguments.mySession.rb=listFirst(cgi.HTTP_ACCEPT_LANGUAGE,';') />		
 			<cfelse>
-				<cfset arguments.mySession.rb=application.rbFactory.CF2Java(application.configBean.getDefaultLocale()) />
+				<cfif listFind(server.coldfusion.supportedlocales,application.configBean.getDefaultLocale())>
+					<cfset arguments.mySession.rb=application.configBean.getDefaultLocale() />
+				<cfelse>
+					<cfset arguments.mySession.rb=application.rbFactory.CF2Java(application.configBean.getDefaultLocale()) />
+				</cfif>
 			</cfif>
-		</cfif>
-	<cfelse>
-
-		<cfset arguments.mySession.rb=application.rbFactory.CF2Java(getLocale()) />
-	</cfif>
-</cfif>
-
-
-<!--- session.locale  is the locale that mura uses for date formating --->
-<cfif not len(arguments.mySession.locale)>
-	<cfif application.configBean.getDefaultLocale() neq "Server">
-		<cfif application.configBean.getDefaultLocale() eq "Client">
-			<cfset arguments.mySession.locale=listFirst(cgi.HTTP_ACCEPT_LANGUAGE,';') />
-			<cfset arguments.mySession.dateKey=""/>
-			<cfset arguments.mySession.dateKeyFormat=""/>		
 		<cfelse>
-			<cfset arguments.mySession.locale=application.configBean.getDefaultLocale() />
-			<cfset arguments.mySession.dateKey=""/>
+
+			<cfset arguments.mySession.rb=application.rbFactory.CF2Java(getLocale()) />
 		</cfif>
-	<cfelse>
-
-		<cfset arguments.mySession.locale=getLocale() />
-		<cfset arguments.mySession.dateKey=""/>
-		<cfset arguments.mySession.dateKeyFormat=""/>
 	</cfif>
-</cfif>
 
-<!--- set locale for current page request --->
-<cfset setLocale(mySession.locale) />
 
-<!--- now we create a date so we can parse it and figure out the date format and then create a date validation key --->
-<cfif not len(arguments.mySession.dateKey) or not len(arguments.mySession.dateKeyFormat)>
-	<cfset utils=getUtils(arguments.mySession.locale)>
-	<cfset arguments.mySession.dateKey=utils.getJSDateKey()>
-	<cfset arguments.mySession.dateKeyFormat=utils.getJSDateKeyFormat()>
-</cfif>
+	<!--- session.locale  is the locale that mura uses for date formating --->
+	<cfif not len(arguments.mySession.locale)>
+		<cfif application.configBean.getDefaultLocale() neq "Server">
+			<cfif application.configBean.getDefaultLocale() eq "Client">
+				<cfset arguments.mySession.locale=listFirst(cgi.HTTP_ACCEPT_LANGUAGE,';') />
+				<cfset arguments.mySession.dateKey=""/>
+				<cfset arguments.mySession.dateKeyFormat=""/>		
+			<cfelse>
+				<cfset arguments.mySession.locale=application.configBean.getDefaultLocale() />
+				<cfset arguments.mySession.dateKey=""/>
+			</cfif>
+		<cfelse>
 
+			<cfset arguments.mySession.locale=getLocale() />
+			<cfset arguments.mySession.dateKey=""/>
+			<cfset arguments.mySession.dateKeyFormat=""/>
+		</cfif>
+	</cfif>
+
+	<!--- set locale for current page request --->
+	<cfset setLocale(mySession.locale) />
+
+	<!--- now we create a date so we can parse it and figure out the date format and then create a date validation key --->
+	<cfif not len(arguments.mySession.dateKey) or not len(arguments.mySession.dateKeyFormat)>
+		<cfset utils=getUtils(arguments.mySession.locale)>
+		<cfset arguments.mySession.dateKey=utils.getJSDateKey()>
+		<cfset arguments.mySession.dateKeyFormat=utils.getJSDateKeyFormat()>
+	</cfif>
+
+	<cfset arguments.mySession.localeHasDayParts=findNoCase('AM',LSTimeFormat(createTime(0,0,0),  'medium'))>
 </cffunction>
 
 <cffunction name="resetSessionLocale" output="false">
-<cfargument name="mySession" required="true" default="#session#">
+	<cfargument name="mySession" required="true" default="#session#">
 	<cfset arguments.mySession.locale=application.settingsManager.getSite(arguments.mySession.siteID).getJavaLocale() />
+	<cfset arguments.mySession.localeHasDayParts=true>
 	<cfset arguments.mySession.dateKey=""/>
 	<cfset arguments.mySession.dateKeyFormat=""/>
 	<cfset setAdminLocale(arguments.mySession)>

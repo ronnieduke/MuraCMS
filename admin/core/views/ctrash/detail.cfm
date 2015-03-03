@@ -46,65 +46,109 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 --->
 <cfsavecontent variable="rc.ajax">
 <cfoutput>
-<script src="js/architecture.js?coreversion=#application.coreversion#" type="text/javascript" language="Javascript" ></script>
+<script src="assets/js/architecture.min.js?coreversion=#application.coreversion#" type="text/javascript" ></script>
 </cfoutput>
 </cfsavecontent>
-<cfsavecontent variable="rc.layout">
 <cfoutput>
-<h2>Trash Detail</h2>
+<h1>Trash Detail</h1>
 
-<ul id="navTask"
-<li><a href="index.cfm?muraAction=cTrash.list&siteID=#URLEncodedFormat(rc.trashItem.getSiteID())#&keywords=#URLEncodedFormat(rc.keywords)#&pageNum=#URLEncodedFormat(rc.pageNum)#">Back to Trash Bin</a></li>
-</ul>
+<div id="nav-module-specific" class="btn-group">
+<a class="btn" href="./?muraAction=cTrash.list&siteID=#esapiEncode('url',rc.trashItem.getSiteID())#&keywords=#esapiEncode('url',rc.keywords)#&pageNum=#esapiEncode('url',rc.pageNum)#"><i class="icon-circle-arrow-left"></i>  Back to Trash Bin</a>
+</div>
 
-<ul>
-<li><strong>Label:</strong> #htmlEditFormat(rc.trashItem.getObjectLabel())#</li>
-<li><strong>Type:</strong> #htmlEditFormat(rc.trashItem.getObjectType())#</li>
-<li><strong>SubType:</strong> #htmlEditFormat(rc.trashItem.getObjectSubType())#</li>
-<li><strong>ObjectID:</strong> #htmlEditFormat(rc.trashItem.getObjectID())#</li>
-<li><strong>SiteID:</strong> #htmlEditFormat(rc.trashItem.getSiteID())#</li>
-<li><strong>ParentID:</strong> #htmlEditFormat(rc.trashItem.getParentID())#</li>
-<li><strong>Object Class:</strong> #htmlEditFormat(rc.trashItem.getObjectClass())#</li>
+<ul class="metadata">
+<li><strong>Label:</strong> #esapiEncode('html',rc.trashItem.getObjectLabel())#</li>
+<li><strong>Type:</strong> #esapiEncode('html',rc.trashItem.getObjectType())#</li>
+<li><strong>SubType:</strong> #esapiEncode('html',rc.trashItem.getObjectSubType())#</li>
+<li><strong>ObjectID:</strong> #esapiEncode('html',rc.trashItem.getObjectID())#</li>
+<li><strong>SiteID:</strong> #esapiEncode('html',rc.trashItem.getSiteID())#</li>
+<li><strong>ParentID:</strong> #esapiEncode('html',rc.trashItem.getParentID())#</li>
+<li><strong>Object Class:</strong> #esapiEncode('html',rc.trashItem.getObjectClass())#</li>
+<li><strong>DeleteID:</strong> #esapiEncode('html',rc.trashItem.getDeleteID())#</li>
 <li><strong>Deleted Date:</strong> #LSDateFormat(rc.trashItem.getDeletedDate(),session.dateKeyFormat)# #LSTimeFormat(rc.trashItem.getDeletedDate(),"short")#</li>
-<li><strong>Deleted By:</strong> #htmlEditFormat(rc.trashItem.getDeletedBy())#</li>
+<li><strong>Deleted By:</strong> #esapiEncode('html',rc.trashItem.getDeletedBy())#</li>
 </ul>
 
-<cfif not listFindNoCase("Page,Portal,File,Link,Gallery,Calender",rc.trashItem.getObjectType())>
-<div class="clearfix" id="actionButtons">
-<input type="button" class="submit" onclick="return confirmDialog('Restore Item From Trash?','?muraAction=cTrash.restore&objectID=#rc.trashItem.getObjectID()#&siteid=#rc.trashItem.getSiteID()#');" value="Restore Item" />
-</div>
+<cfif not listFindNoCase("Page,Folder,File,Link,Gallery,Calender",rc.trashItem.getObjectType())>
+	<div class="clearfix form-actions">
+		<input type="button" class="btn" onclick="return confirmDialog('Restore Item From Trash?','?muraAction=cTrash.restore&objectID=#rc.trashItem.getObjectID()#&siteid=#rc.trashItem.getSiteID()#');" value="Restore Item" />
+		<cfif len(rc.trashItem.getDeleteID())>
+		<input type="button" class="btn" onclick="return confirmDialog('Restore All Items in Delete Transaction from Trash?','?muraAction=cTrash.restore&objectID=#rc.trashItem.getObjectID()#&deleteID=#rc.trashItem.getDeleteID()#&siteid=#rc.trashItem.getSiteID()#');" value="Restore All Items in Delete Transaction" />
+		</cfif>
+	</div>
 <cfelse>
-<cfset parentBean=application.serviceFactory.getBean("content").loadBy(contentID=rc.trashItem.getParentID(),siteID=rc.trashItem.getSiteID())>
-<div id="selectNewParent">
-<strong>#application.rbFactory.getKeyValue(session.rb,'sitemanager.content.fields.contentparent')#</strong>:
-	<span id="move" class="text"><cfif parentBean.getIsNew()>NA<cfelse>#htmlEditFormat(parentBean.getMenuTitle())#</cfif>
-	&nbsp;&nbsp;<a href="javascript:##;" onclick="javascript: loadSiteParents('#rc.trashItem.getSiteID()#','#rc.trashItem.getObjectID()#','#rc.trashItem.getParentID()#','',1);return false;">[#application.rbFactory.getKeyValue(session.rb,'sitemanager.content.fields.selectnewparent')#]</a>
-	<input type="hidden" id="parentid" name="parentid" value="#rc.trashItem.getParentID()#">
-	</span>
-</div>
-<div class="clearfix" id="actionButtons">
-<input type="button" class="submit" onclick="restoreContent();" value="Restore Item" />
-</div>
+	<cfset parentBean=application.serviceFactory.getBean("content").loadBy(contentID=rc.trashItem.getParentID(),siteID=rc.trashItem.getSiteID())>
 
-<script>
-function restoreContent(){
-	var parentid="";
+	<div class="control-group">
+		<label class="control-label">
+			#application.rbFactory.getKeyValue(session.rb,'sitemanager.content.fields.contentparent')#:
+			<span id="mover1" class="text"> 
+			<cfif parentBean.getIsNew()>NA<cfelse>#esapiEncode('html',parentBean.getMenuTitle())#</cfif>
 
-	if(typeof(jQuery('##parentid').val()) != 'undefined' ){
-		parentid=jQuery('##parentid').val();
-	}else{
-		parentid=jQuery('input:radio[name=parentid]:checked').val();
+			<button id="selectParent" name="selectParent" class="btn">
+				#application.rbFactory.getKeyValue(session.rb,'sitemanager.content.fields.selectnewparent')#
+			</button>		
+		</span>
+		</label>
+		<div class="controls" id="mover2" style="display:none"><input type="hidden" id="parentid" name="parentid" value="#esapiEncode('html_attr',rc.trashItem.getParentID())#"></div>
+	</div>
+
+	</div>
+
+	<div class="clearfix form-actions">
+	<input type="button" class="btn" onclick="restoreItem();" value="Restore Item" />
+	<cfif len(rc.trashItem.getDeleteID())>
+	<input type="button" class="btn" onclick="restoreAll();" value="Restore All Items in Delete Transaction" />
+	</cfif>
+	</div>
+
+	<script>
+	function restoreItem(){
+		var parentid="";
+
+		if(typeof(jQuery('##parentid').val()) != 'undefined' ){
+			parentid=jQuery('##parentid').val();
+		}else{
+			parentid=jQuery('input:radio[name=parentid]:checked').val();		
+		}
 		
+		if(parentid.length==35){
+			confirmDialog('Restore Item From Trash?',"?muraAction=cTrash.restore&siteID=#rc.trashItem.getSiteID()#&objectID=#rc.trashItem.getObjectID()#&parentid=" + parentid);
+		}else{
+			alertDialog('Please select a valid content parent.');
+		}
 	}
-	
-	if(parentid.length==35){
-		confirmDialog('Restore Item From Trash?',"?muraAction=cTrash.restore&siteID=#rc.trashItem.getSiteID()#&objectID=#rc.trashItem.getObjectID()#&parentid=" + parentid);
-	}else{
-		alertDialog('Please select a valid content parent.');
-	}
-}
-</script>
 
+	function restoreAll(){
+		var parentid="";
+
+		if(typeof(jQuery('##parentid').val()) != 'undefined' ){
+			parentid=jQuery('##parentid').val();
+		}else{
+			parentid=jQuery('input:radio[name=parentid]:checked').val();
+		}
+		
+		if(parentid.length==35){
+			confirmDialog('Restore Item From Trash?',"?muraAction=cTrash.restore&siteID=#rc.trashItem.getSiteID()#&objectID=#rc.trashItem.getObjectID()#&deleteID=#rc.trashItem.getDeleteID()#&parentid=" + parentid);
+		}else{
+			alertDialog('Please select a valid content parent.');
+		}
+	}
+
+	jQuery(document).ready(function(){
+		$('##selectParent').click(function(e){
+			e.preventDefault();
+			siteManager.loadSiteParents(
+				'#esapiEncode('javascript',rc.trashItem.getSiteID())#'
+				,'#esapiEncode('javascript',rc.trashItem.getParentID())#'
+				,'#esapiEncode('javascript',rc.trashItem.getParentID())#'
+				,''
+				,1
+			);
+			return false;
+		});
+	});
+					
+	</script>
 </cfif>
 </cfoutput>
-</cfsavecontent>

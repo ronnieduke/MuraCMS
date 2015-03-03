@@ -26,12 +26,21 @@
 <cfcomponent extends="mura.cfobject" displayname="Iterator" output="false" hint="I am a Iterator object.">
 	<cfset variables.maxRecordsPerPage=1000>
 	<cfset variables.recordTranslator="">
+	<cfset variables.iteratorID="">
+	<cfset variables.recordIDField="id">
+	<cfset variables.pageQueries=structNew()>
+
 	<cffunction name="init" access="public" output="false" returntype="any">
 		<cfset variables.recordIndex = 0 />
 		<cfset variables.pageIndex = 1 />
+		<cfset variables.iteratorID="i" & hash(createUUID())>
 		<cfreturn THIS />
 	</cffunction>
 	
+	<cffunction name="getIteratorID" access="public" output="false" returntype="any">
+		<cfreturn variables.iteratorID  />
+	</cffunction>
+
 	<cffunction name="currentIndex" access="public" output="false" returntype="numeric">
 		<cfreturn variables.recordIndex  />
 	</cffunction>
@@ -39,7 +48,25 @@
 	<cffunction name="getRecordIndex" access="public" output="false" returntype="numeric">
 		<cfreturn variables.recordIndex />
 	</cffunction>
+
+	<cffunction name="getRecordIdField" access="public" output="false" returntype="any">
+		<cfreturn variables.recordIDField />
+	</cffunction>
 	
+	<cffunction name="getPageIDList" access="public" output="false" returntype="any">
+		<cfset var idList="">
+		<cfset var i="">
+
+		<cfif getRecordCount() and not isArray(variables.records)>
+			<cfloop from="#getFirstRecordOnPageIndex()#" to="#getLastRecordOnPageIndex()#" index="i">
+				<cfset idList=listAppend(idList,variables.records[getRecordIDField()][i])>
+			</cfloop>
+		</cfif>
+		
+		<cfreturn idList>
+		
+	</cffunction>
+
 	<cffunction name="getFirstRecordOnPageIndex" access="public" output="false" returntype="numeric">
 		<cfset var first = ((variables.pageIndex-1) * variables.maxRecordsPerPage)>
 		
@@ -106,7 +133,13 @@
 	
 	<cffunction name="packageRecord" access="public" output="false" returntype="any">
 		<cfargument name="recordIndex" default="#currentIndex()#">
-		<cfreturn queryRowToStruct(variables.records,arguments.recordIndex) />
+		<cfif isQuery(variables.records)>
+			<cfreturn queryRowToStruct(variables.records,arguments.recordIndex)>
+		<cfelseif isArray(variables.records)>
+			<cfreturn variables.records[arguments.recordIndex]>
+		<cfelse>
+			<cfthrow message="The records have not been set.">
+		</cfif>
 	</cffunction>
 	
 	<cffunction name="reset" access="public" output="false">
@@ -127,14 +160,18 @@
 		<cfreturn pageCount />
 	</cffunction>
 	
-	<cffunction name="recordCount" access="public" output="false" returntype="numeric" hint="For Railo compatibility use getRecordCount()">
+	<cffunction name="recordCount" access="public" output="false" returntype="numeric" hint="For Lucee compatibility use getRecordCount()">
 		<cfreturn getRecordCount()>
 	</cffunction>
 	
 	<cffunction name="getRecordCount" access="public" output="false" returntype="numeric">
 		<cfset var recordCount = 0 />
 		<cfif structKeyExists(variables,"records")>
-			<cfset recordCount =variables.records.recordCount />
+			<cfif isQuery(variables.records)>
+				<cfset recordCount =variables.records.recordCount />
+			<cfelseif isArray(variables.records)>
+				<cfset recordCount= arrayLen(variables.records) />
+			</cfif>
 		</cfif>
 		<cfreturn recordCount />
 	</cffunction>
@@ -164,13 +201,43 @@
 	<cffunction name="getNextN" access="public" output="false" returntype="any">
 		<cfreturn variables.maxRecordsPerPage>
 	</cffunction>
-	
+
+	<cffunction name="setArray" access="public" output="false">
+		<cfargument name="array" type="any" required="true">
+		<cfargument name="maxRecordsPerPage" type="numeric" required="false">
+
+		<cfset variables.records = arguments.array />
+			
+		<cfif structKeyExists(arguments,"maxRecordsPerPage") and isNumeric(arguments.maxRecordsPerPage)>
+			<cfset variables.maxRecordsPerPage = arguments.maxRecordsPerPage />
+		<cfelse>
+			<cfset variables.maxRecordsPerPage = arrayLen(variables.records) />
+		</cfif>
+		<cfreturn this>
+	</cffunction>
+		
+	<cffunction name="getArray" output="false" returntype="any">
+		<cfset var array=arrayNew(1)>
+		<cfset var i=1>
+		
+		<cfif isArray(variables.records)>
+			<cfreturn variables.records>
+		<cfelseif isQuery(variables.records)>
+			<cfloop query="variables.records">
+				<cfset arrayAppend(array,queryRowToStruct(variables.records,variables.records.currentRow))>
+			</cfloop>
+			<cfreturn array>
+		<cfelse>
+			<cfthrow message="The records have not been set.">
+		</cfif>
+	</cffunction>
+
 	<cffunction name="setQuery" access="public" output="false">
 		<cfargument name="rs" type="query" required="true">
 		<cfargument name="maxRecordsPerPage" type="numeric" required="false">
 
 		<cfset variables.records = arguments.rs />
-		
+
 		<cfif structKeyExists(arguments,"maxRecordsPerPage") and isNumeric(arguments.maxRecordsPerPage) and arguments.maxRecordsPerPage>
 			<cfset variables.maxRecordsPerPage = arguments.maxRecordsPerPage />
 		<cfelse>
@@ -178,9 +245,15 @@
 		</cfif>
 		<cfreturn this>
 	</cffunction>
-	
+
 	<cffunction name="getQuery" output="false" returntype="any">
-		<cfreturn variables.records>
+		<cfif isQuery(variables.records)>
+			<cfreturn variables.records>
+		<cfelseif isArray(variables.records)>
+			<cfreturn getBean("utility").arrayToQuery(variables.records)>
+		<cfelse>
+			<cfthrow message="The records have not been set.">
+		</cfif>
 	</cffunction>
 	
 	<cffunction name="queryRowToStruct" access="public" output="false" returntype="struct">
@@ -215,12 +288,31 @@
 			return stReturn;
 		</cfscript>
 	</cffunction>
-	
-	<cffunction name="setRecordTranslator" output="false" access="public">
-	<cfargument name="recordTranslator">
-		<cfset variables.recordTranslator=arguments.recordTranslator/>
+
+	<cffunction name="setPageQuery" returntype="any" access="public" output="false">
+	<cfargument name="queryName"  type="string" required="true">
+	<cfargument name="queryObject" default="" >
+
+		<cfset variables.pageQueries["#arguments.queryName#"]=arguments.queryObject />
 		<cfreturn this>
 	</cffunction>
+
+	<cffunction name="getPageQuery" returntype="any" access="public" output="false">
+	<cfargument name="queryName"  type="string" required="true">
+		
+		<cfif structKeyExists(variables.pageQueries,"#arguments.queryName#")>
+			<cfreturn variables.pageQueries["#arguments.queryName#"] />
+		<cfelse>
+			<cfreturn "" />
+		</cfif>
+
+	</cffunction>
+
+	<cffunction name="clearPageQueries" returntype="any" access="public" output="false">
+		<cfset variables.pageQueries=structNew()>
+		<cfreturn this>
+	</cffunction>
+
 	<!---
 	<cffunction name="each">
 		<cfargument name="action" hint="A function that will run per item in iterator.">

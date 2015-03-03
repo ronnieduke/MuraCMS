@@ -1,37 +1,69 @@
-# Folders and Files to ignore
-/WEB-INF
-/config/settings.ini.cfm
-/config/version.cfm
-/config/mappings.cfm
-/config/cfapplication.cfm
-/plugins
-/robots.txt
-/default/assets
-/default/cache
-/dev
-/web.config
-/.htaccess
-/CFIDE
-/bluedragon
-/unitTests
-/www
-/settings.xml
-/logs
-/crossdomain.xml
-compiled/
-*.less.css
+# Mura CMS root/.gitignore
+# ---------------------------------------------
 
-# OS or Editor folders
+# ignored file extensions & system directories
 *~
-.DS_Store
-._*
-Thumbs.db
-.cache
-.project
-.rdsTempFiles
-.settings
-.tmproj
+*_notes/
+*.codekit
 *.esproj
+*.json
+*.less.css
+*.log
 *.sublime-project
 *.sublime-workspace
-*_notes/
+
+# ignored '.' files and directories
+._*
+.cache
+.DS_Store
+.htaccess
+.project
+.rdsTempFiles
+.sass-cache
+.settings
+.tmproj
+.svn
+
+# ignored files, regardless of location
+cffp.ini.cfm
+crossdomain.xml
+robots.txt
+settings.xml
+Thumbs.db
+web.config
+web.xml
+
+# ignored directories, regardless of location
+compiled/
+logs/
+mxunit/
+tests/
+unitTests/
+
+# ignored CF & Tomcat directories
+CFIDE/
+META-INF/
+WEB-INF/
+
+# ignored directories
+/demo/
+/plugins/
+/temp/
+
+# ignored 'config' directory files
+/config/cfapplication.cfm
+/config/mappings.cfm
+/config/settings.ini.cfm
+/config/version.cfm
+
+# ignored 'default' site files & directories
+/default/assets/
+/default/cache/
+/default/includes/Application.cfc
+/default/includes/contentRenderer.cfc
+/default/includes/email/
+/default/includes/eventHandler.cfc
+
+# create sites &/or directories beginning with 'demo' or 'temp' without tracking them
+demo-*/
+temp-*/

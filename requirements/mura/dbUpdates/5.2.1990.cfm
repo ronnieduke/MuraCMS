@@ -1,7 +1,7 @@
 <cfset variables.DOUPDATE=false>
 
 <cftry>
-<cfquery name="rsCheck" datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
+<cfquery name="rsCheck">
 select parentid from tcontentcomments  where 0=1
 </cfquery>
 <cfcatch>
@@ -12,57 +12,63 @@ select parentid from tcontentcomments  where 0=1
 <cfif variables.DOUPDATE>
 <cfswitch expression="#getDbType()#">
 <cfcase value="mssql">
-	<cfquery name="MSSQLversion" datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
-		EXEC sp_MSgetversion
-	</cfquery>
-	
-	<cftry>
-		<cfset MSSQLversion=left(MSSQLversion.CHARACTER_VALUE,1)>
-		<cfcatch>
-			<cfset MSSQLversion=mid(MSSQLversion.COMPUTED_COLUMN_1,1,find(".",MSSQLversion.COMPUTED_COLUMN_1)-1)>
-		</cfcatch>
-	</cftry>
-
-	<cfif MSSQLversion neq 8>
-		<cfset MSSQLlob="[nvarchar](max)">
-	<cfelse>
-		<cfset MSSQLlob="[ntext]">
-	</cfif>
-	<cfquery datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
+	<cfquery>
 	ALTER TABLE tcontentcomments ADD parentID [char](35) default NULL
 	</cfquery>
-	<cfquery datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
+	<cfquery>
 	ALTER TABLE tcontentcomments ADD path #MSSQLlob# default NULL
 	</cfquery>
-	<cfquery datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
+	<cfquery>
 	CREATE  INDEX [IX_tcontentcomment_parentID] ON [dbo].[tcontentcomments]([parentID]) ON [PRIMARY]
 	</cfquery>
 </cfcase>
 <cfcase value="mysql">
-	<cfquery datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
+	<cfquery>
 	ALTER TABLE tcontentcomments ADD parentID char(35) default NULL
 	</cfquery>
-	<cfquery datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
+	<cfquery>
 	ALTER TABLE tcontentcomments ADD path longtext default NULL
 	</cfquery>
-	<cfquery datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
+	<cfquery>
+	CREATE INDEX IX_tcontentcomments_parentID ON tcontentcomments (parentID)
+	</cfquery>
+</cfcase>
+<cfcase value="postgresql">
+	<cfquery>
+	ALTER TABLE tcontentcomments ADD parentID char(35) default NULL
+	</cfquery>
+	<cfquery>
+	ALTER TABLE tcontentcomments ADD path text default NULL
+	</cfquery>
+	<cfquery>
+	CREATE INDEX IX_tcontentcomments_parentID ON tcontentcomments (parentID)
+	</cfquery>
+</cfcase>
+<cfcase value="nuodb">
+	<cfquery>
+	ALTER TABLE tcontentcomments ADD parentID char(35) default NULL
+	</cfquery>
+	<cfquery>
+	ALTER TABLE tcontentcomments ADD path clob default NULL
+	</cfquery>
+	<cfquery>
 	CREATE INDEX IX_tcontentcomments_parentID ON tcontentcomments (parentID)
 	</cfquery>
 </cfcase>
 <cfcase value="oracle">
-	<cfquery datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
+	<cfquery>
 	ALTER TABLE "TCONTENTCOMMENTS" ADD ("PARENTID" char(35))
 	</cfquery>
-	<cfquery datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
+	<cfquery>
 	ALTER TABLE "TCONTENTCOMMENTS" ADD ("PATH" clob)
 	</cfquery>
-	<cfquery datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
+	<cfquery>
 	CREATE INDEX "IDX_TCONTENTCOMMENTS_PARENTID" ON "TCONTENTCOMMENTS" ("PARENTID") 
 	</cfquery>
 </cfcase>
 </cfswitch>
 
-<cfquery datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
+<cfquery>
 	update tcontentcomments set path=commentid
 </cfquery>
 </cfif>
@@ -70,7 +76,7 @@ select parentid from tcontentcomments  where 0=1
 <cfset variables.DOUPDATE=false>
 
 <cftry>
-<cfquery name="rsCheck" datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
+<cfquery name="rsCheck">
 select tagline from tsettings  where 0=1
 </cfquery>
 <cfcatch>
@@ -81,17 +87,27 @@ select tagline from tsettings  where 0=1
 <cfif variables.DOUPDATE>
 <cfswitch expression="#getDbType()#">
 <cfcase value="mssql">
-	<cfquery datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
+	<cfquery>
 	ALTER TABLE tsettings ADD tagline [nvarchar](255) default NULL
 	</cfquery>
 </cfcase>
 <cfcase value="mysql">
-	<cfquery datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
+	<cfquery>
+	ALTER TABLE tsettings ADD tagline varchar(255) default NULL
+	</cfquery>
+</cfcase>
+<cfcase value="postgresql">
+	<cfquery>
+	ALTER TABLE tsettings ADD tagline varchar(255) default NULL
+	</cfquery>
+</cfcase>
+<cfcase value="nuodb">
+	<cfquery>
 	ALTER TABLE tsettings ADD tagline varchar(255) default NULL
 	</cfquery>
 </cfcase>
 <cfcase value="oracle">
-	<cfquery datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
+	<cfquery>
 	ALTER TABLE "TSETTINGS" ADD ("TAGLINE" varchar2(255))
 	</cfquery>
 </cfcase>
@@ -102,7 +118,7 @@ select tagline from tsettings  where 0=1
 <cfset variables.DOUPDATE=false>
 
 <cftry>
-<cfquery name="rsCheck" datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
+<cfquery name="rsCheck">
 select params from tcontentobjects  where 0=1
 </cfquery>
 <cfcatch>
@@ -113,32 +129,16 @@ select params from tcontentobjects  where 0=1
 <cfif variables.DOUPDATE>
 <cfswitch expression="#getDbType()#">
 <cfcase value="mssql">
-	<cfquery name="MSSQLversion" datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
-		EXEC sp_MSgetversion
-	</cfquery>
-	
-	<cftry>
-		<cfset MSSQLversion=left(MSSQLversion.CHARACTER_VALUE,1)>
-		<cfcatch>
-			<cfset MSSQLversion=mid(MSSQLversion.COMPUTED_COLUMN_1,1,find(".",MSSQLversion.COMPUTED_COLUMN_1)-1)>
-		</cfcatch>
-	</cftry>
-
-	<cfif MSSQLversion gt 8>
-		<cfset MSSQLlob="[nvarchar](max)">
-	<cfelse>
-		<cfset MSSQLlob="[ntext]">
-	</cfif>
-	<cfquery datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
+	<cfquery>
 	ALTER TABLE tcontentobjects ADD Params #MSSQLlob# default NULL
 	</cfquery>
-	<cfquery datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
+	<cfquery>
 	ALTER TABLE tcontentobjects DROP CONSTRAINT PK_tcontentobjects
 	</cfquery>
-	<cfquery datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
+	<cfquery>
 	ALTER TABLE tcontentobjects ALTER COLUMN OrderNo [int] NOT NULL
 	</cfquery>
-	<cfquery datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
+	<cfquery>
 	ALTER TABLE [dbo].[tcontentobjects] WITH NOCHECK ADD 
 	CONSTRAINT [PK_tcontentobjects] PRIMARY KEY  CLUSTERED 
 	(
@@ -152,27 +152,65 @@ select params from tcontentobjects  where 0=1
 
 </cfcase>
 <cfcase value="mysql">
-	<cfquery datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
+	<cfquery>
 	ALTER TABLE tcontentobjects ADD Params longtext default NULL
 	</cfquery>
 	<cftry>
-	<cfquery datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
+	<cfquery>
 	ALTER TABLE tcontentobjects drop primary key
 	</cfquery>
-	<cfquery datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
+	<cfquery>
+	ALTER TABLE tcontentobjects add primary key (`ContentHistID`,`ObjectID`,`Object`,`ColumnID`,`OrderNo`)
+	</cfquery>
+	<cfcatch></cfcatch>
+	</cftry>
+</cfcase>
+<cfcase value="postgresql">
+	<cfquery>
+	ALTER TABLE tcontentobjects ADD Params text default NULL
+	</cfquery>
+	<cfquery>
+	ALTER TABLE tcontentobjects DROP CONSTRAINT PK_tcontentobjects
+	</cfquery>
+	<cfquery>
+	ALTER TABLE tcontentobjects ALTER COLUMN OrderNo TYPE integer
+	</cfquery>
+	<cfquery>
+	ALTER TABLE tcontentobjects ALTER COLUMN OrderNo SET NOT NULL
+	</cfquery>
+	<cfquery>
+	ALTER TABLE tcontentobjects ADD CONSTRAINT PK_tcontentobjects PRIMARY KEY
+	(
+		ContentHistID,
+		ObjectID,
+		Object,
+		ColumnID,
+		OrderNo
+	)
+	</cfquery>
+</cfcase>
+<cfcase value="nuodb">
+	<cfquery>
+	ALTER TABLE tcontentobjects ADD Params clob
+	</cfquery>
+	<cftry>
+	<cfquery>
+	ALTER TABLE tcontentobjects drop primary key
+	</cfquery>
+	<cfquery>
 	ALTER TABLE tcontentobjects add primary key (`ContentHistID`,`ObjectID`,`Object`,`ColumnID`,`OrderNo`)
 	</cfquery>
 	<cfcatch></cfcatch>
 	</cftry>
 </cfcase>
 <cfcase value="oracle">
-	<cfquery datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
+	<cfquery>
 	ALTER TABLE "TCONTENTOBJECTS" ADD ("PARAMS" clob)
 	</cfquery>
-	<cfquery datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
+	<cfquery>
 	ALTER TABLE "TCONTENTOBJECTS" DROP CONSTRAINT "PRIMARY_27"
 	</cfquery>
-	<cfquery datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
+	<cfquery>
 	ALTER TABLE "TCONTENTOBJECTS" ADD CONSTRAINT "PRIMARY_27" PRIMARY KEY ("CONTENTHISTID", "OBJECTID", "OBJECT", "COLUMNID", "ORDERNO") ENABLE
 	</cfquery>
 </cfcase>
@@ -181,7 +219,7 @@ select params from tcontentobjects  where 0=1
 
 
 <cftry>
-<cfquery name="rsCheck" datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
+<cfquery name="rsCheck">
 select remotePubDate from tcontentcategories  where 0=1
 </cfquery>
 <cfcatch>
@@ -192,17 +230,27 @@ select remotePubDate from tcontentcategories  where 0=1
 <cfif variables.DOUPDATE>
 <cfswitch expression="#getDbType()#">
 <cfcase value="mssql">
-	<cfquery datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
+	<cfquery>
 	ALTER TABLE tcontentcategories ADD remotePubDate [datetime] default NULL
 	</cfquery>
 </cfcase>
 <cfcase value="mysql">
-	<cfquery datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
+	<cfquery>
 	ALTER TABLE tcontentcategories ADD remotePubDate datetime default NULL
 	</cfquery>
 </cfcase>
+<cfcase value="postgresql">
+	<cfquery>
+	ALTER TABLE tcontentcategories ADD remotePubDate timestamp default NULL
+	</cfquery>
+</cfcase>
+<cfcase value="nuodb">
+	<cfquery>
+	ALTER TABLE tcontentcategories ADD remotePubDate timestamp default NULL
+	</cfquery>
+</cfcase>
 <cfcase value="oracle">
-	<cfquery datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
+	<cfquery>
 	ALTER TABLE "TCONTENTCATEGORIES" add "REMOTEPUBDATE" DATE
 	</cfquery>	
 </cfcase>
@@ -212,7 +260,7 @@ select remotePubDate from tcontentcategories  where 0=1
 <cfset variables.DOUPDATE=false>
 
 <cftry>
-<cfquery name="rsCheck" datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
+<cfquery name="rsCheck">
 select remotePubDate from tcontentfeeds  where 0=1
 </cfquery>
 <cfcatch>
@@ -223,17 +271,27 @@ select remotePubDate from tcontentfeeds  where 0=1
 <cfif variables.DOUPDATE>
 <cfswitch expression="#getDbType()#">
 <cfcase value="mssql">
-	<cfquery datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
+	<cfquery>
 	ALTER TABLE tcontentfeeds ADD remotePubDate [datetime] default NULL
 	</cfquery>
 </cfcase>
 <cfcase value="mysql">
-	<cfquery datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
+	<cfquery>
 	ALTER TABLE tcontentfeeds ADD remotePubDate datetime default NULL
 	</cfquery>
 </cfcase>
+<cfcase value="postgresql">
+	<cfquery>
+	ALTER TABLE tcontentfeeds ADD remotePubDate timestamp default NULL
+	</cfquery>
+</cfcase>
+<cfcase value="nuodb">
+	<cfquery>
+	ALTER TABLE tcontentfeeds ADD remotePubDate timestamp default NULL
+	</cfquery>
+</cfcase>
 <cfcase value="oracle">
-	<cfquery datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
+	<cfquery>
 	ALTER TABLE "TCONTENTFEEDS" add "REMOTEPUBDATE" DATE
 	</cfquery>	
 </cfcase>

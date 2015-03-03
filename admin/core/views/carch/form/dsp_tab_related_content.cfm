@@ -46,28 +46,20 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 --->
 <cfset tabLabelList=listAppend(tabLabelList,application.rbFactory.getKeyValue(session.rb,"sitemanager.content.tabs.relatedcontent"))/>
 <cfset tabList=listAppend(tabList,"tabRelatedcontent")>
+
+<cfset subtype = application.classExtensionManager.getSubTypeByName(rc.contentBean.getType(), rc.contentBean.getSubType(), rc.contentBean.getSiteID())>
+<cfset relatedContentSets = subtype.getRelatedContentSets()>
+
 <cfoutput>
-<div id="tabRelatedcontent">
-<dl class="oneColumn">
-<dt class="first">#application.rbFactory.getKeyValue(session.rb,'sitemanager.content.fields.relatedcontent')#: <span id="selectRelatedContent"> <a href="javascript:;" onclick="javascript: loadRelatedContent('#HTMLEditFormat(rc.siteid)#','',1);return false;">[#application.rbFactory.getKeyValue(session.rb,'sitemanager.content.fields.addrelatedcontent')#]</a></span></dt>
-<table id="relatedContent" class="mura-table-grid stripe"> 
-<tr>
-<th class="varWidth">#application.rbFactory.getKeyValue(session.rb,'sitemanager.content.fields.contenttitle')#</th>
-<th>#application.rbFactory.getKeyValue(session.rb,'sitemanager.content.type')#</th>
-<th class="administration">&nbsp;</th>
-</tr>
-<tbody id="RelatedContent">
-<cfif rc.rsRelatedContent.recordCount>
-<cfloop query="rc.rsRelatedContent">
-<tr id="c#rc.rsRelatedContent.contentID#">
-<td class="varWidth">#rc.rsRelatedContent.menuTitle#</td>
-<td>#application.rbFactory.getKeyValue(session.rb,'sitemanager.content.type.#rc.rsRelatedContent.type#')#</td>
-<td class="administration"><input type="hidden" name="relatedcontentid" value="#rc.rsRelatedContent.contentid#" /><ul class="clearfix"><li class="delete"><a title="Delete" href="##" onclick="return removeRelatedContent('c#rc.rsRelatedContent.contentid#','#jsStringFormat(application.rbFactory.getKeyValue(session.rb,'sitemanager.content.fields.removerelatedcontent'))#');">#application.rbFactory.getKeyValue(session.rb,'sitemanager.content.delete')#</a></li></ul></td>
-</tr></cfloop>
-<cfelse>
-<tr>
-<td id="noFilters" colspan="4" class="noResults">#application.rbFactory.getKeyValue(session.rb,'sitemanager.content.fields.norelatedcontent')#</td>
-</tr>
-</cfif></tbody>
-</table>
-</dl></div></cfoutput>
+<div id="tabRelatedcontent" class="tab-pane">
+
+	<span id="extendset-container-tabrelatedcontenttop" class="extendset-container"></span>
+	
+	<div class="fieldset">
+		<div id="selectRelatedContent"><!--- target for ajax ---></div>
+		<div id="selectedRelatedContent" class="control-group">
+		</div>
+		<input id="relatedContentSetData" type="hidden" name="relatedContentSetData" value="" />	
+	</div>
+</div>
+</cfoutput>

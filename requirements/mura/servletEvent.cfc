@@ -79,6 +79,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfparam name="request.returnURL" default=""/>
 	<cfparam name="request.showMeta" default="0"/>
 	<cfparam name="request.forceSSL" default="0"/>
+	<cfparam name="request.muraForceFilename" default="true"/>
 
 	<cfset setValue('HandlerFactory',application.pluginManager.getStandardEventFactory(getValue('siteid')))>
 	<cfset setValue("MuraScope",createObject("component","mura.MuraScope"))>
@@ -87,9 +88,9 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 </cffunction>
 
 <cffunction name="setValue" returntype="any" access="public" output="false">
-<cfargument name="property"  type="string" required="true">
-<cfargument name="propertyValue" default="" >
-<cfargument name="scope" default="request" required="true">
+	<cfargument name="property"  type="string" required="true">
+	<cfargument name="propertyValue" default="" >
+	<cfargument name="scope" default="request" required="true">
 	
 	<cfset var theScope=getScope(arguments.scope) />
 
@@ -97,10 +98,17 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfreturn this>
 </cffunction>
 
+<cffunction name="set" output="false">
+	<cfargument name="property"  type="string" required="true">
+	<cfargument name="defaultValue">
+	<cfargument name="scope" default="request" required="true">
+	<cfreturn setValue(argumentCollection=arguments)>
+</cffunction>
+
 <cffunction name="getValue" returntype="any" access="public" output="false">
-<cfargument name="property"  type="string" required="true">
-<cfargument name="defaultValue">
-<cfargument name="scope" default="request" required="true">
+	<cfargument name="property"  type="string" required="true">
+	<cfargument name="defaultValue">
+	<cfargument name="scope" default="request" required="true">
 	<cfset var theScope=getScope(arguments.scope)>
 	
 	<cfif structKeyExists(theScope,"#arguments.property#")>
@@ -112,6 +120,13 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<cfreturn "" />
 	</cfif>
 
+</cffunction>
+
+<cffunction name="get" output="false">
+	<cfargument name="property"  type="string" required="true">
+	<cfargument name="defaultValue">
+	<cfargument name="scope" default="request" required="true">
+	<cfreturn getValue(argumentCollection=arguments)>
 </cffunction>
 
 <cffunction name="getAllValues" returntype="any" access="public" output="false">
@@ -163,7 +178,6 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfargument name="scope" default="request" required="true">
 		<cfset var theScope=getScope(arguments.scope) />
 		<cfset structDelete(theScope,arguments.property) />
-	 returntype="void"
 </cffunction>
 
 <cffunction name="getHandler" returntype="any" access="public" output="false">
@@ -185,8 +199,8 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfreturn getValue('contentRenderer') />	
 </cffunction>
 
-<cffunction name="getThemeRenderer" returntype="any" access="public" output="false">
-	<cfreturn getValue('themeRenderer') />	
+<cffunction name="getThemeRenderer" returntype="any" access="public" output="false" hint="deprecated: use getContentRenderer()">
+	<cfreturn getContentRenderer() />	
 </cffunction>
 
 <cffunction name="getContentBean" returntype="any" access="public" output="false">

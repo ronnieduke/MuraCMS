@@ -154,7 +154,7 @@ select filename from tcontent where siteid='#arguments.siteid#'  and active =1 a
 and contenthistid in (select contenthistid from tcontentobjects where object='mailing_list_master')	
 </cfquery>
 
-<cfset returnURL="http://#variables.settingsManager.getSite(arguments.siteid).getDomain()##variables.configBean.getServerPort()##variables.configBean.getContext()##variables.contentRenderer.getURLStem(arguments.siteid,rsreturnform.filename)#?doaction=validateMember&mlid=#arguments.mlid#&siteid=#URLEncodedFormat(arguments.siteid)#&email=#arguments.sendto#&nocache=1"/>
+<cfset returnURL="#application.settingsManager.getSite(arguments.siteID).getScheme()#://#variables.settingsManager.getSite(arguments.siteid).getDomain()##variables.configBean.getServerPort()##variables.configBean.getContext()##variables.contentRenderer.getURLStem(arguments.siteid,rsreturnform.filename)#?doaction=validateMember&mlid=#arguments.mlid#&siteid=#URLEncodedFormat(arguments.siteid)#&email=#arguments.sendto#&nocache=1"/>
 <cfset mailingListConfirmScript = variables.settingsManager.getSite(arguments.siteid).getmailingListConfirmScript()/>
 
 <cfoutput>
@@ -208,7 +208,7 @@ The #contactName# staff
 	<cfargument name="data" type="struct" />
 	
 	
-	<cfquery datasource="#variables.configBean.getDatasource()#"  username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
+	<cfquery>
 		update tmailinglistmembers
 		set isVerified = 1 
 		where email = <cfqueryparam cfsqltype="cf_sql_varchar" value="#data.email#"> and

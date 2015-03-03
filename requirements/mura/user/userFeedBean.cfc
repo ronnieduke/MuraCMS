@@ -44,7 +44,7 @@ For clarity, if you create a modified version of Mura CMS, you are not obligated
 modified version; it is your choice whether to do so, or to make such modified version available under the GNU General Public License 
 version 2 without this exception.  You may, if you choose, apply this exception to your own modified versions of Mura CMS.
 --->
-<cfcomponent extends="mura.bean.beanFeed" output="false">
+<cfcomponent extends="mura.bean.beanFeed" entityName="user" output="false">
 
 	<cfproperty name="inActive" type="numeric" default="0" required="true" />
 	<cfproperty name="isPublic" type="numeric" default="1" required="true" />
@@ -56,6 +56,8 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfproperty name="sortDirection" type="string" default="asc" required="true" />
 	<cfproperty name="bean" type="string" default="user" required="true" />
 	
+	<cfset variables.entityName="user">
+
 <cffunction name="init" output="false">
 	<cfset super.init(argumentCollection=arguments)>
 	
@@ -65,10 +67,10 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfset variables.instance.type=2>
 	<cfset variables.instance.categoryID="">
 	<cfset variables.instance.siteID="">
-	<cfset variables.instance.bean="user">
 	<cfset variables.instance.sortBy="lname" />
 	<cfset variables.instance.sortDirection="asc" />
 	<cfset variables.instance.table="tusers">
+	<cfset variables.instance.entityName="user">
 	
 	<cfset variables.instance.params=queryNew("param,relationship,field,condition,criteria,dataType","integer,varchar,varchar,varchar,varchar,varchar" )  />
 	<cfreturn this/>
@@ -90,11 +92,11 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 			<cfloop from="1" to="#listLen(arguments.params.param)#" index="i">
 				
 				<cfset addParam(
-						listFirst(evaluate('arguments.params.paramField#i#'),'^'),
-						evaluate('arguments.params.paramRelationship#i#'),
-						evaluate('arguments.params.paramCriteria#i#'),
-						evaluate('arguments.params.paramCondition#i#'),
-						listLast(evaluate('arguments.params.paramField#i#'),'^')
+						listFirst(arguments.params['paramField#i#'],'^'),
+						arguments.params['paramRelationship#i#'],
+						arguments.params['paramCriteria#i#'],
+						arguments.params['paramCondition#i#'],
+						listLast(arguments.params['paramField#i#'],'^')
 						) />
 	
 			</cfloop>
@@ -130,7 +132,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 			</cfif>
 			
 			<cfif structKeyExists(arguments.params,"siteid")>
-				<cfset setSiteID(arguments.params.siteid)>
+				<cfset setValue('siteid',arguments.params.siteid)>
 			</cfif>
 			
 			<cfif structKeyExists(arguments.params,"categoryID")>
@@ -148,7 +150,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfif not len(variables.instance.siteID)>
 		<cfthrow message="The 'SITEID' value must be set in order to search users.">
 	</cfif>
-	<cfreturn getBean('userManager').getAdvancedSearchQuery(this)>
+	<cfreturn getBean('userManager').getAdvancedSearchQuery(userFeedBean=this)>
 </cffunction>
 
 <cffunction name="getIterator" returntype="any" output="false">
@@ -214,6 +216,10 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	    </cfloop> 
 	</cfif>
 	<cfreturn this>
+</cffunction>
+
+<cffunction name="getAvailableCount" output="false">
+	<cfreturn getQuery(countOnly=true).count>
 </cffunction>
  
 </cfcomponent>

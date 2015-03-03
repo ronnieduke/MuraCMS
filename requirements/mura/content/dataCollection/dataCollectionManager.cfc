@@ -76,8 +76,13 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfset var thefield = "" />
 	<cfset var f = "" />
 	<cfset var theXml = "" />
+	<cfset var ignoreList = 'DOACTION,SUBMIT,MLID,SITEID,FORMID,POLLLIST,REDIRECT_URL,REDIRECT_LABEL,X,Y,UKEY,HKEY,formfield1234567891,formfield1234567892,formfield1234567893,formfield1234567894,useProtect,linkservid,useReCAPTCHA,g-recaptcha-response,grecaptcharesponse' />
 	
 	<cfparam name="info.fieldnames" default=""/>
+
+	<cfif IsDefined('arguments.data.ignoreFields') and IsSimpleValue(arguments.data.ignoreFields) and Len(arguments.data.ignoreFields)>
+		<cfset ignoreList = ListAppend(ignoreList, arguments.data.ignoreFields) />
+	</cfif>
 	
 	<cfif isdefined('arguments.data.responseid')>
 		<cfset responseid=arguments.data.responseid>
@@ -91,8 +96,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	</cfif> 
 	
 	<cfloop list="#fieldlist#" index="f">
-	<cfif f neq 'DOACTION' and f neq 'SUBMIT' and f neq 'MLID' and f neq 'SITEID' and f neq 'FORMID' and f neq 'POLLLIST' and f neq 'REDIRECT_URL' and f neq 'REDIRECT_LABEL' and f neq 'X' and f neq 'Y' and f neq 'UKEY' and f neq 'HKEY'
-		and f neq 'formfield1234567891' and f neq 'formfield1234567892' and f neq 'formfield1234567893' and f neq 'formfield1234567894' and f neq 'useProtect' and f neq "linkservid">
+	<cfif Not ListFindNoCase(ignoreList, f)>
 	
 		<cfif action eq 'create' and right(f,8) eq '_default'>
 			<cfset rf=left(f,len(f)-8)>
@@ -124,7 +128,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 					<cfset info['#thefield#']=REREplaceNoCase(info['#thefield#'], "<script|<form",  "<noscript" ,  "ALL")/>
 					<cfset info['#thefield#']=REREplaceNoCase(info['#thefield#'], "script>|form>",  "noscript>" ,  "ALL")/>		
 					
-					<cfquery datasource="#variables.dsn#"  username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
+					<cfquery>
 						insert into tformresponsequestions (responseid,formid,formField,formValue,pollValue)
 						values(
 						<cfqueryparam cfsqltype="cf_sql_varchar" value="#responseID#"/>,
@@ -144,7 +148,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	
 		<cfwddx action="cfml2wddx" input="#info#" output="theXml">
 		
-			<cfquery datasource="#variables.dsn#"  username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
+			<cfquery>
 				insert into tformresponsepackets (responseid,formid,siteid,entered,Data,fieldlist)
 				values(
 				<cfqueryparam cfsqltype="cf_sql_varchar" value="#responseID#"/>,
@@ -166,7 +170,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cfset var rs = ''/>
 	
 	<cfif deleteFiles>
-		<cfquery name="rs" datasource="#variables.dsn#"  username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
+		<cfquery attributeCollection="#variables.configBean.getReadOnlyQRYAttrs(name='rs')#">
 			Select * from tformresponsequestions 
 			where responseID= <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.responseID#"/>
 		</cfquery>
@@ -178,13 +182,13 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		</cfloop>
 		</cfif>
 	
-	<cfquery datasource="#variables.dsn#"  username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
+	<cfquery>
 		delete from tformresponsequestions 
 		where responseID= <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.responseID#"/>
 	</cfquery>
 					
 					
-	<cfquery datasource="#variables.dsn#"  username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
+	<cfquery>
 		delete from tformresponsepackets 
 		where responseID= <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.responseID#"/>
 	</cfquery>
@@ -196,7 +200,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 
 <cfset var rs=""/>
 					
-	<cfquery name="rs" datasource="#variables.dsn#"  username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
+	<cfquery attributeCollection="#variables.configBean.getReadOnlyQRYAttrs(name='rs')#">
 		select *  from tformresponsepackets 
 		where responseID= <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.responseID#"/>
 	</cfquery>
@@ -210,7 +214,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cfset var rs=""/>
 <cfset var dbType=variables.configBean.getDbType() />					
 	
-	<cfquery name="rs" datasource="#variables.dsn#"  username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
+	<cfquery attributeCollection="#variables.configBean.getReadOnlyQRYAttrs(name='rs')#">
 		select distinct formField from tformresponsequestions
 		where formID= <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.formID#"/>
 		order by formField asc
@@ -226,14 +230,17 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cfset var extend= arguments.data.sortby neq '' and arguments.data.sortBy neq 'Entered' and listFind(arguments.data.fieldnames,arguments.data.sortBy)>
 <cfset var start="" />
 <cfset var stop="" />
-<cfquery datasource="#variables.dsn#" name="rs"  username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
+<cfquery attributeCollection="#variables.configBean.getReadOnlyQRYAttrs(name='rs')#">
 select tformresponsepackets.* from tformresponsepackets 
-<cfif extend or arguments.data.keywords neq ''>
-left join tformresponsequestions on tformresponsepackets.responseid= tformresponsequestions.responseid
+<cfif extend>
+left join tformresponsequestions extend on tformresponsepackets.responseid= extend.responseid
+</cfif>
+<cfif arguments.data.keywords neq ''>
+left join tformresponsequestions keywords on tformresponsepackets.responseid= keywords.responseid
 </cfif>
 where tformresponsepackets.siteid= <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.data.siteID#"/> and tformresponsepackets.formid= <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.data.contentID#"/>
 <cfif extend>
-and tformresponsequestions.formField= <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.data.sortBy#"/>
+and extend.formField= <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.data.sortBy#"/>
 </cfif>
 <cfif isdefined('arguments.data.date1') and lsIsDate(arguments.data.date1)>
 <cfset start=lsParseDateTime(arguments.data.date1) />
@@ -245,16 +252,16 @@ and entered >= <cfqueryparam cfsqltype="cf_sql_timestamp" value="#createdatetime
 and entered <= <cfqueryparam cfsqltype="cf_sql_timestamp" value="#createdatetime(year(stop),month(stop),day(stop),arguments.data.hour2,arguments.data.minute2,59)#">
 </cfif>
 <cfif arguments.data.keywords neq ''>
-and tformresponsequestions.pollValue = <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.data.keywords#">
+and keywords.pollValue like <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.data.keywords#">
 
 <cfif listFind(arguments.data.fieldnames,arguments.data.filterBy) and arguments.data.filterBy neq ''>
-and tformresponsequestions.formField = <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.data.filterBy#">
+and keywords.formField = <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.data.filterBy#">
 </cfif>
 
 </cfif>
 
 <cfif  arguments.data.sortBy eq 'Entered' or (listFind(arguments.data.fieldnames,arguments.data.sortBy) and arguments.data.sortby neq '')>
-order by <cfif arguments.data.sortBy eq 'Entered'>tformresponsepackets.entered<cfelse>tformresponsequestions.pollValue</cfif> #arguments.data.sortDirection#
+order by <cfif arguments.data.sortBy eq 'Entered'>tformresponsepackets.entered<cfelse>extend.pollValue</cfif> #arguments.data.sortDirection#
 <cfelse>
 order by tformresponsepackets.entered asc
 </cfif>
@@ -269,6 +276,7 @@ order by tformresponsepackets.entered asc
 <cfargument name="preBody" type="string">
 <cfargument name="responseChart" type="numeric" required="yes" default="0">
 <cfargument name="linkServID" type="string" required="yes" default="">
+<cfargument name="$">
 
 <cfset var frm=""/>
 <cfset var finder=""/>
@@ -293,31 +301,33 @@ order by tformresponsepackets.entered asc
 </cfloop>
 
 <cfset body=rereplacenocase(arguments.preBody,'</form>','#formHTML#</form>')>
-<cfset body=rereplacenocase(body,'<form','<form id="#frmID#" ')>
+<cfif not find(frmID,body)>
+	<cfset body=rereplacenocase(body,'<form','<form id="#frmID#" ')>
+</cfif>
+
 
 <cfsavecontent variable="frm"><cfoutput>
 #body#
+<cfif request.muraFrontEndRequest>
 <script type="text/javascript">
-		var frm=document.getElementById('#frmID#');
-			frm.setAttribute('action','?nocache=1');
-			frm.method='post';
-			if( frm.getAttribute('onsubmit') == null || frm.getAttribute('onsubmit')==''){
-				frm.onsubmit=function(){return validateForm(this);}
-			}
-		<cfif not(refind("Mac",cgi.HTTP_USER_AGENT) and refind("MSIE 5",cgi.HTTP_USER_AGENT))>	
-			<cfif arguments.responseChart>
-				polllist=new Array();
-				poll=frm.elements;
-					for (p=0; p < poll.length; p++) {
-							if(poll[p].type =='radio'){polllist.push(escape(poll[p].value));}
-						}
-				if(polllist.length > 0) {frm.action='?nocache=1&polllist='+ polllist.toString();}		
-			</cfif>
-		</cfif>
-		if( !(typeof(window.jQuery) != 'undefined' && typeof(window.jQuery.mobile) != 'undefined') ){
-			frm.action=frm.action + "###frmID#";
+	$(function(){
+		frm=$('###frmID#');
+		frm.attr('action','?nocache=1');
+		frm.attr('method','post');
+
+		if(frm.attr('onsubmit') == undefined){
+			frm.on('submit',function(){return validateForm(this);})
 		}
-</script></cfoutput>
+		<cfif arguments.responseChart>
+			var polllist=new Array();
+			frm.find("input[type='radio']").each(function(){
+				polllist.push($(this).val());
+			});
+			if(polllist.length > 0) {frm.attr('action','?nocache=1&polllist='+ polllist.toString());}		
+		</cfif>
+		frm.attr('action',frm.attr('action') + '###frmID#');
+	});
+</script></cfif></cfoutput>
 </cfsavecontent>
 
 <cfreturn trim(frm) />
@@ -326,7 +336,7 @@ order by tformresponsepackets.entered asc
 <cffunction name="setDisplay" output="false" returntype="void" access="public">
 <cfargument name="contentBean" type="any" >
 
-	<cfquery datasource="#variables.dsn#"  username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
+	<cfquery>
 	update tcontent set 
 	responseDisplayFields=<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.contentBean.getResponseDisplayFields()#"/>,
 	sortBy=<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.contentBean.getSortBy()#"/>,
@@ -338,6 +348,13 @@ order by tformresponsepackets.entered asc
 	</cfquery>
 
 	<cfset getBean("contentManager").purgeContentCache(contentBean=arguments.contentBean)>
+
+</cffunction>
+
+<cffunction name="_deserializeWDDX" output="false">
+	<cfargument name="wddx">
+	<cfwddx action="wddx2cfml" input="#arguments.wddx#" output="local.data">
+	<cfreturn local.data>
 
 </cffunction>
 </cfcomponent>

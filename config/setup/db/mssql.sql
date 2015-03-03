@@ -1,102 +1,3 @@
-CREATE TABLE [dbo].[tadcampaigns] (
-	[campaignID] [char] (35) NOT NULL ,
-	[userID] [char] (35) NULL ,
-	[dateCreated] [datetime] NULL ,
-	[lastUpdate] [datetime] NULL ,
-	[lastUpdateBy] [nvarchar] (50) NULL ,
-	[name] [nvarchar] (50) NULL ,
-	[startDate] [datetime] NULL ,
-	[endDate] [datetime] NULL ,
-	[isActive] [int] NULL ,
-	[notes] [nvarchar] (max) NULL 
-) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
-GO
-
-CREATE TABLE [dbo].[tadcreatives] (
-	[creativeID] [char] (35) NOT NULL ,
-	[userID] [char] (35) NULL ,
-	[dateCreated] [datetime] NULL ,
-	[lastUpdate] [datetime] NULL ,
-	[lastUpdateBy] [nvarchar] (50) NULL ,
-	[name] [nvarchar] (50) NULL ,
-	[creativeType] [nvarchar] (50) NULL ,
-	[fileID] [nvarchar] (35) NULL ,
-	[mediaType] [nvarchar] (50) NULL ,
-	[redirectURL] [nvarchar] (200) NULL ,
-	[altText] [nvarchar] (200) NULL ,
-	[notes] [nvarchar] (max) NULL ,
-	[isActive] [int] NULL ,
-	[height] [int] NULL ,
-	[width] [int] NULL ,
-	[textBody] [nvarchar] (max) NULL 
-) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
-GO
-
-CREATE TABLE [dbo].[tadipwhitelist] (
-	[IP] [nvarchar] (50) NOT NULL ,
-	[siteID] [nvarchar] (50) NOT NULL 
-) ON [PRIMARY]
-GO
-
-CREATE TABLE [dbo].[tadplacementdetails] (
-	[detailID] [int] IDENTITY (1, 1) NOT NULL ,
-	[placementID] [char] (35) NOT NULL ,
-	[PlacementType] [nvarchar] (50) NOT NULL ,
-	[PlacementValue] [int] NOT NULL 
-) ON [PRIMARY]
-GO
-
-CREATE TABLE [dbo].[tadplacements] (
-	[placementID] [char] (35) NOT NULL ,
-	[campaignID] [char] (35) NULL ,
-	[adZoneID] [char] (35) NULL ,
-	[creativeID] [char] (35) NULL ,
-	[dateCreated] [datetime] NULL ,
-	[lastUpdate] [datetime] NULL ,
-	[lastUpdateBy] [nvarchar] (50) NULL ,
-	[startDate] [datetime] NULL ,
-	[endDate] [datetime] NULL ,
-	[costPerImp] [decimal](18, 5) NULL ,
-	[costPerClick] [decimal](18, 2) NULL ,
-	[isExclusive] [int] NULL ,
-	[billable] [decimal](18, 2) NULL ,
-	[budget] [int] NULL ,
-	[isActive] [int] NULL ,
-	[notes] [nvarchar] (max) NULL 
-) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
-GO
-
-CREATE TABLE [dbo].[tadstats] (
-	[statID] [int] IDENTITY (1, 1) NOT NULL ,
-	[PlacementID] [char] (35) NULL ,
-	[StatHour] [int] NULL ,
-	[StatDate] [datetime] NULL ,
-	[Type] [nvarchar] (50) NULL ,
-	[counter] [int] NULL 
-) ON [PRIMARY]
-GO
-
-CREATE TABLE [dbo].[tadzones] (
-	[adZoneID] [char] (35) NOT NULL ,
-	[siteID] [nvarchar] (25) NULL ,
-	[dateCreated] [datetime] NULL ,
-	[lastUpdate] [datetime] NULL ,
-	[lastUpdateBy] [nvarchar] (50) NULL ,
-	[name] [nvarchar] (50) NULL ,
-	[creativeType] [nvarchar] (50) NULL ,
-	[notes] [nvarchar] (max) NULL ,
-	[isActive] [int] NULL ,
-	[height] [int] NULL ,
-	[width] [int] NULL 
-) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
-GO
-
-CREATE TABLE [dbo].[tcaptcha] (
-	[LetterID] [int] NOT NULL ,
-	[Letter] [char] (1) NULL ,
-	[ImageFile] [varchar] (50) NULL 
-) ON [PRIMARY]
-GO
 
 CREATE TABLE [dbo].[tcontent] (
 	[tcontent_ID] [int] IDENTITY (1, 1) NOT NULL ,
@@ -609,7 +510,7 @@ GO
 CREATE TABLE [dbo].[tusersfavorites] (
 	[favoriteID] [char] (35) NOT NULL ,
 	[userID] [char] (35) NOT NULL ,
-	[favoriteName] [varchar] (100) NULL ,
+	[favoriteName] [varchar] (255) NULL ,
 	[favorite] [varchar] (1000) NOT NULL ,
 	[type] [varchar] (30) NOT NULL ,
 	[siteID] [varchar] (25) NULL ,
@@ -745,43 +646,6 @@ ALTER TABLE [dbo].[tcontentstats] WITH NOCHECK ADD
 		[siteID]
 	)  ON [PRIMARY]
 GO
-
-ALTER TABLE [dbo].[tadcampaigns] WITH NOCHECK ADD 
-	CONSTRAINT [PK_tadcampaigns] PRIMARY KEY  CLUSTERED 
-	(
-		[campaignID]
-	)  ON [PRIMARY] 
-GO
-
-ALTER TABLE [dbo].[tadcreatives] WITH NOCHECK ADD 
-	CONSTRAINT [PK_tadcreatives] PRIMARY KEY  CLUSTERED 
-	(
-		[creativeID]
-	)  ON [PRIMARY] 
-GO
-
-ALTER TABLE [dbo].[tadplacementdetails] WITH NOCHECK ADD 
-	CONSTRAINT [PK_tadplacementdetails] PRIMARY KEY  CLUSTERED 
-	(
-		[detailID]
-	)  ON [PRIMARY] 
-GO
-
-
-ALTER TABLE [dbo].[tadplacements] WITH NOCHECK ADD 
-	CONSTRAINT [PK_tadplacements] PRIMARY KEY  CLUSTERED 
-	(
-		[placementID]
-	)  ON [PRIMARY] 
-GO
-
-ALTER TABLE [dbo].[tadstats] WITH NOCHECK ADD 
-	CONSTRAINT [PK_tadstats] PRIMARY KEY  CLUSTERED 
-	(
-		[statID]
-	)  ON [PRIMARY] 
-GO
-
 
 ALTER TABLE [dbo].[tcontentassignments] WITH NOCHECK ADD 
 	CONSTRAINT [PK_tcontentassignments] PRIMARY KEY  CLUSTERED 
@@ -1141,18 +1005,17 @@ INSERT INTO [dbo].[tsystemobjects] ([Object],[SiteID],[Name],[OrderNo]) VALUES (
 INSERT INTO [dbo].[tsystemobjects] ([Object],[SiteID],[Name],[OrderNo]) VALUES ('seq_nav','default','Sequential Nav',8);
 INSERT INTO [dbo].[tsystemobjects] ([Object],[SiteID],[Name],[OrderNo]) VALUES ('rater','default','Content Rater',16);
 INSERT INTO [dbo].[tsystemobjects] ([Object],[SiteID],[Name],[OrderNo]) VALUES ('favorites','default','User Favorites',17);
-INSERT INTO [dbo].[tsystemobjects] ([Object],[SiteID],[Name],[OrderNo]) VALUES ('dragable_feeds','default','Dragable Feeds',18);
 INSERT INTO [dbo].[tsystemobjects] ([Object],[SiteID],[Name],[OrderNo]) VALUES ('related_content','default','Related Content',19);
 INSERT INTO [dbo].[tsystemobjects] ([Object],[SiteID],[Name],[OrderNo]) VALUES ('user_tools','default','User Tools',20);
 INSERT INTO [dbo].[tsystemobjects] ([Object],[SiteID],[Name],[OrderNo]) VALUES ('tag_cloud','default','Tag Cloud',21);
 INSERT INTO [dbo].[tsystemobjects] ([Object],[SiteID],[Name],[OrderNo]) VALUES ('goToFirstChild','default','Go To First Child',23);
 GO
-
-INSERT INTO [dbo].[tusers] ([UserID],[GroupName],[Fname],[Lname],[UserName],[Password],[PasswordCreated],[Email],[Company],[JobTitle],[mobilePhone],[Website],[Type],[subType],[Ext],[ContactForm],[Admin],[S2],[LastLogin],[LastUpdate],[LastUpdateBy],[LastUpdateByID],[Perm],[InActive],[isPublic],[SiteID],[Subscribe],[notes],[keepPrivate],[tags]) VALUES ('22FC551F-FABE-EA01-C6EDD0885DDC1682',NULL,'Admin','User','admin','21232F297A57A5A743894A0E4A801FC3',getDate(),'admin@localhost.com',NULL,NULL,NULL,NULL,2,'Default',NULL,NULL,NULL,1,getDate(),getDate(),'System','22FC551F-FABE-EA01-C6EDD0885DDC1682',0,0,0,'default',0,NULL,0,NULL);
-INSERT INTO [dbo].[tusers] ([UserID],[GroupName],[Fname],[Lname],[UserName],[Password],[Email],[Company],[JobTitle],[mobilePhone],[Website],[Type],[subType],[Ext],[ContactForm],[Admin],[S2],[LastLogin],[LastUpdate],[LastUpdateBy],[LastUpdateByID],[Perm],[InActive],[isPublic],[SiteID],[Subscribe],[notes],[keepPrivate],[tags]) VALUES ('6300EE15-1320-5CC2-F9F48B9DBBA54D9F','Admin',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,1,'Default',NULL,NULL,NULL,0,NULL,getDate(),'System',NULL,1,0,0,'default',0,NULL,0,NULL);
+<cfoutput>
+INSERT INTO [dbo].[tusers] ([UserID],[GroupName],[Fname],[Lname],[UserName],[Password],[PasswordCreated],[Email],[Company],[JobTitle],[mobilePhone],[Website],[Type],[subType],[Ext],[ContactForm],[Admin],[S2],[LastLogin],[LastUpdate],[LastUpdateBy],[LastUpdateByID],[Perm],[InActive],[isPublic],[SiteID],[Subscribe],[notes],[keepPrivate],[tags]) VALUES ('#adminUserID#',NULL,'Admin','User','admin','21232F297A57A5A743894A0E4A801FC3',getDate(),'admin@localhost.com',NULL,NULL,NULL,NULL,2,'Default',NULL,NULL,NULL,1,getDate(),getDate(),'System','22FC551F-FABE-EA01-C6EDD0885DDC1682',0,0,0,'default',0,NULL,0,NULL);
+INSERT INTO [dbo].[tusers] ([UserID],[GroupName],[Fname],[Lname],[UserName],[Password],[Email],[Company],[JobTitle],[mobilePhone],[Website],[Type],[subType],[Ext],[ContactForm],[Admin],[S2],[LastLogin],[LastUpdate],[LastUpdateBy],[LastUpdateByID],[Perm],[InActive],[isPublic],[SiteID],[Subscribe],[notes],[keepPrivate],[tags]) VALUES ('#createUUID()#','Admin',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,1,'Default',NULL,NULL,NULL,0,NULL,getDate(),'System',NULL,1,0,0,'default',0,NULL,0,NULL);
 GO
-
-INSERT INTO [dbo].[tsettings] ([SiteID],[Site],[MaxNestLevel],[PageLimit],[Locking],[Domain],[exportLocation],[FileDir],[Contact],[MailserverIP],[MailServerUsername],[MailServerPassword],[EmailBroadcaster],[Extranet],[ExtranetPublicReg],[ExtranetPublicRegNotify],[ExtranetSSL],[Cache],[ViewDepth],[NextN],[DataCollection],[columnCount],[columnNames],[primaryColumn],[publicSubmission],[AdManager],[archiveDate],[contactName],[contactAddress],[contactCity],[contactState],[contactZip],[contactEmail],[contactPhone],[privateUserPoolID],[publicUserPoolID],[advertiserUserPoolID],[orderNo],[emailBroadcasterLimit],[feedManager],[displayPoolID],[galleryMainScaleBy],[galleryMainScale],[gallerySmallScaleBy],[gallerySmallScale],[galleryMediumScaleBy],[galleryMediumScale],[sendLoginScript],[mailingListConfirmScript],[publicSubmissionApprovalScript],[reminderScript],[loginURL],[editProfileURL],[CommentApprovalDefault],[deploy],[lastDeployment],[useDefaultSMTPServer]) VALUES ('default','Default',NULL,1000,'none','localhost',NULL,NULL,'info@getmura.com','mail.server.com','username@server.com','password',1,1,1,null,0,0,1,20,1,3,'Left Column^Main Content^Right Column',2,0,1,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,'default','default','default',1,0,1,'default','y',500,'s',100,'y',250,NULL,NULL,NULL,NULL,'?display=login','?display=editProfile',1,0,NULL,0);
+</cfoutput>
+INSERT INTO [dbo].[tsettings] ([SiteID],[Site],[MaxNestLevel],[PageLimit],[Locking],[Domain],[exportLocation],[FileDir],[Contact],[MailserverIP],[MailServerUsername],[MailServerPassword],[EmailBroadcaster],[Extranet],[ExtranetPublicReg],[ExtranetPublicRegNotify],[ExtranetSSL],[Cache],[ViewDepth],[NextN],[DataCollection],[columnCount],[columnNames],[primaryColumn],[publicSubmission],[AdManager],[archiveDate],[contactName],[contactAddress],[contactCity],[contactState],[contactZip],[contactEmail],[contactPhone],[privateUserPoolID],[publicUserPoolID],[advertiserUserPoolID],[orderNo],[emailBroadcasterLimit],[feedManager],[displayPoolID],[galleryMainScaleBy],[galleryMainScale],[gallerySmallScaleBy],[gallerySmallScale],[galleryMediumScaleBy],[galleryMediumScale],[sendLoginScript],[mailingListConfirmScript],[publicSubmissionApprovalScript],[reminderScript],[loginURL],[editProfileURL],[CommentApprovalDefault],[deploy],[lastDeployment],[useDefaultSMTPServer]) VALUES ('default','Default',NULL,1000,'none','localhost',NULL,NULL,'info@getmura.com','mail.server.com','username@server.com','password',0,1,0,null,0,0,1,20,1,3,'Left Column^Main Content^Right Column',2,0,0,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,'default','default','default',1,0,1,'default','y',500,'s',100,'y',250,NULL,NULL,NULL,NULL,'?display=login','?display=editProfile',1,0,NULL,0);
 GO
 
 INSERT INTO [dbo].[tcontent] ([SiteID],[ModuleID],[ParentID],[ContentID],[ContentHistID],[RemoteID],[RemoteURL],[RemotePubDate],[RemoteSourceURL],[RemoteSource],[Credits],[FileID],[Template],[Type],[subType],[Active],[OrderNo],[Title],[MenuTitle],[Summary],[Filename],[MetaDesc],[MetaKeyWords],[Body],[lastUpdate],[lastUpdateBy],[lastUpdateByID],[DisplayStart],[DisplayStop],[Display],[Approved],[IsNav],[Restricted],[RestrictGroups],[Target],[TargetParams],[responseChart],[responseMessage],[responseSendTo],[responseDisplayFields],[moduleAssign],[displayTitle],[Notes],[inheritObjects],[isFeature],[ReleaseDate],[IsLocked],[nextN],[sortBy],[sortDirection],[featureStart],[featureStop],[forceSSL],[audience],[keyPoints],[searchExclude],[path]) VALUES ('default','00000000000000000000000000000000003','00000000000000000000000000000000END','00000000000000000000000000000000003','6300ED4A-1320-5CC3-F9D6A2D279E386D0',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,'Module','Default',1,NULL,'Components',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,1,1,1,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,0,NULL,NULL,NULL,null);
@@ -1168,37 +1031,11 @@ INSERT INTO [dbo].[tcontent] ([SiteID],[ModuleID],[ParentID],[ContentID],[Conten
 INSERT INTO [dbo].[tcontent] ([SiteID],[ModuleID],[ParentID],[ContentID],[ContentHistID],[RemoteID],[RemoteURL],[RemotePubDate],[RemoteSourceURL],[RemoteSource],[Credits],[FileID],[Template],[Type],[subType],[Active],[OrderNo],[Title],[MenuTitle],[Summary],[Filename],[MetaDesc],[MetaKeyWords],[Body],[lastUpdate],[lastUpdateBy],[lastUpdateByID],[DisplayStart],[DisplayStop],[Display],[Approved],[IsNav],[Restricted],[RestrictGroups],[Target],[TargetParams],[responseChart],[responseMessage],[responseSendTo],[responseDisplayFields],[moduleAssign],[displayTitle],[Notes],[inheritObjects],[isFeature],[ReleaseDate],[IsLocked],[nextN],[sortBy],[sortDirection],[featureStart],[featureStop],[forceSSL],[audience],[keyPoints],[searchExclude],[path]) VALUES ('default','00000000000000000000000000000000012','00000000000000000000000000000000END','00000000000000000000000000000000012','6300EDE6-1320-5CC3-F94E2FCEF5DE046D',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,'Module','Default',1,NULL,'Filemanager Manager',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,1,1,1,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,0,NULL,NULL,0,null);
 GO
 
+<cfoutput>
 INSERT INTO [dbo].[tmailinglist] ([MLID],[SiteID],[Name],[Description],[LastUpdate],[isPurge],[isPublic] ) 
-VALUES ('22FC551F-FABE-EA01-C6EDD0885DDC1680','default','Please Remove Me from All Lists','',getDate(),1,1)
+VALUES ('#createUUID()#','default','Please Remove Me from All Lists','',getDate(),1,1)
 GO
-
-INSERT INTO [DBO].[tcaptcha] ([LetterID],[Letter],[ImageFile]) VALUES (1,'a','a.gif');
-INSERT INTO [DBO].[tcaptcha] ([LetterID],[Letter],[ImageFile]) VALUES (2,'b','b.gif');
-INSERT INTO [DBO].[tcaptcha] ([LetterID],[Letter],[ImageFile]) VALUES (3,'c','c.gif');
-INSERT INTO [DBO].[tcaptcha] ([LetterID],[Letter],[ImageFile]) VALUES (4,'d','d.gif');
-INSERT INTO [DBO].[tcaptcha] ([LetterID],[Letter],[ImageFile]) VALUES (5,'e','e.gif');
-INSERT INTO [DBO].[tcaptcha] ([LetterID],[Letter],[ImageFile]) VALUES (6,'f','f.gif');
-INSERT INTO [DBO].[tcaptcha] ([LetterID],[Letter],[ImageFile]) VALUES (7,'g','g.gif');
-INSERT INTO [DBO].[tcaptcha] ([LetterID],[Letter],[ImageFile]) VALUES (8,'h','h.gif');
-INSERT INTO [DBO].[tcaptcha] ([LetterID],[Letter],[ImageFile]) VALUES (9,'i','i.gif');
-INSERT INTO [DBO].[tcaptcha] ([LetterID],[Letter],[ImageFile]) VALUES (10,'j','j.gif');
-INSERT INTO [DBO].[tcaptcha] ([LetterID],[Letter],[ImageFile]) VALUES (11,'k','k.gif');
-INSERT INTO [DBO].[tcaptcha] ([LetterID],[Letter],[ImageFile]) VALUES (12,'l','l.gif');
-INSERT INTO [DBO].[tcaptcha] ([LetterID],[Letter],[ImageFile]) VALUES (13,'m','m.gif');
-INSERT INTO [DBO].[tcaptcha] ([LetterID],[Letter],[ImageFile]) VALUES (14,'n','n.gif');
-INSERT INTO [DBO].[tcaptcha] ([LetterID],[Letter],[ImageFile]) VALUES (15,'o','o.gif');
-INSERT INTO [DBO].[tcaptcha] ([LetterID],[Letter],[ImageFile]) VALUES (16,'p','p.gif');
-INSERT INTO [DBO].[tcaptcha] ([LetterID],[Letter],[ImageFile]) VALUES (17,'q','q.gif');
-INSERT INTO [DBO].[tcaptcha] ([LetterID],[Letter],[ImageFile]) VALUES (18,'r','r.gif');
-INSERT INTO [DBO].[tcaptcha] ([LetterID],[Letter],[ImageFile]) VALUES (19,'s','s.gif');
-INSERT INTO [DBO].[tcaptcha] ([LetterID],[Letter],[ImageFile]) VALUES (20,'t','t.gif');
-INSERT INTO [DBO].[tcaptcha] ([LetterID],[Letter],[ImageFile]) VALUES (21,'u','u.gif');
-INSERT INTO [DBO].[tcaptcha] ([LetterID],[Letter],[ImageFile]) VALUES (22,'v','v.gif');
-INSERT INTO [DBO].[tcaptcha] ([LetterID],[Letter],[ImageFile]) VALUES (23,'w','w.gif');
-INSERT INTO [DBO].[tcaptcha] ([LetterID],[Letter],[ImageFile]) VALUES (24,'x','x.gif');
-INSERT INTO [DBO].[tcaptcha] ([LetterID],[Letter],[ImageFile]) VALUES (25,'y','y.gif');
-INSERT INTO [DBO].[tcaptcha] ([LetterID],[Letter],[ImageFile]) VALUES (26,'z','z.gif');
-GO
+</cfoutput>
 
 SET QUOTED_IDENTIFIER OFF 
 GO

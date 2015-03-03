@@ -57,6 +57,9 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cfproperty name="lastUpdateBy" type="string" default="" required="true" />
 <cfproperty name="lastUpdateByID" type="string" default="" required="true" />
 
+<cfset variables.primaryKey = 'mlid'>
+<cfset variables.entityName = 'mailinglist'>
+
 <cffunction name="Init" access="public" returntype="any" output="false">
 	<cfset super.init(argumentCollection=arguments)>
 	
@@ -75,6 +78,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<cfset variables.instance.LastUpdateBy = "" />
 		<cfset variables.instance.LastUpdateByID = "" />
 	</cfif>
+
 	<cfreturn this />
 </cffunction>
 
@@ -121,7 +125,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	
 	<cfset arguments.mailinglistBean=this>
 		
-	<cfreturn variables.mailinglistManager.read(arguments)>
+	<cfreturn variables.mailinglistManager.read(argumentCollection=arguments)>
 </cffunction>
 
 </cfcomponent>

@@ -1,4 +1,5 @@
-﻿<!--- This file is part of Mura CMS.
+/*
+This file is part of Mura CMS.
 
 Mura CMS is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -43,132 +44,31 @@ requires distribution of source code.
 For clarity, if you create a modified version of Mura CMS, you are not obligated to grant this special exception for your 
 modified version; it is your choice whether to do so, or to make such modified version available under the GNU General Public License 
 version 2 without this exception.  You may, if you choose, apply this exception to your own modified versions of Mura CMS.
---->
-<cfcomponent output="false" extends="coldspring.beans.DefaultXmlBeanFactory">
+*/
+component extends="ioc" {
 
-	
-	<cfset variables.transient=structNew()>
-	<cfset variables.transientAlias=structNew()>
-	<cfset variables.transientObjects=structNew()>
-	
-	<cfset variables.transient["contentBean"]="mura.content.contentBean"/>
-	<cfset variables.transient["contentNavBean"]="mura.content.contentNavBean"/>
-	<cfset variables.transient["contentStatsBean"]="mura.content.contentStatsBean"/>
-	<cfset variables.transient["contentIterator"]="mura.content.contentIterator"/>
-	<cfset variables.transient["contentCommentIterator"]="mura.content.contentCommentIterator"/>
-	<cfset variables.transient["contentCommentBean"]="mura.content.contentCommentBean"/>
-	<cfset variables.transient["contentCommentFeedBean"]="mura.content.contentCommentFeedBean"/>	
-	<cfset variables.transient["httpSession"]="mura.client.httpSession"/>
-	<cfset variables.transient["MuraScope"]="mura.MuraScope">
-	<cfset variables.transient["changesetBean"]="mura.content.changeset.changesetBean"/>
-	<cfset variables.transient["changesetIterator"]="mura.content.changeset.changesetIterator"/>
-	<cfset variables.transient["extendObjectIterator"]="mura.extend.extendObjectIterator"/>
-	<cfset variables.transient["extendObject"]="mura.extend.extendObject"/>
-	<cfset variables.transient["extendObjectFeedBean"]="mura.extend.extendObjectFeedBean"/>
-	<cfset variables.transient["pluginScriptBean"]="mura.plugin.pluginScriptBean"/>
-	<cfset variables.transient["pluginDisplayObjectBean"]="mura.plugin.pluginDisplayObjectBean"/>		
-	<cfset variables.transient["pluginSettingBean"]="mura.plugin.pluginSettingBean"/>
-	<cfset variables.transient["changesetBean"]="mura.content.changeset.changesetBean"/>
-	<cfset variables.transient["changesetIterator"]="mura.content.changeset.changesetIterator"/>
-	<cfset variables.transient["rateBean"]="mura.content.rater.rateBean"/>
-	<cfset variables.transient["servlet"]="mura.servlet" />
-	<cfset variables.transient["favoriteBean"]="mura.content.favorite.favoriteBean"/>
-	<cfset variables.transient["creativeBean"]="mura.advertising.creative.creativeBean" />
-	<cfset variables.transient["image"]="mura.content.file.imagecfc.image" />
-	<cfset variables.transient["adZoneBean"]="mura.advertising.adZone.adZoneBean" />
-	<cfset variables.transient["reminderBean"]="mura.content.reminder.reminderBean" />
-	<cfset variables.transient["contentRenderer"]="mura.content.contentRenderer"  />
-	<cfset variables.transient["categoryIterator"]="mura.category.categoryIterator"/>
-	<cfset variables.transient["categoryBean"]="mura.category.categoryBean" />
-	<cfset variables.transient["categoryFeedBean"]="mura.category.categoryFeedBean" />
-	<cfset variables.transient["settingsBean"]="mura.settings.settingsBean"/>
-	<cfset variables.transient["settingsBundle"]="mura.settings.settingsBundle"/>
-	<cfset variables.transient["userIterator"]="mura.user.userIterator"/>
-	<cfset variables.transient["userFeedBean"]="mura.user.userFeedBean"/>
-	<cfset variables.transient["addressIterator"]="mura.user.addressIterator"/>
-	<cfset variables.transient["userBean"]="mura.user.userBean" />
-	<cfset variables.transient["addressBean"]="mura.user.addressBean" />
-	<cfset variables.transient["mailinglistBean"]="mura.mailinglist.mailinglistBean" />
-	<cfset variables.transient["memberBean"]="mura.mailinglist.memberBean" />
-	<cfset variables.transient["emailBean"]="mura.email.emailBean" />
-	<cfset variables.transient["campaignBean"]="mura.advertising.campaign.campaignBean" />
-	<cfset variables.transient["placementBean"]="mura.advertising.campaign.placement.placementBean" />
-	<cfset variables.transient["feedBean"]="mura.content.feed.feedBean"/>
-	<cfset variables.transient["beanServicePlaceHolder"]="mura.bean.beanServicePlaceHolder"/>
-	<cfset variables.transient["dbUtility"]="mura.dbUtility"/>
-	<cfset variables.transientAlias["content"]="contentBean"/>
-	<cfset variables.transientAlias["feed"]="feedBean"/>
-	<cfset variables.transientAlias["site"]="settingsBean"/>
-	<cfset variables.transientAlias["user"]="userBean"/>
-	<cfset variables.transientAlias["group"]="userBean"/>
-	<cfset variables.transientAlias["address"]="addressBean"/>
-	<cfset variables.transientAlias["category"]="categoryBean"/>
-	<cfset variables.transientAlias["categoryFeed"]="categoryFeedBean"/>
-	<cfset variables.transientAlias["userFeed"]="userFeedBean"/>
-	<cfset variables.transientAlias["comment"]="contentCommentBean"/>
-	<cfset variables.transientAlias["commentFeed"]="contentCommentFeedBean"/>
-	<cfset variables.transientAlias["stats"]="contentStatsBean"/>
-	<cfset variables.transientAlias["changeset"]="changesetBean"/>
-	<cfset variables.transientAlias["bundle"]="settingsBundle"/>
-	<cfset variables.transientAlias["mailingList"]="mailingListBean"/>
-	<cfset variables.transientAlias["mailingListMember"]="memberBean"/>
-	<cfset variables.transientAlias["groupDAO"]="userDAO"/>
-	<cfset variables.transientAlias["placement"]="placementBean"/>
-	<cfset variables.transientAlias["creative"]="creativeBean"/>
-	<cfset variables.transientAlias["rate"]="rateBean"/>
-	<cfset variables.transientAlias["favorite"]="favoriteBean"/>
-	<cfset variables.transientAlias["campaign"]="campaignBean"/>
-	<cfset variables.transientAlias["email"]="emailBean"/>
-	<cfset variables.transientAlias["adZone"]="adZoneBean"/>
-	<cfset variables.transientAlias["$"]="MuraScope"/>
-	
-	<cffunction name="loadBeansFromXMLRaw" output="false">
-		<cfset super.loadBeansFromXMLRaw(argumentCollection=arguments)>
-		<cfset variables.beanInjector=super.getBean("beanInjector")>	
-	</cffunction>
-	
-	<cffunction name="getBean" outout="false">
-		<cfargument name="beanName">
-		<cfargument name="targetService">
-		<cfset var bean="">
-	
-		<cfif super.containsBean(arguments.beanName)>
-			<cfif structKeyExists(arguments,"targetService")>
-				<cfreturn createObject("component","beanServicePlaceholder").init(argumentCollection=arguments)>
-			<cfelse>
-				<cfreturn super.getBean(arguments.beanName)>
-			</cfif>
-		</cfif>
-		
-		<cfif structKeyExists(variables.transientAlias,arguments.beanName)>
-			<cfset arguments.beanName=variables.transientAlias["#arguments.beanName#"]>
-		</cfif>
-		
-		<cfif structKeyExists(variables.transient,arguments.beanName)>
-			<cfif StructKeyExists(application,"configBean") and application.configBean.getValue("duplicateTransients")>
-				<cfif not structKeyExists(variables.transientObjects,"#arguments.beanName#")>
-					<cfset variables.transientObjects["#arguments.beanName#"]=createObject("component",variables.transient["#arguments.beanName#"]).init()>
-				</cfif>
-				
-				<cfset bean=duplicate(variables.transientObjects["#arguments.beanName#"])>
-			<cfelse>
-				<cfset bean=createObject("component",variables.transient["#arguments.beanName#"]).init()>
-			</cfif>
-			
-			<cfif arguments.beanName neq "MuraScope">
-				<cfset variables.beanInjector.autowire(bean,variables.transient["#arguments.beanName#"])>
-			</cfif>
-		<cfelse>
-			<cfthrow message="The bean '#arguments.beanName#' does not exist">
-		</cfif>
-		
-		<cfreturn bean>
-	</cffunction>
-	
-	<cffunction name="containsBean" output="false">
-		<cfargument name="beanName">
-		
-		<cfreturn (structKeyExists(variables.transient,arguments.beanName) or structKeyExists(variables.transientAlias,arguments.beanName) or super.containsBean(arguments.beanName))>
-	</cffunction>
-	
-</cfcomponent>
+ 	// Calls containsBean(). Added for WireBox compatibility
+	public function containsInstance( String name ) {
+	  return containsBean( name );
+	}
+
+	 // calls getBean(). Added for WireBox compatibility
+	public function getInstance( String name, String dsl, Any initArguments ) {
+	  return getBean( name );
+	}
+	  
+	// return the parent factory. Added for WireBox compatibility
+	public function getParent() {
+	  return variables.parent;
+	}
+
+	public function shutdown() {
+	  // shutdown parent bean factory
+	  
+	  if ( isObject( variables.parent ) AND structKeyExists( variables.parent, "shutdown" ) ) {
+	    variables.parent.shutdown();
+	  }
+
+	  // At the moment this does nothing else. This method is here for WireBox compatibility for dealing with WireBox's scope storage.
+	}
+}

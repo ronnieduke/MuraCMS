@@ -50,9 +50,10 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 
 <cffunction name="init" output="false">
 	<cfargument name="data" hint="Can be an event object, struct or siteID">
+	
 	<cfset var initArgs=structNew()>
 	
-	<cfif structKeyExists(arguments,"data")>
+	<cfif structKeyExists(arguments,"data") and not (isSimpleValue(arguments.data) and not len(arguments.data))>
 		<cfif isObject(arguments.data)>
 			<cfset setEvent(arguments.data)>
 		<cfelse>
@@ -62,7 +63,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 				<cfset initArgs.siteID=arguments.data>
 			</cfif>
 			<cfset initArgs.muraScope=this>
-			<cfset setEvent(createObject("component","mura.event").init(initArgs))>
+			<cfset setEvent(createObject("component","mura.event").init(initArgs).setValue('MuraScope',this))>
 		</cfif>
 	</cfif>
 	
@@ -82,10 +83,10 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		
 		<cfif isObject(getEvent()) and structKeyExists(variables.instance.event,arguments.MissingMethodName)>
 			<cfset object=variables.instance.event>
-		<cfelseif isObject(getThemeRenderer()) and structKeyExists(getThemeRenderer(),arguments.MissingMethodName)>
-			<cfset object=getThemeRenderer()>
 		<cfelseif isObject(getContentRenderer()) and structKeyExists(getContentRenderer(),arguments.MissingMethodName)>
 			<cfset object=getContentRenderer()>
+		<cfelseif structKeyExists(request.customMuraScopeKeys,arguments.MissingMethodName)>
+			<cfreturn request.customMuraScopeKeys[arguments.MissingMethodName]>
 		<cfelseif isObject(getContentBean())>
 			<cfif structKeyExists(getContentBean(),arguments.MissingMethodName)>
 				<cfset object=getContentBean()>
@@ -127,10 +128,28 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 
 <cffunction name="getContentRenderer" output="false" returntype="any">
 	<cfif not isObject(event("contentRenderer"))>
-		<cfif structKeyExists(request,"contentRenderer")>
+		<cfif structKeyExists(request,"contentRenderer") and request.contentRenderer.getValue('siteid') eq event('siteid')>
 			<cfset event("contentRenderer",request.contentRenderer)>
 		<cfelseif len(event('siteid'))>
-			<cfset event("contentRenderer",createObject("component","#siteConfig().getAssetMap()#.contentRenderer").init(event=event,$=event("muraScope"),mura=event("muraScope") ) )>
+			<!-- temp fix, may become permanent--->
+			<cfif globalConfig().getValue(property='alwaysUseLocalRenderer',defaultValue=false)>
+				<cfset event("contentRenderer",createObject("component","#event('siteid')#.includes.contentRenderer") )>
+			<cfelse>
+				<cfset event("contentRenderer",createObject("component","#siteConfig().getAssetMap()#.includes.contentRenderer") )>
+			</cfif>
+			<!-- end temp fix --->
+			<cfset event("contentRenderer").init(event=event(),$=event("muraScope"),mura=event("muraScope") )>
+			<cfif fileExists(expandPath(siteConfig().getThemeIncludePath()) & "/contentRenderer.cfc" )>
+				<cfset var themeRenderer=createObject("component","#siteConfig().getThemeAssetMap()#.contentRenderer")>
+				<cfset themeRenderer.injectMethod('$',event("muraScope")).injectMethod('mura',event("muraScope")).injectMethod('event',event())>
+				<cfset themeRenderer.init(event=event(),$=event("muraScope"),mura=event("muraScope") )>
+				<cfset var siteRenderer=event("contentRenderer")>
+         		<cfset var key=''>
+         		<cfloop collection="#themeRenderer#" item="key">
+          			<cfset siteRenderer.injectMethod('#key#',themeRenderer[key])>
+         		</cfloop>
+			</cfif>
+			<cfset event("contentRenderer").setValue('siteid',event('siteid'))>
 		<cfelseif structKeyExists(application,"contentRenderer")>
 			<cfset event("contentRenderer",getBean('contentRenderer'))>
 		</cfif>
@@ -138,30 +157,12 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfreturn event("contentRenderer")>
 </cffunction>
 
-<cffunction name="setContentRenderer" output="false" returntype="any">
-	<cfargument name="contentRenderer">
-	<cfif isObject(arguments.contentRenderer)>
-		<cfset event("contentRenderer",arguments.contentRenderer)>
-	</cfif>
-	<cfreturn this>
+<cffunction name="getSiteRenderer" output="false" returntype="any" hint="deprecated: use getContentRenderer()">
+	<cfreturn getContentRenderer()>
 </cffunction>
 
-<cffunction name="getThemeRenderer" output="false" returntype="any">
-	<cfif isObject(event("themeRenderer"))>
-		<cfreturn event("themeRenderer")>
-	<cfelseif len(event('siteid')) and fileExists(expandPath(siteConfig().getThemeIncludePath()) & "/contentRenderer.cfc" )>
-		<cfset event("themeRenderer",createObject("component","#siteConfig().getThemeAssetMap()#.contentRenderer").init(event=event,$=event("muraScope"),mura=event("muraScope") ) )>
-	<cfelse>
-		<cfreturn event("themeRenderer")>
-	</cfif>
-</cffunction>
-
-<cffunction name="setThemeRenderer" output="false" returntype="any">
-	<cfargument name="themeRenderer">
-	<cfif isObject(arguments.themeRenderer)>
-		<cfset event("themeRenderer",arguments.themeRenderer)>
-	</cfif>
-	<cfreturn this>
+<cffunction name="getThemeRenderer" output="false" returntype="any" hint="deprecated: use getContentRenderer()">
+	<cfreturn getContentRenderer()>
 </cffunction>
 
 <cffunction name="getContentBean" output="false" returntype="any">
@@ -182,6 +183,8 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 			<cfset variables.instance.event=request.servletEvent>
 		<cfelseif structKeyExists(request,"event")>
 			<cfset variables.instance.event=request.event>
+		<cfelse>
+			<cfset variables.instance.event=createObject("component","mura.event").init($=this)>
 		</cfif>
 	</cfif>
 	<cfreturn variables.instance.event>
@@ -219,10 +222,10 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<cfif isObject(getEvent())>
 			<cfif structKeyExists(arguments,"propertyValue")>
 				<cfset getEvent().setValue(arguments.property,arguments.propertyValue)>
+				<cfreturn this>
+			<cfelse>
+				<cfreturn getEvent().getValue(arguments.property)>
 			</cfif>
-			
-			<cfreturn getEvent().getValue(arguments.property)>
-			
 		<cfelse>
 			<cfthrow message="The event is not set in the Mura Scope.">
 		</cfif>
@@ -238,12 +241,14 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	
 	<cfif structKeyExists(arguments,"property")>
 		<cfif isObject(getContentBean())>
-		<cfif structKeyExists(arguments,"propertyValue")>
-			<cfset getContentBean().setValue(arguments.property,arguments.propertyValue)>
-		</cfif>
-		<cfreturn getContentBean().getValue(arguments.property)>
+			<cfif structKeyExists(arguments,"propertyValue")>
+				<cfset getContentBean().setValue(arguments.property,arguments.propertyValue)>
+				<cfreturn this>
+			<cfelse>
+				<cfreturn getContentBean().getValue(arguments.property)>
+			</cfif>
 		<cfelse>
-			<cfthrow message="The content is not set ine the Mura Scope.">
+			<cfthrow message="The content is not set in the Mura Scope.">
 		</cfif>
 	<cfelse>
 		<cfreturn getContentBean()>
@@ -257,12 +262,13 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfif structKeyExists(arguments,"property")>
 		<cfif structKeyExists(arguments,"propertyValue")>
 			<cfset getCurrentUser().setValue(arguments.property,arguments.propertyValue)>
+			<cfreturn this>
+		<cfelse>
+			<cfreturn getCurrentUser().getValue(arguments.property)>
 		</cfif>
-		<cfreturn getCurrentUser().getValue(arguments.property)>
 	<cfelse>
 		<cfreturn getCurrentUser()>
 	</cfif>
-	
 </cffunction>
 
 <cffunction name="siteConfig" output="false" returntype="any">
@@ -270,7 +276,11 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfargument name="propertyValue">
 	<cfset var site="">
 	<cfset var theValue="">
-	<cfset var siteID=event('siteid')>
+	<cfset var siteID = Len(event('siteid')) 
+		? event('siteid') 
+		: IsDefined('session') && StructKeyExists(session, 'siteid') 
+			? session.siteid 
+			: '' />
 	
 	<cfif len(siteid)>
 		<cfset site=application.settingsManager.getSite(siteid)>
@@ -278,35 +288,38 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<cfif structKeyExists(arguments,"property")>
 			<cfif structKeyExists(arguments,"propertyValue")>
 				<cfset site.setValue(arguments.property,arguments.propertyValue)>
+				<cfreturn this>
+			<cfelse>
+				<cfreturn (IsSimpleValue(site.getValue(arguments.property)) and Len(site.getValue(arguments.property))) || !IsSimpleValue(site.getValue(arguments.property))
+					? site.getValue(arguments.property)
+					: globalConfig(arguments.property) />
 			</cfif>
-			<cfreturn site.getValue(arguments.property)>
 		<cfelse>
 			<cfreturn site>
 		</cfif>
+
 	<cfelse>
-		<cfthrow message="The siteid is not set in the current Mura Scope event.">
-	</cfif>
-	
+		<cfthrow message="The SiteID is not set in the current Mura Scope event.">
+	</cfif>	
 </cffunction>
 
 <cffunction name="globalConfig" output="false" returntype="any">
 	<cfargument name="property">
-	<cfset var site="">
 	<cfset var theValue="">
 	
 	<cfif structKeyExists(arguments,"property")>
 		<cfif structKeyExists(arguments,"propertyValue")>
-				<cfinvoke component="#application.configBean#" method="set#arguments.property#">
-					<cfinvokeargument name="#arguments.property#" value="#arguments.propertyValue#">
-				</cfinvoke>
+			<cfinvoke component="#application.configBean#" method="set#arguments.property#">
+				<cfinvokeargument name="#arguments.property#" value="#arguments.propertyValue#">
+			</cfinvoke>
+			<cfreturn this>
 		<cfelse>
 			<cfinvoke component="#application.configBean#" method="get#arguments.property#" returnvariable="theValue">
+			<cfreturn theValue>
 		</cfif>
-		<cfreturn theValue>
 	<cfelse>
 		<cfreturn application.configBean>
 	</cfif>
-	
 </cffunction>
 
 <cffunction name="component" output="false" returntype="any">
@@ -316,13 +329,13 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfset var component=event('component')>
 	
 	<cfif structKeyExists(arguments,"property") and isStruct(component)>
-		<cfif structKeyExists(arguments,"property") and structKeyExists(component,arguments.property)>
-			
+		<cfif structKeyExists(arguments,"property") and structKeyExists(component,arguments.property)>		
 			<cfif structKeyExists(arguments,"propertyValue")>
 				<cfset component[arguments.property]=arguments.propertyValue>
+				<cfreturn this>
+			<cfelse>
+				<cfreturn component[arguments.property]>
 			</cfif>
-			
-			<cfreturn component[arguments.property]>
 		<cfelse>
 			<cfreturn "">
 		</cfif>
@@ -333,7 +346,6 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfelse>
 		<cfthrow message="No component has been set in the Mura Scope.">
 	</cfif>
-	
 </cffunction>
 
 <cffunction name="currentURL" output="false" returntype="any">
@@ -365,12 +377,14 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 
 <cffunction name="announceEvent" returntype="any" access="public" output="false">
 	<cfargument name="eventName">
-	<cfset getEventManager().announceEvent(arguments.eventName,this)>
+	<cfargument name="index" default="0">
+	<cfset getEventManager().announceEvent(eventToAnnounce=arguments.eventName,currentEventObject=this,index=arguments.index)>
 </cffunction>
 
 <cffunction name="renderEvent" returntype="any" access="public" output="false">
 	<cfargument name="eventName">
-	<cfreturn getEventManager().renderEvent(arguments.eventName,this)>
+	<cfargument name="index" default="0">
+	<cfreturn getEventManager().renderEvent(eventToRender=arguments.eventName,currentEventObject=this,index=arguments.index)>
 </cffunction>
 
 <cffunction name="createHREF" returntype="string" output="false" access="public">
@@ -391,7 +405,11 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 
 <cffunction name="rbKey" output="false" returntype="any">
 	<cfargument name="key">
-	<cfreturn siteConfig("RBFactory").getKey(arguments.key)>
+	<cfif isDefined('request.muraAdminRequest') and request.muraAdminRequest>
+		<cfreturn application.rbFactory.getKeyValue(session.rb,arguments.key)>
+	<cfelse>
+		<cfreturn siteConfig("RBFactory").getKey(arguments.key)>
+	</cfif>
 </cffunction>
 
 <cffunction name="setCustomMuraScopeKey" output="false">
@@ -408,9 +426,11 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfargument name="outputDirectory" default="compiled">
 	<cfargument name="minifyMode" default="package">
 	<cfargument name="checkForUpdates" default="true">
+	<cfargument name="addCacheBusters" default="true">
+	<cfargument name="forceCompilation" default="false">
 	<cfargument name="javaLoaderScope" default="#application.configBean.getValue('cfStaticJavaLoaderScope')#">
 	<cfset var hashKey="">
-	
+
 	<cfif not len(arguments.staticDirectory) and len(event("siteid"))>
 		<cfset arguments.staticDirectory=ExpandPath(siteConfig("themeIncludePath"))>	
 	</cfif>
@@ -505,5 +525,69 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfreturn structKeyExists(request.muraHandledEvents,arguments.eventName)>
 </cffunction>
 
+<cffunction name="getCrumbPropertyArray" output="false">
+	<cfargument name="property">
+	<cfargument name="direction" default="desc">
+	
+	<cfset var it=content().getCrumbIterator()>
+	<cfset var propertyArray=[]>
+	<cfset var item="">
+
+	<cfif arguments.direction eq "desc">
+		<cfset it.end()>
+		<cfloop condition="it.hasPrevious()">
+			<cfset item=it.previous()>
+			<cfset arrayAppend(propertyArray,item.getValue(arguments.property))>	
+		</cfloop>
+	<cfelse>
+		<cfloop condition="it.hasNext()">
+			<cfset item=it.next()>
+			<cfset arrayAppend(propertyArray,item.getValue(arguments.property))>
+		</cfloop>
+	</cfif>
+	<cfreturn propertyArray>
+</cffunction>
+
+<cffunction name="validateCSRFTokens" output="false">
+	<cfset arguments.$=this>
+	<cfreturn currentUser().validateCSRFTokens(argumentCollection=arguments)>
+</cffunction>
+
+<cffunction name="renderCSRFTokens" output="false">
+	<cfreturn currentUser().renderCSRFTokens(argumentCollection=arguments)>
+</cffunction>
+
+<cffunction name="generateCSRFTokens" output="false">
+	<cfreturn currentUser().generateCSRFTokens(argumentCollection=arguments)>
+</cffunction>
+
+<cffunction name="setAdminAlert" output="false">
+	<cfargument name="key">
+	<cfargument name="text">
+	<cfargument name="type" default="">
+
+	<cfif len(event('siteid'))>
+		<cfif len(arguments.type) and !ListFindNoCase('error,warning,success,info', arguments.type)>
+			<cfset arguments.type=''>
+		</cfif>
+		<cfparam name="session.mura.alerts" default="#structNew()#">
+		<cfif structKeyExists(session.mura.alerts,'#event('siteid')#')>
+			<cfset session.mura.alerts['#event('siteid')#']={}>
+		</cfif>
+		<cfset session.mura.alerts['#event('siteid')#']['#arguments.key#']={text=arguments.text,type=arguments.type}>
+	</cfif>
+</cffunction>
+
+<cffunction name="removeAdminAlert" output="false">
+	<cfargument name="key">
+	<cfargument name="text">
+	<cfif len(event('siteid'))>
+		<cfparam name="session.mura.alerts" default="#structNew()#">
+		<cfif structKeyExists(session.mura.alerts,'#event('siteid')#')>
+			<cfset session.mura.alerts['#event('siteid')#']={}>
+		</cfif>
+		<cfset structDelete(session.mura.alerts['#event('siteid')#'],'#arguments.key#')>
+	</cfif>
+</cffunction>
 
 </cfcomponent>

@@ -58,12 +58,31 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfif len(local.pluginEvent.getValue("siteID"))>
 		<cfset application.pluginManager.announceEvent("onSiteMissingTemplate",local.pluginEvent)>
 	</cfif>	
-	<cfset application.pluginManager.announceEvent("onGlobalMissingTemplate",local.pluginEvent)>
-
-	<cfif isDefined("application.contentServer")>
-		<cfset onRequestStart()>
-		<cfset application.contentServer.renderFilename(listDeleteAt(cgi.script_name, listLen(cgi.script_name,"/"), "/"))>
-		<cfabort>
-	</cfif>
+	<cfset application.pluginManager.announceEvent("onGlobalMissingTemplate",local.pluginEvent)>	
 </cfif>
+<cfif isDefined("application.contentServer")>
+	<cfset request.muraTemplateMissing=true>
+	<cfset onRequestStart()>
+	<cfset local.fileArray=listToArray(cgi.script_name,"/")>
+	<cfset local.filename="">
+
+	<cfloop from="1" to="#arrayLen(local.fileArray)#" index="local.i">
+		<cfif find(".",local.fileArray[local.i]) and local.i lt arrayLen(local.fileArray)>
+			<cfset local.filename="">
+		<cfelseif not find(".",local.fileArray[local.i])>
+			<cfset local.filename=listAppend(local.filename,local.fileArray[local.i] , "/")>
+		</cfif>
+	</cfloop>
+
+	<cfset firstItem=listFirst(local.filename,'/')>
+	<cfif listFind('_api,tasks',firstItem)>
+		<cfoutput>#application.contentServer.handleAPIRequest('/' & local.filename)#</cfoutput>
+		<cfabort>
+	<cfelse>
+		<cfset application.contentServer.renderFilename(local.filename)>
+	</cfif>
 	
+	<cfreturn true>
+</cfif>
+
+<cfreturn false>

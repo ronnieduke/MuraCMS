@@ -56,10 +56,21 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<cfset variables.utility=arguments.utility />
 		<cfset variables.Gateway=arguments.settingsGateway />
 		<cfset variables.DAO=arguments.settingsDAO />
-		<cfset variables.clusterManager=arguments.clusterManager />	
+		<cfset variables.clusterManager=arguments.clusterManager />		
 		<cfset variables.classExtensionManager=variables.configBean.getClassExtensionManager()>
 		<cfset setSites() />
 <cfreturn this />
+</cffunction>
+
+<cffunction name="validate" output="false">
+	<cfreturn isObject(variables.configBean)
+	and isObject(variables.utility)
+	and isObject(variables.Gateway)
+	and isObject(variables.DAO)
+	and isObject(variables.clusterManager)
+	and isObject(variables.classExtensionManager)
+	and isDefined('variables.sites') 
+	and not structIsEmpty(variables.sites)>
 </cffunction>
 
 <cffunction name="getBean" output="false">
@@ -209,20 +220,34 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cffunction name="update" access="public" output="false" returntype="any">
 	<cfargument name="data" type="struct" />
 	<cfset var bean=variables.DAO.read(arguments.data.SiteID) />
+	<cfset var pluginEvent = createObject("component","mura.event").init(arguments.data) />
 
 	<cfset bean.set(arguments.data) />
+	<cfset pluginEvent.setValue('settingsBean',bean)>
+
 	<cfset bean.setModuleID("00000000000000000000000000000000000")>
 	<cfset bean.validate()>
+
+	<cfset getBean('pluginManager').announceEvent("onBeforeSiteUpdate",pluginEvent)>
+	<cfset getBean('pluginManager').announceEvent("onBeforeSiteSave",pluginEvent)>
 	
 	<cfif structIsEmpty(bean.getErrors())>
 		<cfset variables.utility.logEvent("SiteID:#bean.getSiteID()# Site:#bean.getSite()# was updated","mura-settings","Information",true) />
 		<cfif structKeyExists(arguments.data,"extendSetID") and len(arguments.data.extendSetID)>
 			<cfset variables.classExtensionManager.saveExtendedData(bean.getBaseID(),bean.getAllValues())/>
 		</cfif>
+
+		<cfset bean.getRazunaSettings().set(arguments.data).save()>
 		<cfset variables.DAO.update(bean) />
+
+		<cfset validateDisplayPool(bean) />
+
 		<cfset checkForBundle(arguments.data,bean.getErrors())>
 		<cfset setSites() />
 		<cfset application.appInitialized=false>
+
+		<cfset getBean('pluginManager').announceEvent("onAfterSiteUpdate",pluginEvent)>
+		<cfset getBean('pluginManager').announceEvent("onAfterSiteSave",pluginEvent)>
 	</cfif>
 
 	<cfreturn bean />
@@ -233,32 +258,48 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfargument name="siteid" type="string" />
 	
 	<cfset var bean=read(arguments.siteid) />
+	<cfset var pluginEvent = createObject("component","mura.event") />
+	<cfset var data={sited=arguments.siteid,settingsBean=bean}>
+	<cfset pluginEvent.init(data)>
+
+	<cfset getBean('pluginManager').announceEvent("onBeforeSiteDelete",pluginEvent)>
+
+	<cfset bean.getRazunaSettings().delete()>
+	
 	<cfset variables.utility.logEvent("SiteID:#arguments.siteid# Site:#bean.getSite()# was deleted","mura-settings","Information",true) />
 	<cfset variables.DAO.delete(arguments.siteid) />
 	<cfset setSites() />
 	<cftry>
-	<cfset variables.utility.deleteDir("#variables.configBean.getWebRoot()##variables.configBean.getFileDelim()##arguments.siteid##variables.configBean.getFileDelim()#") />
+	<cfset variables.utility.deleteDir("#variables.configBean.getWebRoot()#/#arguments.siteid#/") />
 	<cfcatch></cfcatch>
 	</cftry>
 	<cftry>
-	<cfset variables.utility.deleteDir("#variables.configBean.getFileDir()##variables.configBean.getFileDelim()##arguments.siteid##variables.configBean.getFileDelim()#") />
+	<cfset variables.utility.deleteDir("#variables.configBean.getFileDir()#/#arguments.siteid#/") />
 	<cfcatch></cfcatch>
 	</cftry>
 	<cftry>
-	<cfset variables.utility.deleteDir("#variables.configBean.getAssetDir()##variables.configBean.getFileDelim()##arguments.siteid##variables.configBean.getFileDelim()#") />
+	<cfset variables.utility.deleteDir("#variables.configBean.getAssetDir()#/#arguments.siteid#/") />
 	<cfcatch></cfcatch>
 	</cftry>
+
+	<cfset getBean('pluginManager').announceEvent("onAfterSiteDelete",pluginEvent)>
+
 </cffunction>
 
 <cffunction name="create" access="public" output="false" returntype="any">
 	<cfargument name="data" type="struct" />
 	<cfset var rs=""/>
 	<cfset var bean=getBean("settingsBean") />
-	
+	<cfset var pluginEvent = createObject("component","mura.event").init(arguments.data) />
+
 	<cfset bean.set(arguments.data) />
+	<cfset pluginEvent.setValue('settingsBean',bean)>
 	<cfset bean.setModuleID("00000000000000000000000000000000000")>
 	<cfset bean.validate()>
-	
+
+	<cfset getBean('pluginManager').announceEvent("onBeforeSiteCreate",pluginEvent)>
+	<cfset getBean('pluginManager').announceEvent("onBeforeSiteSave",pluginEvent)>
+
 	<cfif structIsEmpty(bean.getErrors()) and  bean.getSiteID() neq ''>
 		
 		<cfquery name="rs" datasource="#variables.configBean.getReadOnlyDatasource()#" username="#variables.configBean.getReadOnlyDbUsername()#" password="#variables.configBean.getReadOnlyDbPassword()#">
@@ -278,24 +319,54 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<cfif structKeyExists(arguments.data,"extendSetID") and len(arguments.data.extendSetID)>
 			<cfset variables.classExtensionManager.saveExtendedData(bean.getBaseID(),bean.getAllValues())/>
 		</cfif>
+		<cfset bean.getRazunaSettings().set(arguments.data).save()>
 		<cfset variables.DAO.create(bean) />
-		<cfset variables.utility.copyDir("#variables.configBean.getWebRoot()##variables.configBean.getFileDelim()#default#variables.configBean.getFileDelim()#", "#variables.configBean.getWebRoot()##variables.configBean.getFileDelim()##bean.getSiteID()##variables.configBean.getFileDelim()#") />
+		
+		<cfset var fileDelim=variables.configBean.getFileDelim()>
+
+		<cfset validateDisplayPool(bean) />
+	
 		<cfif variables.configBean.getCreateRequiredDirectories()>
-			<cfset variables.utility.createRequiredSiteDirectories(bean.getSiteID()) />
+			<cfset variables.utility.createRequiredSiteDirectories(bean.getSiteID(),bean.getDisplayPoolID()) />
 		</cfif>
+
 		<cfset checkForBundle(arguments.data,bean.getErrors())>
 		<cfset setSites() />
 		<cfset application.appInitialized=false>
+
+		<cfset getBean('pluginManager').announceEvent("onAfterSiteCreate",pluginEvent)>
+		<cfset getBean('pluginManager').announceEvent("onAfterSiteSave",pluginEvent)>
 	</cfif>
 
 	<cfreturn bean />
+</cffunction>
+
+<cffunction name="validateDisplayPool" access="public" output="false" returntype="void">
+	<cfargument name="bean" required="true" >
+
+	<cfset var fileDelim=variables.configBean.getFileDelim()>
+
+	<cfif bean.getSiteID() eq bean.getDisplayPoolID() and !directoryExists('#variables.configBean.getWebRoot()##fileDelim##bean.getSiteID()##fileDelim#')>
+
+		<cfset variables.utility.copyDir(
+				baseDir="#variables.configBean.getWebRoot()##fileDelim#default#fileDelim#",
+				destDir="#variables.configBean.getWebRoot()##fileDelim##bean.getSiteID()##fileDelim#",
+				excludeList="#variables.configBean.getWebRoot()##fileDelim#default#fileDelim#cache,#variables.configBean.getWebRoot()##fileDelim#default#fileDelim#assets"
+			)>
+	</cfif>
 </cffunction>
 
 <cffunction name="setSites" access="public" output="false" returntype="void">
 	<cfargument name="missingOnly" default="false">
 	<cfset var rs="" />
 	<cfset var builtSites=structNew()>
-	<cfobjectcache action="clear"/>
+
+	<cftry>
+		<cfobjectcache action="clear"/>
+		<cfcatch></cfcatch>
+	</cftry>
+
+	
 	<cfset rs=getList() />
 
 	<cfloop query="rs">
@@ -305,7 +376,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 			<cfset builtSites['#rs.siteid#']=variables.DAO.read(rs.siteid) />	
 		</cfif>
 		<cfif variables.configBean.getCreateRequiredDirectories()>
-			<cfset variables.utility.createRequiredSiteDirectories(rs.siteid) />
+			<cfset variables.utility.createRequiredSiteDirectories(rs.siteid,builtSites['#rs.siteid#'].getDisplayPoolID()) />
 		</cfif>
  	</cfloop>
 
@@ -315,6 +386,9 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 
 <cffunction name="getSite" access="public" output="false" returntype="any">
 	<cfargument name="siteid" type="string" />
+	<cfif not len(arguments.siteid)>
+		<cfset arguments.siteid='default'>
+	</cfif>
 	<cftry>
 	<cfreturn variables.sites['#arguments.siteid#'] />
 	<cfcatch>
@@ -362,14 +436,19 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cffunction name="getUserSites" access="public" output="false" returntype="query">
 <cfargument name="siteArray" type="array" required="yes" default="#arrayNew(1)#">
 <cfargument name="isS2" type="boolean" required="yes" default="false">
-	<cfset var rs=""/>
+<cfargument name="searchString" type="string" required="no" default="">
+<cfargument name="searchMaxRows" type="numeric" required="no" default="-1">
+
+	<cfset var rsSites=""/>
 	<cfset var counter=1/>
-	<cfset var rsSites=getList(sortby="site")/>
+	<cfset var rsAllSites=getList(sortby="site")/>
 	<cfset var s=0/>
+	<cfset var where=false/>
 	
-	<cfquery name="rs" dbtype="query">
-		select * from rsSites
+	<cfquery name="rsSites" dbtype="query" maxrows="#arguments.searchMaxRows#">
+		select * from rsAllSites
 		<cfif arrayLen(arguments.siteArray) and not arguments.isS2>
+			<cfset where=true/>
 			where siteid in (
 			<cfloop from="1" to="#arrayLen(arguments.siteArray)#" index="s">
 			'#arguments.siteArray['#s#']#'
@@ -377,12 +456,24 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 			<cfset counter=counter+1>
 			</cfloop>)
 		<cfelseif not arrayLen(arguments.siteArray) and not arguments.isS2>
+		<cfset where=true/>
 		where 0=1
+		</cfif>
+		<cfif arguments.searchString neq "">
+		<cfif where>
+		and
+		<cfelse>
+		where
+		</cfif>
+		(
+			siteid like <cfqueryparam value="%#arguments.searchString#%">
+		or	Site like <cfqueryparam value="%#arguments.searchString#%">
+		)
 		</cfif>
 		
 	</cfquery>
 
-	<cfreturn rs />
+	<cfreturn rsSites />
 </cffunction>
 
 <cffunction name="checkForBundle" output="false">
@@ -450,6 +541,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfset var Bundle			= getBean("bundle") />
 	<cfset var publisher 		= getBean("publisher") />
 	<cfset var keyFactory		= createObject("component","mura.publisherKeys").init(arguments.keyMode,application.utility)>
+	<cfsetting requestTimeout = "7200">
 	
 	<cfset Bundle.restore( arguments.BundleFile)>
 	
@@ -474,6 +566,21 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<cfset publisher.getToWork( argumentCollection=sArgs )>
 		
 		<cfif len(arguments.siteID)>
+			<!-- Legacy data updates --->
+			<cfquery>
+				update tclassextend set type='Folder' where type in ('Portal','LocalRepo')
+			</cfquery>
+			<cfquery>
+				update tcontent set type='Folder' where type in ('Portal','LocalRepo')
+			</cfquery>
+			<cfquery>
+				update tsystemobjects set
+					object='folder_nav',
+					name='Folder Navigation'
+				where object='portal_nav'
+			</cfquery>
+			<!--- --->	
+
 			<cfset getSite(arguments.siteID).getCacheFactory(name="output").purgeAll()>
 			<cfif sArgs.contentMode neq "none">
 				<cfset getSite(arguments.siteID).getCacheFactory(name="data").purgeAll()>
@@ -481,12 +588,12 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 			</cfif>
 			<cfif sArgs.pluginMode neq "none">
 				<cfset getBean("pluginManager").loadPlugins()>
-			</cfif>	
+			</cfif>
 		</cfif>
 		
 		<cfset application.appInitialized=false>
 	<cfcatch>
-		
+
 		<cfset arguments.errors.message="The bundle was not successfully imported:<br/>ERROR: " & cfcatch.message>
 		<cfif findNoCase("duplicate",errors.message)>
 			<cfset arguments.errors.message=arguments.errors.message & "<br/>HINT: This error is most often caused by 'Maintaining Keys' when the bundle data already exists within another site in the current Mura instance.">
@@ -494,7 +601,6 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<cfif isDefined("cfcatch.sql") and len(cfcatch.sql)>
 			<cfset arguments.errors.message=arguments.errors.message & "<br/>SQL: " & cfcatch.sql>
 		</cfif>
-		
 		<cfif isDefined("cfcatch.detail") and len(cfcatch.detail)>
 			<cfset arguments.errors.message=arguments.errors.message & "<br/>DETAIL: " & cfcatch.detail>
 		</cfif>
@@ -509,6 +615,16 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 
 	<cfquery name="rs" dbType="query">
 		select entry from rs where entry in ('sitefiles.zip','pluginfiles.zip','filefiles.zip','pluginfiles.zip')
+	</cfquery>
+	<cfreturn rs.recordcount>
+</cffunction>	
+
+<cffunction name="isPartialBundle" output="false">
+	<cfargument name="BundleFile">
+	<cfset var rs=createObject("component","mura.Zip").List(zipFilePath="#arguments.BundleFile#")>
+
+	<cfquery name="rs" dbType="query">
+		select entry from rs where entry in ('assetfiles.zip')
 	</cfquery>
 	<cfreturn rs.recordcount>
 </cffunction>	
@@ -555,5 +671,9 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 
 </cffunction>
 
+<cffunction name="remoteReload" output="false">
+		<cfset application.appInitialized=false>
+		<cfset application.broadcastInit=false>
+</cffunction>
 
 </cfcomponent>

@@ -78,9 +78,19 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 </cffunction>
 
 <cffunction name="set" output="false" access="public">
-		<cfargument name="data" type="any" required="true">
+		<cfargument name="property" required="true">
+		<cfargument name="propertyValue">  	
+		
+		<cfif not isDefined('arguments.data')>
+			<cfif isSimpleValue(arguments.property)>
+				<cfreturn setValue(argumentCollection=arguments)>
+			</cfif>
+
+			<cfset arguments.data=arguments.property>
+		</cfif>
 
 		<cfset var prop=""/>
+		<cfset var tempFunc="">
 		
 		<cfif isquery(arguments.data)>
 			<cfset setSiteID(arguments.data.siteID) />
@@ -95,8 +105,9 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<cfelseif isStruct(arguments.data)>
 		
 			<cfloop collection="#arguments.data#" item="prop">
-				<cfif structKeyExists(this,"set#prop#")>
-					<cfset evaluate("set#prop#(arguments.data[prop])") />
+				<cfif isDefined("this.set#prop#")>
+					<cfset tempFunc=this["set#prop#"]>
+          			<cfset tempFunc(arguments.data['#prop#'])>
 				</cfif>
 			</cfloop>
 			
@@ -186,8 +197,12 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 
 <cffunction name="setIsActive" access="public" output="false">
 	<cfargument name="IsActive"/>
-	<cfif isNumeric(arguments.isActive)>
-		<cfset variables.instance.IsActive = arguments.IsActive />
+	<cfif isBoolean(arguments.IsActive)>
+		<cfif arguments.IsActive>
+			<cfset variables.instance.IsActive = 1 />
+		<cfelse>
+			<cfset variables.instance.IsActive = 0 />
+		</cfif>
 	</cfif>
 	<cfreturn this>
 </cffunction>
@@ -217,7 +232,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cffunction name="getAttributesQuery" access="public" returntype="query">
 <cfset var rs=""/>
 
-		<cfquery name="rs" datasource="#variables.configBean.getReadOnlyDatasource()#" username="#variables.configBean.getReadOnlyDbUsername()#" password="#variables.configBean.getReadOnlyDbPassword()#">
+		<cfquery attributeCollection="#variables.configBean.getReadOnlyQRYAttrs(name='rs')#">
 		select *
 		from tclassextendattributes 
 		where tclassextendattributes.ExtendSetID=<cfqueryparam cfsqltype="cf_sql_varchar"  value="#getExtendSetID()#">
@@ -230,7 +245,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cffunction name="load" access="public" returntype="any">
 	<cfset var rs=""/>
                
-	<cfquery name="rs" datasource="#variables.configBean.getReadOnlyDatasource()#" username="#variables.configBean.getReadOnlyDbUsername()#" password="#variables.configBean.getReadOnlyDbPassword()#">
+	<cfquery attributeCollection="#variables.configBean.getReadOnlyQRYAttrs(name='rs')#">
         select extendSetID,subTypeID,categoryID,siteID,name,orderno,isActive,container from tclassextendsets
         where
         <cfif len(getName()) and len(getSubTypeID())>
@@ -283,13 +298,13 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cffunction name="save"  access="public" output="false">
 <cfset var rs=""/>
 
-	<cfquery name="rs" datasource="#variables.configBean.getReadOnlyDatasource()#" username="#variables.configBean.getReadOnlyDbUsername()#" password="#variables.configBean.getReadOnlyDbPassword()#">
+	<cfquery attributeCollection="#variables.configBean.getReadOnlyQRYAttrs(name='rs')#">
 	select ExtendSetID from tclassextendsets where ExtendSetID=<cfqueryparam cfsqltype="cf_sql_varchar" value="#getExtendSetID()#">
 	</cfquery>
 	
 	<cfif rs.recordcount>
 		
-		<cfquery datasource="#variables.configBean.getDatasource()#" username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
+		<cfquery>
 		update tclassextendsets set
 		siteID=<cfqueryparam cfsqltype="cf_sql_varchar" null="#iif(getSiteID() neq '',de('no'),de('yes'))#" value="#getSiteID()#">,
 		name=<cfqueryparam cfsqltype="cf_sql_varchar" null="#iif(getName() neq '',de('no'),de('yes'))#" value="#getName()#">,
@@ -303,7 +318,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		
 	<cfelse>
 	
-		<cfquery datasource="#variables.configBean.getDatasource()#" username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
+		<cfquery>
 		Insert into tclassextendsets (ExtendSetID,siteID,name,subtypeid,isActive,orderno,categoryID,container) 
 		values(
 		<cfqueryparam cfsqltype="cf_sql_varchar"  value="#getExtendSetID()#">,
@@ -332,7 +347,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<cfset attribute.delete() />
 	</cfloop>
 
-	<cfquery name="rs" datasource="#variables.configBean.getDatasource()#" username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
+	<cfquery attributeCollection="#variables.configBean.getReadOnlyQRYAttrs(name='rs')#">
 	delete from tclassextendsets where extendSetID=<cfqueryparam cfsqltype="cf_sql_varchar" value="#getExtendSetID()#">
 	</cfquery>
 	
@@ -406,5 +421,66 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 </cfif>
 
 </cffunction>
+
+<cffunction name="getAllValues" ouput="false">
+ 	
+ 	<cfset var extensionData = {} />
+	<cfset var atts = getAttributes() />
+	<cfset var attStruct = {} />
+	<cfset var i = 0 />
+
+	<cfset extensionData = duplicate(variables.instance) />
+	<cfset structDelete(extensionData,"errors") />
+	<cfset extensionData.attributes = [] />
+
+	<cfloop from="1" to="#ArrayLen(atts)#" index="i">
+		<cfset attStruct = atts[i].getAllValues() />
+		<cfset ArrayAppend(extensionData.attributes,attStruct ) />
+	</cfloop>
+
+	<cfreturn extensionData />
+</cffunction>
+
+<cffunction name="getAsXML" ouput="false" returntype="xml">
+	<cfargument name="documentXML">
+	<cfargument name="includeIDs" type="boolean" default="false" >
+	
+	<cfset var extensionData = {} />
+	<cfset var atts = getAttributes() />
+	<cfset var item = "" />
+	<cfset var i = 0 />
+
+	<cfset var xmlAttributeSet = XmlElemNew( documentXML, "", "attributeset" ) />
+	<cfset var xmlAttributes = "" />
+
+	<cfset extensionData = duplicate(variables.instance) />
+	<cfset structDelete(extensionData,"errors") />
+
+	<cfif not(arguments.includeIDs)>
+		<cfset structDelete(extensionData,"extendsetID") />
+		<cfset structDelete(extensionData,"subTypeID") />
+	</cfif>
+
+	<cfset structDelete(extensionData,"isNew") />
+	<cfset structDelete(extensionData,"isActive") />
+	<cfset structDelete(extensionData,"siteid") />
+	<cfloop collection="#extensionData#" item="item">
+		<cfif isSimpleValue(extensionData[item])>
+			<cfset xmlAttributeSet.XmlAttributes[lcase(item)] = extensionData[item] />
+		</cfif>
+	</cfloop>
+
+	<cfloop from="1" to="#ArrayLen(atts)#" index="i">
+		<cfset var xmlAttributes = atts[i].getAsXML(documentXML) />
+		<cfset ArrayAppend(
+			xmlAttributeSet.XmlChildren,
+			xmlAttributes
+			) />
+	</cfloop>
+
+	<cfreturn xmlAttributeSet />	
+</cffunction>
+
+
 
 </cfcomponent>

@@ -46,143 +46,194 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 --->
 
 <cfoutput>
-<h2>Change Set Content List</h2>
+<h1>Change Set Content List</h1>
+<cfinclude template="dsp_secondary_menu.cfm">
+<cfset csrftokens=rc.$.renderCSRFTokens(context=rc.changesetid,format='url')>
+<cfif rc.changeset.getPublished()>
+<p class="alert">#application.rbFactory.getKeyValue(session.rb,'changesets.publishednotice')#</p>
+<cfelse>
+  <cfset hasPendingApprovals=rc.changeset.hasPendingApprovals()>
+  <cfif hasPendingApprovals>
+    <div class="alert alert-error">
+        #application.rbFactory.getKeyValue(session.rb,'changesets.haspendingapprovals')# 
+    </div>  
+  </cfif>
+</cfif>
 
-<ul id="navTask">
-<li><a  title="#application.rbFactory.getKeyValue(session.rb,'changesets.backtochangesets')#" href="index.cfm?muraAction=cChangesets.list&siteid=#URLEncodedFormat(rc.siteid)#">#application.rbFactory.getKeyValue(session.rb,'changesets.backtochangesets')#</a></li>
-<li><a  title="#application.rbFactory.getKeyValue(session.rb,'changesets.vieweditform')#" href="index.cfm?muraAction=cChangesets.edit&siteid=#URLEncodedFormat(rc.siteid)#&changesetID=#HTMLEditFormat(rc.changesetID)#">#application.rbFactory.getKeyValue(session.rb,'changesets.vieweditform')#</a></li>
-</ul>
+<cfif not rc.changeset.getPublished() and isDate(rc.changeset.getCloseDate())>
+   <div class="alert">#application.rbFactory.getResourceBundle(session.rb).messageFormat(application.rbFactory.getKeyValue(session.rb,"changesets.hasclosedate"),LSDateFormat(rc.changeset.getCloseDate(),session.dateKeyFormat))#
+    </div> 
+</cfif>
+<!--- <h2>#application.rbFactory.getKeyValue(session.rb,'changesets.name')#</h2> --->
+<h2>#esapiEncode('html',rc.changeset.getName())#</h2>
 
-<h3>#application.rbFactory.getKeyValue(session.rb,'changesets.name')#</h3>
-<p>#HTMLEditFormat(rc.changeset.getName())#</p>
+<cfif not rc.changeset.getPublished()>
+<p><i class="icon-link"></i> <a title="Change Set Name" href="##" onclick="return preview('#esapiEncode('javascript',rc.previewLink)#','');">#esapiEncode('html',rc.previewLink)#</a></p>
+</cfif>
 
-<cfset rc.rslist=rc.siteAssignments.getQuery()>
-<cfset rc.previewLink="http://#application.settingsManager.getSite(rc.siteid).getDomain()##application.configBean.getServerPort()##application.configBean.getContext()##application.contentRenderer.getURLStem(rc.siteid,"")#?changesetID=#rc.changesetID#">
-<h4>#application.rbFactory.getKeyValue(session.rb,'changesets.filterview')#</h4>
-<p>#application.rbFactory.getKeyValue(session.rb,'changesets.filterviewnotice')#</p>
-<form novalidate="novalidate" id="assignmentSearch" name="assignmentSearch" method="get">
-	<input name="keywords" value="#HTMLEditFormat(rc.keywords)#" type="text" class="text" maxlength="50" />
-	<input type="button" class="submit" onclick="return submitForm(document.forms.assignmentSearch);" value="Search" />
+<form class="form-inline separate" novalidate="novalidate" id="assignmentSearch" name="assignmentSearch" method="get">
+	<input name="keywords" placeholder="Keywords" value="#esapiEncode('html_attr',rc.keywords)#" type="text" class="text" maxlength="50" />
+	<input type="button" class="btn" onclick="return submitForm(document.forms.assignmentSearch);" value="#application.rbFactory.getKeyValue(session.rb,'changesets.filterview')#" />
 	<input type="hidden" name="muraAction" value="cChangesets.assignments">
-	<input type="hidden" name="siteid" value="#HTMLEditFormat(rc.siteid)#">
-	<input type="hidden" name="changesetID" value="#HTMLEditFormat(rc.changesetID)#">
+	<input type="hidden" name="siteid" value="#esapiEncode('html_attr',rc.siteid)#">
+	<input type="hidden" name="changesetID" value="#esapiEncode('html_attr',rc.changesetID)#">
 </form>
+<!---
+<h3>#application.rbFactory.getKeyValue(session.rb,'changesets.filterview')#</h3>
+<p>#application.rbFactory.getKeyValue(session.rb,'changesets.filterviewnotice')#</p>
+--->
 
-<h4>#application.rbFactory.getKeyValue(session.rb,'changesets.previewlink')#</h4>
-<p><a title="Preview" href="##" onclick="return preview('#JSStringFormat(rc.previewLink)#','');">#HTMLEditFormat(rc.previewLink)#</a></p>
-<h4>#application.rbFactory.getKeyValue(session.rb,'changesets.sitearchitecture')#</h4>
- <table class="mura-table-grid stripe">
+<!--- <h3>#application.rbFactory.getKeyValue(session.rb,'changesets.previewlink')#</h3> --->
+
+<h3>#application.rbFactory.getKeyValue(session.rb,'changesets.sitearchitecture')#</h3>
+ <table class="mura-table-grid">
     <tr> 
-      <th class="varWidth">Title</th>
-      <th class="administration">&nbsp;</th>
+      <th class="var-width"> #application.rbFactory.getKeyValue(session.rb,'sitemanager.content.title')#</th>
+      <th> #application.rbFactory.getKeyValue(session.rb,'sitemanager.content.status')#</th>
+      <th class="actions">&nbsp;</th>
     </tr>
-    <cfif rc.rslist.recordcount>
-     <cfloop query="rc.rslist">
+    <cfif rc.siteAssignments.hasNext()>
+     <cfloop condition="rc.siteAssignments.hasNext()">
 		<cfsilent>
-			<cfset crumbdata=application.contentManager.getCrumbList(rc.rslist.contentid, rc.siteid,false,rc.rslist.path)/>
+      <cfset item=rc.siteAssignments.next()>
+			<cfset crumbdata=application.contentManager.getCrumbList(item.getContentID(), rc.siteid,false,item.getPath())/>
 			<cfset verdict=application.permUtility.getnodePerm(crumbdata)/>
 		</cfsilent>
         <tr>  
-          <td class="title varWidth">#application.contentRenderer.dspZoom(crumbdata,rc.rsList.fileExt)#</td>
- 		  <td class="administration">
-		<ul class="four">
+          <td class="title var-width">#$.dspZoom(crumbdata)#</td>
+           <td> 
+            <cfif len(item.getapprovalStatus())>
+              #application.rbFactory.getKeyValue(session.rb,'sitemanager.content.#item.getapprovalStatus()#')#
+            <cfelseif item.getapproved() and item.getactive()>
+               #application.rbFactory.getKeyValue(session.rb,'sitemanager.content.published')#
+            <cfelseif item.getapproved()>
+                 #application.rbFactory.getKeyValue(session.rb,'sitemanager.content.archived')#
+            <cfelse>
+              #application.rbFactory.getKeyValue(session.rb,'sitemanager.content.queued')#
+            </cfif>
+          </td>
+ 		  <td class="actions">
+		<ul>
 		<cfif verdict neq 'none'>
-       		<li class="edit"><a title="Edit" href="index.cfm?muraAction=cArch.edit&contenthistid=#rc.rsList.ContentHistID#&contentid=#rc.rsList.ContentID#&type=#rc.rsList.type#&parentid=#rc.rsList.parentID#&topid=#URLEncodedFormat(rc.rslist.contentID)#&siteid=#URLEncodedFormat(rc.siteid)#&moduleid=#rc.rslist.moduleid#&startrow=#rc.startrow#&return=changesets">&nbsp;</a></li> 	
-			<li class="preview"><a title="Preview" href="##" onclick="return preview('http://#application.settingsManager.getSite(rc.siteid).getDomain()##application.configBean.getServerPort()##application.configBean.getContext()##application.contentRenderer.getURLStem(rc.siteid,"")#?changesetPreviewID=#JSStringFormat(rc.rslist.changesetID)#&linkServID=#JSStringFormat(rc.rslist.contentID)#','#rc.rsList.targetParams#');">#HTMLEditFormat(left(rc.rsList.menutitle,70))#</a></li>
-		   	<li class="versionHistory"><a title="Version History" href="index.cfm?muraAction=cArch.hist&contentid=#rc.rsList.ContentID#&type=#rc.rsList.type#&parentid=#rc.rsList.parentID#&topid=#rc.rsList.contentID#&siteid=#URLEncodedFormat(rc.siteid)#&moduleid=#rc.rslist.moduleID#&startrow=#rc.startrow#">&nbsp;</a></li>   
-        <cfelse>
-	        <li class="editOff">&nbsp;</li>
-			<li class="preview"><a title="Preview" href="##" onclick="return preview('http://#application.settingsManager.getSite(rc.siteid).getDomain()##application.configBean.getServerPort()##application.configBean.getContext()##application.contentRenderer.getURLStem(rc.siteid,"")#?changesetID=#JSStringFormat(rc.rslist.changesetID)#&linkServID=#JSStringFormat(rc.rslist.contentID)#','#rc.rsList.targetParams#');">#HTMLEditFormat(left(rc.rsList.menutitle,70))#</a></li>
-			<li class="versionHistoryOff"><a>Version History</a></li>
-      	</cfif>
-		<li class="delete"><a  title="Delete" href="index.cfm?muraAction=cChangesets.removeItem&contentHistId=#rc.rsList.contentHistID#&siteid=#URLEncodedFormat(rc.siteid)#&changesetID=#URLEncodedFormat(rc.rslist.changesetID)#&keywords=#HTMLEditFormat(rc.keywords)#" onclick="return confirmDialog('#jsStringFormat(application.rbFactory.getResourceBundle(session.rb).messageFormat(application.rbFactory.getKeyValue(session.rb,'changesets.removeitemconfirm'),rc.rslist.menutitle))#',this.href)"&nbsp;</a></li>
+      <li class="edit"><a title="Edit" href="./?muraAction=cArch.edit&contenthistid=#item.getContentHistID()#&contentid=#item.getContentID()#&type=#esapiEncode('javascript',item.gettype())#&parentid=#item.getparentID()#&topid=#esapiEncode('url',item.getcontentID())#&siteid=#esapiEncode('url',rc.siteid)#&moduleid=#item.getmoduleid()#&startrow=#esapiEncode('url',rc.startrow)#&return=changesets"> <i class="icon-pencil"></i></a></li> 	
+			 <li class="preview"><a title="Preview" href="##" onclick="return preview('#item.getURL(complete=1,queryString="previewid=#item.getContentHistID()#")#');"><i class="icon-globe"></i></a></li>
+		   <li class="version-history"><a title="Version History" href="./?muraAction=cArch.hist&contentid=#item.getContentID()#&type=#item.gettype()#&parentid=#item.getparentID()#&topid=#item.getcontentID()#&siteid=#esapiEncode('url',rc.siteid)#&moduleid=#item.getmoduleID()#&startrow=#esapiEncode('url',rc.startrow)#"><i class="icon-book"></i></a></li>
+    <cfelse>
+      <li class="edit disabled"><i class="icon-edit"></i></li>
+      <li class="preview"><a title="Preview" href="##" onclick="return preview('#item.getURL(complete=1,queryString="previewid=#item.getContentHistID()#")#');"><i class="icon-globe"></i></a></li>
+		  <li class="version-history disabled"><i class="icon-book"></i></li>
+    </cfif>
+		<li class="delete"><a  title="Delete" href="./?muraAction=cChangesets.removeItem&contentHistId=#item.getcontentHistID()#&siteid=#esapiEncode('url',rc.siteid)#&changesetID=#esapiEncode('url',item.getchangesetID())#&keywords=#esapiEncode('html',rc.keywords)##csrftokens#" onclick="return confirmDialog('#esapiEncode('javascript',application.rbFactory.getResourceBundle(session.rb).messageFormat(application.rbFactory.getKeyValue(session.rb,'changesets.removeitemconfirm'),item.getmenutitle()))#',this.href)"><i class="icon-remove-sign"></i></a></li>
 		</ul>
 		</td>
 		</tr>
    		</cfloop>
       <cfelse>
       <tr> 
-        <td colspan="2" class="results"><em>Your search returned no results.</em></td>
+        <td colspan="3" class="results"><em>Your search returned no results.</em></td>
       </tr>
     </cfif>
 </table>
-</td></tr></table>
+
 
 <cfset rc.rslist=rc.componentAssignments.getQuery()>
-<h4>#application.rbFactory.getKeyValue(session.rb,'changesets.components')#</h4>
- <table class="mura-table-grid stripe">
+<h3>#application.rbFactory.getKeyValue(session.rb,'changesets.components')#</h3>
+ <table class="mura-table-grid">
     <tr> 
-      <th class="varWidth">Title</th>
-      <th class="administration">&nbsp;</th>
+      <th class="var-width"> #application.rbFactory.getKeyValue(session.rb,'sitemanager.content.title')#</th>
+      <th> #application.rbFactory.getKeyValue(session.rb,'sitemanager.content.status')#</th>
+      <th class="actions">&nbsp;</th>
     </tr>
     <cfif rc.rslist.recordcount>
      <cfloop query="rc.rslist">
 		<cfsilent>
 			<cfset crumbdata=application.contentManager.getCrumbList(rc.rslist.contentid, rc.siteid,false,rc.rslist.path)/>
 			<cfset verdict=application.permUtility.getnodePerm(crumbdata)/>
-      <cfset editlink="index.cfm?muraAction=cArch.edit&contenthistid=#rc.rsList.ContentHistID#&contentid=#rc.rsList.ContentID#&type=#rc.rsList.type#&parentid=#rc.rsList.parentID#&topid=#URLEncodedFormat(rc.rslist.contentID)#&siteid=#URLEncodedFormat(rc.siteid)#&moduleid=#rc.rslist.moduleid#&startrow=#rc.startrow#&return=changesets">
+      <cfset editlink="./?muraAction=cArch.edit&contenthistid=#rc.rsList.ContentHistID#&contentid=#rc.rsList.ContentID#&type=#rc.rsList.type#&parentid=#rc.rsList.parentID#&siteid=#esapiEncode('url',rc.siteid)#&moduleid=#rc.rslist.moduleid#&startrow=#esapiEncode('url',rc.startrow)#&return=changesets">
 		</cfsilent>
         <tr>  
-          <td class="title varWidth"><a href="#editlink#">#HTMLEditFormat(rc.rsList.title)#</a></td>
- 		  <td class="administration">
-		<ul class="three">
-		<cfif verdict neq 'none'>
-       		<li class="edit"><a title="Edit" href="#editlink#">&nbsp;</a></li> 	
-		   	<li class="versionHistory"><a title="Version History" href="index.cfm?muraAction=cArch.hist&contentid=#rc.rsList.ContentID#&type=#rc.rsList.type#&parentid=#rc.rsList.parentID#&topid=#rc.rsList.contentID#&siteid=#URLEncodedFormat(rc.siteid)#&moduleid=#rc.rslist.moduleID#&startrow=#rc.startrow#">&nbsp;</a></li>   
-        <cfelse>
-	        <li class="editOff">&nbsp;</li>
-			<li class="preview"><a title="Preview" href="##" onclick="return preview('http://#application.settingsManager.getSite(rc.siteid).getDomain()##application.configBean.getServerPort()##application.configBean.getContext()##application.contentRenderer.getURLStem(rc.siteid,"")#?changesetID=#JSStringFormat(rc.rslist.changesetID)#&linkServID=#JSStringFormat(rc.rslist.contentID)#','#rc.rsList.targetParams#');">#HTMLEditFormat(left(rc.rsList.menutitle,70))#</a></li>
-			<li class="versionHistoryOff"><a>Version History</a></li>
-      	</cfif>
-		<li class="delete"><a  title="Delete" href="index.cfm?muraAction=cChangesets.removeItem&contentHistId=#rc.rsList.contentHistID#&siteid=#URLEncodedFormat(rc.siteid)#&changesetID=#URLEncodedFormat(rc.rslist.changesetID)#&keywords=#HTMLEditFormat(rc.keywords)#" onclick="return confirmDialog('#jsStringFormat(application.rbFactory.getResourceBundle(session.rb).messageFormat(application.rbFactory.getKeyValue(session.rb,'changesets.removeitemconfirm'),rc.rslist.menutitle))#',this.href)"&nbsp;</a></li>
-		</ul>
-		</td>
-		</tr>
+          <td class="title var-width"><a href="#editlink#">#esapiEncode('html',rc.rsList.title)#</a></td>
+          <td> 
+            <cfif len(rc.rslist.approvalStatus)>
+              #application.rbFactory.getKeyValue(session.rb,'sitemanager.content.#rc.rslist.approvalStatus#')#
+            <cfelseif rc.rslist.approved and rc.rslist.active>
+               #application.rbFactory.getKeyValue(session.rb,'sitemanager.content.published')#
+            <cfelseif rc.rslist.approved>
+                 #application.rbFactory.getKeyValue(session.rb,'sitemanager.content.archived')#
+            <cfelse>
+              #application.rbFactory.getKeyValue(session.rb,'sitemanager.content.queued')#
+            </cfif>
+          </td>
+ 		     <td class="actions">
+      		<ul>
+      		<cfif verdict neq 'none'>
+            <li class="edit"><a title="Edit" href="#editlink#"><i class="icon-pencil"></i></a></li> 	
+      		  <li class="version-history"><a title="Version History" href="./?muraAction=cArch.hist&contentid=#rc.rsList.ContentID#&type=#esapiEncode('url',rc.rsList.type)#&parentid=#rc.rsList.parentID#&&siteid=#esapiEncode('url',rc.siteid)#&moduleid=#rc.rslist.moduleID#&startrow=#esapiEncode('url',rc.startrow)#"><i class="icon-book"></i></a></li>   
+          <cfelse>
+      	   <li class="edit disabled"><i class="icon-pencil"></i></li>
+            <li class="version-history disabled"><a><i class="icon-book"></i></a></li>
+          </cfif> 	
+      		<li class="delete"><a  title="Delete" href="./?muraAction=cChangesets.removeItem&contentHistId=#rc.rsList.contentHistID#&siteid=#esapiEncode('url',rc.siteid)#&changesetID=#esapiEncode('url',rc.rslist.changesetID)#&keywords=#esapiEncode('html',rc.keywords)##csrftokens#" onclick="return confirmDialog('#esapiEncode('javascript',application.rbFactory.getResourceBundle(session.rb).messageFormat(application.rbFactory.getKeyValue(session.rb,'changesets.removeitemconfirm'),rc.rslist.menutitle))#',this.href)"><i class="icon-remove-sign"></i></a></li>
+      		</ul>
+      	</td>
+		    </tr>
    		</cfloop>
       <cfelse>
       <tr> 
-        <td colspan="2" class="results"><em>Your search returned no results.</em></td>
+        <td colspan="3" class="results"><em>Your search returned no results.</em></td>
       </tr>
     </cfif>
 </table>
-</td></tr></table>
+
 
 <cfset rc.rslist=rc.formAssignments.getQuery()>
-<h4>#application.rbFactory.getKeyValue(session.rb,'changesets.forms')#</h4>
- <table class="mura-table-grid stripe">
+<h3>#application.rbFactory.getKeyValue(session.rb,'changesets.forms')#</h3>
+ <table class="mura-table-grid">
     <tr> 
-      <th class="varWidth">Title</th>
-      <th class="administration">&nbsp;</th>
+      <th class="var-width"> #application.rbFactory.getKeyValue(session.rb,'sitemanager.content.title')#</th>
+      <th> #application.rbFactory.getKeyValue(session.rb,'sitemanager.content.status')#</th>
+      <th class="actions">&nbsp;</th>
     </tr>
     <cfif rc.rslist.recordcount>
      <cfloop query="rc.rslist">
     <cfsilent>
       <cfset crumbdata=application.contentManager.getCrumbList(rc.rslist.contentid, rc.siteid,false,rc.rslist.path)/>
       <cfset verdict=application.permUtility.getnodePerm(crumbdata)/>
-      <cfset editlink="index.cfm?muraAction=cArch.edit&contenthistid=#rc.rsList.ContentHistID#&contentid=#rc.rsList.ContentID#&type=#rc.rsList.type#&parentid=#rc.rsList.parentID#&topid=#URLEncodedFormat(rc.rslist.contentID)#&siteid=#URLEncodedFormat(rc.siteid)#&moduleid=#rc.rslist.moduleid#&startrow=#rc.startrow#&return=changesets">
+      <cfset editlink="./?muraAction=cArch.edit&contenthistid=#rc.rsList.ContentHistID#&contentid=#rc.rsList.ContentID#&type=#rc.rsList.type#&parentid=#rc.rsList.parentID#&siteid=#esapiEncode('url',rc.siteid)#&moduleid=#rc.rslist.moduleid#&startrow=#esapiEncode('url',rc.startrow)#&return=changesets">
     </cfsilent>
         <tr>  
-          <td class="title varWidth"><a href="#editlink#">#HTMLEditFormat(rc.rsList.title)#</a></td>
-      <td class="administration">
-    <ul class="three">
-    <cfif verdict neq 'none'>
-          <li class="edit"><a title="Edit" href="#editlink#">&nbsp;</a></li>  
-        <li class="versionHistory"><a title="Version History" href="index.cfm?muraAction=cArch.hist&contentid=#rc.rsList.ContentID#&type=#rc.rsList.type#&parentid=#rc.rsList.parentID#&topid=#rc.rsList.contentID#&siteid=#URLEncodedFormat(rc.siteid)#&moduleid=#rc.rslist.moduleID#&startrow=#rc.startrow#">&nbsp;</a></li>   
-        <cfelse>
-          <li class="editOff">&nbsp;</li>
-      <li class="preview"><a title="Preview" href="##" onclick="return preview('http://#application.settingsManager.getSite(rc.siteid).getDomain()##application.configBean.getServerPort()##application.configBean.getContext()##application.contentRenderer.getURLStem(rc.siteid,"")#?changesetID=#JSStringFormat(rc.rslist.changesetID)#&linkServID=#JSStringFormat(rc.rslist.contentID)#','#rc.rsList.targetParams#');">#HTMLEditFormat(left(rc.rsList.menutitle,70))#</a></li>
-      <li class="versionHistoryOff"><a>Version History</a></li>
-        </cfif>
-    <li class="delete"><a  title="Delete" href="index.cfm?muraAction=cChangesets.removeItem&contentHistId=#rc.rsList.contentHistID#&siteid=#URLEncodedFormat(rc.siteid)#&changesetID=#URLEncodedFormat(rc.rslist.changesetID)#&keywords=#HTMLEditFormat(rc.keywords)#" onclick="return confirmDialog('#jsStringFormat(application.rbFactory.getResourceBundle(session.rb).messageFormat(application.rbFactory.getKeyValue(session.rb,'changesets.removeitemconfirm'),rc.rslist.menutitle))#',this.href)"&nbsp;</a></li>
-    </ul>
-    </td>
-    </tr>
+          <td class="title var-width"><a href="#editlink#">#esapiEncode('html',rc.rsList.title)#</a></td>
+           <td>
+            <cfif len(rc.rslist.approvalStatus)>
+              #application.rbFactory.getKeyValue(session.rb,'sitemanager.content.#rc.rslist.approvalStatus#')#
+            <cfelseif rc.rslist.approved and rc.rslist.active>
+               #application.rbFactory.getKeyValue(session.rb,'sitemanager.content.published')#
+            <cfelseif rc.rslist.approved>
+                 #application.rbFactory.getKeyValue(session.rb,'sitemanager.content.archived')#
+            <cfelse>
+              #application.rbFactory.getKeyValue(session.rb,'sitemanager.content.queued')#
+            </cfif>
+           </td>
+
+           <td class="actions">
+            <ul>
+            <cfif verdict neq 'none'>
+              <li class="edit"><a title="Edit" href="#editlink#"><i class="icon-pencil"></i></a></li>  
+              <li class="version-history"><a title="Version History" href="./?muraAction=cArch.hist&contentid=#rc.rsList.ContentID#&type=#esapiEncode('url',rc.rsList.type)#&parentid=#rc.rsList.parentID#&siteid=#esapiEncode('url',rc.siteid)#&moduleid=#rc.rslist.moduleID#&startrow=#esapiEncode('url',rc.startrow)#"><i class="icon-book"></i></a></li>   
+            <cfelse>
+                <li class="edit disabled"><i class="icon-pencil"></i></li>
+               <li class="version-history disabled"><a><i class="icon-book"></i></a></li>
+            </cfif>
+            <li class="delete"><a  title="Delete" href="./?muraAction=cChangesets.removeItem&contentHistId=#rc.rsList.contentHistID#&siteid=#esapiEncode('url',rc.siteid)#&changesetID=#esapiEncode('url',rc.rslist.changesetID)#&keywords=#esapiEncode('html',rc.keywords)##csrftokens#" onclick="return confirmDialog('#esapiEncode('javascript',application.rbFactory.getResourceBundle(session.rb).messageFormat(application.rbFactory.getKeyValue(session.rb,'changesets.removeitemconfirm'),rc.rslist.menutitle))#',this.href)"><i class="icon-remove-sign"></i></a></li>
+            </ul>
+          </td>
+        </tr>
       </cfloop>
       <cfelse>
       <tr> 
-        <td colspan="2" class="results"><em>Your search returned no results.</em></td>
+        <td colspan="3" class="results"><em>Your search returned no results.</em></td>
       </tr>
     </cfif>
 </table>
-</td></tr></table>
+
   </cfoutput>

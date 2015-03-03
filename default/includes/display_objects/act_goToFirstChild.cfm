@@ -51,11 +51,12 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cfelse>
 	<cfset variables.rs=variables.rsPre/>
 </cfif>
-
-<cfif rs.recordcount>	
-	<cfset variables.redirect=variables.$.createHREF(variables.rs.type,variables.rs.filename,variables.rs.siteid,variables.rs.contentid,"","","",variables.$.globalConfig('context'),variables.$.globalConfig('stub'),variables.$.globalConfig('indexFile'))>	
-	<cfset variables.$.redirect(redirect) />
-</cfif>
 </cfsilent>
-
-	
+<cfif rs.recordcount>
+	<cfset variables.redirect=variables.$.createHREF(variables.rs.type,variables.rs.filename,variables.rs.siteid,variables.rs.contentid,"","","",variables.$.globalConfig('context'),variables.$.globalConfig('stub'),variables.$.globalConfig('indexFile'))>
+	<cfif not request.muraExportHTML>
+		<cfset variables.$.redirect(variables.redirect) />
+	<cfelse>	
+		<cfoutput><script>location.href='#JSStringFormat(variables.redirect)#';</script></cfoutput>
+	</cfif>
+</cfif>

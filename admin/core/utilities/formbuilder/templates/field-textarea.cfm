@@ -47,9 +47,9 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cfoutput><span>
 		<div class="mura-tb-form">
 			<div class="mura-tb-header textarea">
-				<h3><!---#mmRBF.getKeyValue(session.rb,'formbuilder.field.textarea')#:---> <span id="mura-tb-form-label"></span></h3>
+				<h2><!---#mmRBF.getKeyValue(session.rb,'formbuilder.field.textarea')#:---> <span id="mura-tb-form-label"></span></h2>
 				<ul class="mura-tb-nav-utility">
-					<li><div class="ui-button" id="button-trash" title="#mmRBF.getKeyValue(session.rb,'formbuilder.delete')#"></div></li>
+					<li><div id="button-trash" title="#mmRBF.getKeyValue(session.rb,'formbuilder.delete')#"></div></li>
 				</ul>
 			</div>
 			
@@ -76,6 +76,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 							<label for="value">#mmRBF.getKeyValue(session.rb,'formbuilder.field.value')#</label>
 							<textarea class="textarea" name="value"></textarea>
 						</li>
+						#application.serviceFactory.getBean('$').init(session.siteid).renderEvent('onFormElementBasicTabRender')#
 					</ul>
 			</div>
 			<div class="ui-tabs-panel" id="mura-tb-form-tab-advanced">
@@ -91,6 +92,10 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 						<li>
 							<label for="cssclass">#mmRBF.getKeyValue(session.rb,'formbuilder.field.cssclass')#</label>
 							<input class="text " type="text" name="cssclass" value="" maxlength="50" data-required='false' />
+						</li>
+						<li>
+							<label for="wrappercssclass">#mmRBF.getKeyValue(session.rb,'formbuilder.field.wrappercssclass')#</label>
+							<input class="text " type="text" name="wrappercssclass" value="" maxlength="50" data-required='false' />
 						</li>
 						<li>
 							<label for="tooltip">#mmRBF.getKeyValue(session.rb,'formbuilder.field.tooltip')#</label>

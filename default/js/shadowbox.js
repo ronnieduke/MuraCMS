@@ -70,7 +70,7 @@ if(typeof Shadowbox == 'undefined'){
          *
          * @var     {String}    assetURL
          */
-        assetURL:        context +  '/default/images/shadowbox/',
+        assetURL:        mura.context +  '/default/images/shadowbox/',
 
         /**
          * The path to the image to display while loading.
@@ -117,7 +117,7 @@ if(typeof Shadowbox == 'undefined'){
          *
          * @var     {Number}    overlayOpacity
          */
-        overlayOpacity:     0.85,
+        overlayOpacity:     0.8,
 
         /**
          * A background image to use for browsers such as FF Mac that don't
@@ -1994,7 +1994,12 @@ if(typeof Shadowbox == 'undefined'){
             var links = [];
             var a = document.getElementsByTagName('a'), rel;
             for(var i = 0, len = a.length; i < len; ++i){
-                rel = a[i].getAttribute('rel');
+                rel = a[i].getAttribute('data\-rel');
+
+                if(!rel){
+                    rel = a[i].getAttribute('rel') ;
+                }
+
                 if(rel && RE.rel.test(rel)) links[links.length] = a[i];
             }
         }else if(!links.length){
@@ -2053,7 +2058,12 @@ if(typeof Shadowbox == 'undefined'){
         }
 
         // HTML options always trump JavaScript options, so do these last
-        var rel = link.getAttribute('rel');
+        var rel = link.getAttribute('data\-rel');
+
+        if(!rel){
+            rel = link.getAttribute('rel') ;
+        }
+
         if(rel){
             // extract gallery name from shadowbox[name] format
             var match = rel.match(RE.gallery);

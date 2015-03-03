@@ -47,10 +47,112 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cfset tabLabelList=listAppend(tabLabelList,application.rbFactory.getKeyValue(session.rb,"sitemanager.content.tabs.categorization"))/>
 <cfset tabList=listAppend(tabList,"tabCategorization")>
 <cfoutput>
-<div id="tabCategorization">
-<dl class="oneColumn">
-<dt class="first"><cfoutput><a href="##" class="tooltip">#application.rbFactory.getKeyValue(session.rb,'sitemanager.content.fields.availablecategories')#<span>#application.rbFactory.getKeyValue(session.rb,"tooltip.availableCategories")#</span></a></cfoutput></dt>
-<dd class="categoryAssignment" id="categoryContainer"><cf_dsp_categories_nest siteID="#rc.siteID#" parentID="" nestLevel="0" contentBean="#rc.contentBean#" rsCategoryAssign="#rc.rsCategoryAssign#"></dd>
-</dl>
-</div>
+	<div id="tabCategorization" class="tab-pane fade">
+
+		<span id="extendset-container-tabcategorizationtop" class="extendset-container"></span>
+
+		<div class="fieldset">
+		<div class="control-group">
+		<div class="mura-grid stripe">
+			<dl class="mura-grid-hdr">
+				<dt class="categorytitle">
+						#application.rbFactory.getKeyValue(session.rb,'sitemanager.content.fields.availablecategories')#
+				</dt>
+				<dd class="categoryassignmentwrapper">
+					<a title="#application.rbFactory.getKeyValue(session.rb,'tooltip.categoryfeatureassignment')#" rel="tooltip" href="##">
+						#application.rbFactory.getKeyValue(session.rb,'sitemanager.content.fields.feature')# <i class="icon-question-sign"></i>
+					</a>
+				</dd>
+			</dl><!--- /.mura-grid-hdr --->
+				<cfset rc.rsCategoryAssign=application.contentManager.getCategoriesByHistID(rc.contentBean.getContentHistID()) />
+				<cf_dsp_categories_nest 
+					siteID="#rc.siteID#" 
+					parentID="" 
+					nestLevel="0" 
+					contentBean="#rc.contentBean#" 
+					rsCategoryAssign="#rc.rsCategoryAssign#">
+			
+		</div><!--- /.mura-grid --->
+		</div>
+		</div>
+
+		<span id="extendset-container-categorization" class="extendset-container"></span>
+		<span id="extendset-container-tabcategorizationbottom" class="extendset-container"></span>
+		
+	</div><!--- /tabCatgeorization --->
 </cfoutput>
+<script>
+	siteManager.initCategoryAssignments();
+
+	var stripeCategories=function() {
+			var counter=0;
+			//alert($('#tabCategorization dl').length)
+			$('#tabCategorization dl').each(
+				function(index) {
+					//alert(index)
+					if(index && !$(this).parents('ul.categorylist:hidden').length)
+					{	
+						//alert($(this).parents('ul.categorylist').length);
+						counter++;
+						//alert(counter)
+						if(counter % 2) {
+							$(this).addClass('alt');
+						} else {
+							$(this).removeClass('alt');
+						}
+					}
+			});
+			//alert(counter)
+		}
+
+	$(document).ready(function(){
+
+		var catsInited=false;
+
+		$('.hasChildren').click(function(){
+			if(catsInited){
+				$(this).closest('li').find('ul.categorylist:first').toggle();
+				$(this).toggleClass('open');
+				$(this).toggleClass('closed');
+				stripeCategories();
+			} else {
+				$(this).closest('li').find('ul.categorylist:first').show();
+				if(!$(this).hasClass('open')){
+					$(this).toggleClass('open').toggleClass('closed');	
+				}
+			}	
+		});
+		
+		<cfset cats=$.getBean('categoryFeed')
+			.addParam(
+				column="categoryid",
+				list=true,
+				condition="in",
+				criteria=request.opencategorylist)
+			.getIterator()>
+
+		<cfset itemList="">
+		<cfloop condition="cats.hasNext()">
+			<cfset cat=cats.next()>
+			<cfif listLen(cat.getPath()) gt 1>
+				<cfset to=listLen(cat.getPath())-1>
+				<cfloop from="1" to="#to#" index="i">
+					<cfset item=replace(listGetAt(cat.getPath(),i),"'","","all")>
+					<cfif not listFind(itemlist,item)>
+						<cfoutput>$('##tabCategorization li[data-categoryid="#item#"]').find('span.hasChildren:first').trigger('click');</cfoutput>
+					<cfset itemlist=listAppend(itemList,item)>
+					</cfif>
+					
+				</cfloop>
+			</cfif>		
+		</cfloop>
+		
+		catsInited=true;
+
+		$('a[data-toggle="tab"]').on('shown', function (e) {		
+		  if(e.target.toString().indexOf('#tabCategorization') != -1){
+		  	stripeCategories()
+		  }	 
+		})
+	});
+</script>

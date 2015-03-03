@@ -49,7 +49,10 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cffunction name="before" output="false">
 	<cfargument name="rc">
 
-	<cfif not listFind(session.mura.memberships,'S2')>
+	<cfif not (
+				listFind(session.mura.memberships,'Admin;#variables.settingsManager.getSite(arguments.rc.siteid).getPrivateUserPoolID()#;0') 
+				or listFind(session.mura.memberships,'S2')
+				)>
 		<cfset secure(arguments.rc)>
 	</cfif>
 	
@@ -59,40 +62,96 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfparam name="arguments.rc.extendSetID" default="" />
 	<cfparam name="arguments.rc.attibuteID" default="" />
 	<cfparam name="arguments.rc.siteID" default="" />
+	<cfparam name="arguments.rc.hasAvailableSubTypes" default="0" />
 </cffunction>
 
+<cffunction name="exportsubtype" output="false">
+	<cfargument name="rc">
+	
+	<cfparam name="arguments.rc.action" default="list" />
+	
+	  <cfif arguments.rc.action eq 'export'>
+		<cfset variables.fw.redirect(action="cExtend.export",append="siteid",path="./")>
+	  </cfif>
+
+	<cfset arguments.rc.subtypes = application.classExtensionManager.getSubTypes(arguments.rc.siteID,false) />
+
+</cffunction>
+
+<cffunction name="importsubtypes" output="false">
+	<cfargument name="rc">
+	
+	<cfset var file = "" />
+	<cfset var fileContent = "" />
+	<cfset var fileManager=getBean("fileManager")>
+	
+	<cfparam name="arguments.rc.action" default="" />
+
+	<cfif arguments.rc.action eq 'import' and arguments.rc.$.validateCSRFTokens(context=arguments.rc.moduleid)>
+		<cfif structKeyExists(arguments.rc,"newfile") and len(arguments.rc.newfile)>
+			<cfset file = fileManager.upload( "newFile" ) />
+
+			<cffile action="read" variable="fileContent" file="#file.serverdirectory#/#file.serverfile#" >
+			
+			<cfset application.classExtensionManager.loadConfigXML( xmlParse(filecontent) ,arguments.rc.siteid) />
+			<cfset variables.fw.redirect(action="cExtend.listSubTypes",append="siteid",path="./")>
+		</cfif>
+	</cfif>
+
+</cffunction>
+
+<cffunction name="export" output="false">
+	<cfargument name="rc">
+	
+	<cfset extendArray = ArrayNew(1)>	
+	<cfset arguments.rc.exportXML = "" />
+	
+	<cfif structKeyExists(arguments.rc,"exportClassExtensionID") and len(arguments.rc.exportClassExtensionID)>
+		<cfset extendArray = listToArray( arguments.rc.exportClassExtensionID ) />
+		<cfset arguments.rc.exportXML = application.classExtensionManager.getSubTypesAsXML( extendArray,false ) />		
+	</cfif>
+
+</cffunction>
 <cffunction name="updateSubType" output="false">
 	<cfargument name="rc">
 	
-	 <cfset arguments.rc.subtypeBean=application.classExtensionManager.getSubTypeByID(arguments.rc.subTypeID) />
-	  <cfset arguments.rc.subtypeBean.set(arguments.rc) />
-	  
-	  <cfif arguments.rc.action eq 'Update'>
-	  		<cfset arguments.rc.subtypeBean.save() />
-	  </cfif>
-  
-	  <cfif arguments.rc.action eq 'Delete'>
-	  		<cfset arguments.rc.subtypeBean.delete() />
-	  </cfif>
-  
-	  <cfif arguments.rc.action eq 'Add'>
-	  		<cfset arguments.rc.subtypeBean.save() />
-	  </cfif> 
+	<cfif not arguments.rc.hasAvailableSubTypes>
+		<cfset arguments.rc.availableSubTypes="">
+	</cfif>
 	
-	  <cfif arguments.rc.action neq 'delete'>
-		  <cfset arguments.rc.subTypeID=rc.subtypeBean.getSubTypeID()>
-		  <cfset variables.fw.redirect(action="cExtend.listSets",append="subTypeID,siteid")>
-	  <cfelse>
-	  	  <cfset variables.fw.redirect(action="cExtend.listSubTypes",append="siteid")>
-	  </cfif>
+	<cfset arguments.rc.subtypeBean=application.classExtensionManager.getSubTypeByID(arguments.rc.subTypeID) />
+		  <cfset arguments.rc.subtypeBean.set(arguments.rc) />
+		  
+		  <cfif arguments.rc.$.validateCSRFTokens(context=arguments.rc.subtypeid)>
+		  <cfif arguments.rc.action eq 'Update'>
+		  		<cfset arguments.rc.subtypeBean.save() />
+		  </cfif>
+	  
+		  <cfif arguments.rc.action eq 'Delete'>
+		  		<cfset arguments.rc.subtypeBean.delete() />
+		  </cfif>
+	  
+		  <cfif arguments.rc.action eq 'Add'>
+		  		<cfset arguments.rc.subtypeBean.save() />
+		  </cfif> 
+	</cfif>
+	  
+  <cfif arguments.rc.action neq 'delete'>
+	  <cfset arguments.rc.subTypeID=rc.subtypeBean.getSubTypeID()>
+	  <cfset variables.fw.redirect(action="cExtend.listSets",append="subTypeID,siteid",path="./")>
+  <cfelse>
+  	  <cfset variables.fw.redirect(action="cExtend.listSubTypes",append="siteid",path="./")>
+  </cfif>
 	  
 </cffunction>
 
 <cffunction name="updateSet" output="false">
 	<cfargument name="rc">
-	 <cfset arguments.rc.extendSetBean=application.classExtensionManager.getSubTypeBean().getExtendSetBean() />
-	 <cfset arguments.rc.extendSetBean.set(arguments.rc) />
-	  
+	
+	<cfset arguments.rc.extendSetBean=application.classExtensionManager.getSubTypeBean().getExtendSetBean() />
+	<cfset arguments.rc.extendSetBean.set(arguments.rc) />
+
+	<cfif arguments.rc.$.validateCSRFTokens(context=arguments.rc.extendsetid)>
 	  <cfif arguments.rc.action eq 'Update'>
 	  	<cfset arguments.rc.extendSetBean.save() />
 	  </cfif>
@@ -104,32 +163,61 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	  <cfif arguments.rc.action eq 'Add'>
 	  	<cfset arguments.rc.extendSetBean.save() />
 	  </cfif> 
-	
+	</cfif>
+
 	  <cfif arguments.rc.action neq 'delete'>
-		<cfset variables.fw.redirect(action="cExtend.editAttributes",append="subTypeId,extendSetID,siteid")>
+		<cfset variables.fw.redirect(action="cExtend.editAttributes",append="subTypeId,extendSetID,siteid",path="./")>
 	  <cfelse>
-	  	<cfset variables.fw.redirect(action="cExtend.listSets",append="subTypeId,siteid")>
+	  	<cfset variables.fw.redirect(action="cExtend.listSets",append="subTypeId,siteid",path="./")>
 	  </cfif>
 </cffunction>	  	
 
+
+<cffunction name="updateRelatedContentSet" output="false">
+	<cfargument name="rc">
+
+	
+	<cfset arguments.rc.rcsBean = getBean('relatedContentSet').loadBy(relatedContentSetID=arguments.rc.relatedContentSetID)>
+		
+		<cfif not arguments.rc.hasAvailableSubTypes>
+			<cfset arguments.rc.availableSubTypes="">
+		</cfif>
+		
+		<cfset arguments.rc.rcsBean.set(arguments.rc) />
+		
+		<cfif arguments.rc.$.validateCSRFTokens(context=arguments.rc.relatedContentSetID)>
+
+			<cfif listFindNoCase("Update,Add", arguments.rc.action)>
+				<cfset arguments.rc.rcsBean.save() />
+			</cfif>
+			
+			<cfif arguments.rc.action eq 'Delete'>
+				<cfset arguments.rc.rcsBean.delete() />
+			</cfif>
+		</cfif>
+	<cfset variables.fw.redirect(action="cExtend.listSets",append="subTypeId,siteid",path="./")>
+</cffunction>	
+
 <cffunction name="updateAttribute" output="false">
 	<cfargument name="rc">
-	  <cfset arguments.rc.attributeBean=application.classExtensionManager.getSubTypeBean().getExtendSetBean().getattributeBean() />
-	  <cfset arguments.rc.attributeBean.set(arguments.rc) />
+	 
+		<cfset arguments.rc.attributeBean=application.classExtensionManager.getSubTypeBean().getExtendSetBean().getattributeBean() />
+		<cfset arguments.rc.attributeBean.set(arguments.rc) />
 
-	  <cfif arguments.rc.action eq 'Update'>
-	  	<cfset arguments.rc.attributeBean.save() />
-	  </cfif>
-  
-	  <cfif arguments.rc.action eq 'Delete'>
-	  	<cfset arguments.rc.attributeBean.delete() />
-	  </cfif>
-  
-	  <cfif arguments.rc.action eq 'Add'>
-	  	<cfset arguments.rc.attributeBean.save() />
-	  </cfif> 
+		<cfif arguments.rc.$.validateCSRFTokens(context=arguments.rc.attributeid)>
+		  <cfif arguments.rc.action eq 'Update'>
+		  	<cfset arguments.rc.attributeBean.save() />
+		  </cfif>
 	  
-	 <cfset variables.fw.redirect(action="cExtend.editAttributes",append="subTypeId,extendSetID,siteid")>
+		  <cfif arguments.rc.action eq 'Delete'>
+		  	<cfset arguments.rc.attributeBean.delete() />
+		  </cfif>
+	  
+		  <cfif arguments.rc.action eq 'Add'>
+		  	<cfset arguments.rc.attributeBean.save() />
+		  </cfif> 
+	  </cfif>
+	 <cfset variables.fw.redirect(action="cExtend.editAttributes",append="subTypeId,extendSetID,siteid",path="./")>
 </cffunction>
 
 <cffunction name="saveAttributeSort" output="false">
@@ -141,6 +229,12 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cffunction name="saveExtendSetSort" output="false">
 	<cfargument name="rc">
 	<cfset application.classExtensionManager.saveExtendSetSort(arguments.rc.extendSetID) />
+	<cfabort>
+</cffunction>
+
+<cffunction name="saveRelatedSetSort" output="false">
+	<cfargument name="rc">
+	<cfset application.classExtensionManager.saveRelatedSetSort(arguments.rc.relatedContentSetID) />
 	<cfabort>
 </cffunction>
 </cfcomponent>

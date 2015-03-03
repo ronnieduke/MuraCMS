@@ -1,7 +1,7 @@
 -- MySQL Administrator dump 1.4
 --
 -- ------------------------------------------------------
--- Server version	4.1.14-nt
+-- Server version 4.1.14-nt
 
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
@@ -12,226 +12,6 @@
 /*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
 /*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
 /*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
-
---
--- Definition of table `tadcampaigns`
---
-
-CREATE TABLE `tadcampaigns` (
-  `campaignID` char(35) character set utf8 NOT NULL default '',
-  `userID` char(35) character set utf8 default NULL,
-  `dateCreated` datetime default NULL,
-  `lastUpdate` datetime default NULL,
-  `lastUpdateBy` varchar(50) character set utf8 default NULL,
-  `name` varchar(50) character set utf8 default NULL,
-  `startDate` datetime default NULL,
-  `endDate` datetime default NULL,
-  `isActive` int(10) default NULL,
-  `notes` longtext,
-  PRIMARY KEY  (`campaignID`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
---
--- Dumping data for table `tadcampaigns`
---
-
-/*!40000 ALTER TABLE `tadcampaigns` DISABLE KEYS */;
-/*!40000 ALTER TABLE `tadcampaigns` ENABLE KEYS */;
-
-
---
--- Definition of table `tadcreatives`
---
-
-CREATE TABLE `tadcreatives` (
-  `creativeID` char(35) character set utf8 NOT NULL default '',
-  `userID` char(35) character set utf8 default NULL,
-  `dateCreated` datetime default NULL,
-  `lastUpdate` datetime default NULL,
-  `lastUpdateBy` varchar(50) character set utf8 default NULL,
-  `name` varchar(50) character set utf8 default NULL,
-  `creativeType` varchar(50) character set utf8 default NULL,
-  `fileID` varchar(35) character set utf8 default NULL,
-  `mediaType` varchar(50) character set utf8 default NULL,
-  `redirectURL` varchar(200) character set utf8 default NULL,
-  `altText` varchar(200) character set utf8 default NULL,
-  `notes` longtext,
-  `isActive` int(10) default NULL,
-  `height` int(10) default NULL,
-  `width` int(10) default NULL,
-  `textBody` longtext,
-  PRIMARY KEY  (`creativeID`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
---
--- Dumping data for table `tadcreatives`
---
-
-/*!40000 ALTER TABLE `tadcreatives` DISABLE KEYS */;
-/*!40000 ALTER TABLE `tadcreatives` ENABLE KEYS */;
-
-
---
--- Definition of table `tadipwhitelist`
---
-
-CREATE TABLE `tadipwhitelist` (
-  `IP` varchar(50) character set utf8 NOT NULL default '',
-  `siteID` varchar(50) character set utf8 NOT NULL default ''
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
---
--- Dumping data for table `tadipwhitelist`
---
-
-/*!40000 ALTER TABLE `tadipwhitelist` DISABLE KEYS */;
-/*!40000 ALTER TABLE `tadipwhitelist` ENABLE KEYS */;
-
-
---
--- Definition of table `tadplacementdetails`
---
-
-CREATE TABLE `tadplacementdetails` (
-  `detailID` INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
-  `placementID` char(35) character set utf8 NOT NULL default '',
-  `PlacementType` char(35) character set utf8 NOT NULL default '',
-  `PlacementValue` int(10) NOT NULL default '0',
-   PRIMARY KEY  (`detailID`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
---
--- Dumping data for table `tadplacementdetails`
---
-
-/*!40000 ALTER TABLE `tadplacementdetails` DISABLE KEYS */;
-/*!40000 ALTER TABLE `tadplacementdetails` ENABLE KEYS */;
-
-
---
--- Definition of table `tadplacements`
---
-
-CREATE TABLE `tadplacements` (
-  `placementID` char(35) character set utf8 NOT NULL default '',
-  `campaignID` char(35) character set utf8 default NULL,
-  `adZoneID` char(35) character set utf8 default NULL,
-  `creativeID` char(35) character set utf8 default NULL,
-  `dateCreated` datetime default NULL,
-  `lastUpdate` datetime default NULL,
-  `lastUpdateBy` varchar(50) character set utf8 default NULL,
-  `startDate` datetime default NULL,
-  `endDate` datetime default NULL,
-  `costPerImp` decimal(18,5) default NULL,
-  `costPerClick` decimal(18,2) default NULL,
-  `isExclusive` int(10) default NULL,
-  `billable` decimal(18,2) default NULL,
-  `budget` int(10) default NULL,
-  `isActive` int(10) default NULL,
-  `notes` longtext,
-  PRIMARY KEY  (`placementID`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
---
--- Dumping data for table `tadplacements`
---
-
-/*!40000 ALTER TABLE `tadplacements` DISABLE KEYS */;
-/*!40000 ALTER TABLE `tadplacements` ENABLE KEYS */;
-
-
---
--- Definition of table `tadstats`
---
-
-CREATE TABLE `tadstats` (
-  `statID` INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
-  `PlacementID` char(35) character set utf8 default NULL,
-  `StatHour` int(10) default NULL,
-  `StatDate` datetime default NULL,
-  `Type` varchar(50) character set utf8 default NULL,
-  `counter` int(10) default NULL,
-   PRIMARY KEY  (`statID`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
---
--- Dumping data for table `tadstats`
---
-
-/*!40000 ALTER TABLE `tadstats` DISABLE KEYS */;
-/*!40000 ALTER TABLE `tadstats` ENABLE KEYS */;
-
-
---
--- Definition of table `tadzones`
---
-
-CREATE TABLE `tadzones` (
-  `adZoneID` char(35) character set utf8 NOT NULL default '',
-  `siteID` varchar(25) character set utf8 default NULL,
-  `dateCreated` datetime default NULL,
-  `lastUpdate` datetime default NULL,
-  `lastUpdateBy` varchar(50) character set utf8 default NULL,
-  `name` varchar(50) character set utf8 default NULL,
-  `creativeType` varchar(50) character set utf8 default NULL,
-  `notes` longtext,
-  `isActive` int(10) default NULL,
-  `height` int(10) default NULL,
-  `width` int(10) default NULL,
-   PRIMARY KEY  (`adZoneID`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
---
--- Dumping data for table `tadzones`
---
-
-/*!40000 ALTER TABLE `tadzones` DISABLE KEYS */;
-/*!40000 ALTER TABLE `tadzones` ENABLE KEYS */;
-
-
---
--- Definition of table `tcaptcha`
---
-
-CREATE TABLE `tcaptcha` (
-  `LetterID` int(10) NOT NULL default '0',
-  `Letter` char(1) default NULL,
-  `ImageFile` varchar(50) default NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
---
--- Dumping data for table `tcaptcha`
---
-/*!40000 ALTER TABLE `tcaptcha` DISABLE KEYS */;
-INSERT INTO `tcaptcha` (`LetterID`,`Letter`,`ImageFile`) VALUES
-(1,'a','a.gif'),
-(2,'b','b.gif'),
-(3,'c','c.gif'),
-(4,'d','d.gif'),
-(5,'e','e.gif'),
-(6,'f','f.gif'),
-(7,'g','g.gif'),
-(8,'h','h.gif'),
-(9,'i','i.gif'),
-(10,'j','j.gif'),
-(11,'k','k.gif'),
-(12,'l','l.gif'),
-(13,'m','m.gif'),
-(14,'n','n.gif'),
-(15,'o','o.gif'),
-(16,'p','p.gif'),
-(17,'q','q.gif'),
-(18,'r','r.gif'),
-(19,'s','s.gif'),
-(20,'t','t.gif'),
-(21,'u','u.gif'),
-(22,'v','v.gif'),
-(23,'w','w.gif'),
-(24,'x','x.gif'),
-(25,'y','y.gif'),
-(26,'z','z.gif');
-/*!40000 ALTER TABLE `tcaptcha` ENABLE KEYS */;
-
 
 --
 -- Definition of table `tcontent`
@@ -824,8 +604,10 @@ CREATE TABLE `tmailinglist` (
 --
 
 /*!40000 ALTER TABLE `tmailinglist` DISABLE KEYS */;
+<cfoutput>
 INSERT INTO `tmailinglist` (`MLID`,`SiteID`,`Name`,`Description`,`LastUpdate`,`isPurge`,`isPublic`) VALUES 
- ('22FC551F-FABE-EA01-C6EDD0885DDC1680','default','Please Remove Me from All Lists','',now(),1,1);
+ ('#createUUID()#','default','Please Remove Me from All Lists','',now(),1,1);
+</cfoutput>
 /*!40000 ALTER TABLE `tmailinglist` ENABLE KEYS */;
 
 
@@ -1004,7 +786,7 @@ CREATE TABLE `tsettings` (
 
 /*!40000 ALTER TABLE `tsettings` DISABLE KEYS */;
 INSERT INTO `tsettings` (`SiteID`,`Site`,`MaxNestLevel`,`PageLimit`,`Locking`,`Domain`,`exportLocation`,`FileDir`,`Contact`,`MailserverIP`,`MailServerUsername`,`MailServerPassword`,`EmailBroadcaster`,`Extranet`,`ExtranetPublicReg`,`ExtranetPublicRegNotify`,`ExtranetSSL`,`Cache`,`ViewDepth`,`NextN`,`DataCollection`,`columnCount`,`columnNames`,`primaryColumn`,`publicSubmission`,`AdManager`,`archiveDate`,`contactName`,`contactAddress`,`contactCity`,`contactState`,`contactZip`,`contactEmail`,`contactPhone`,`privateUserPoolID`,`publicUserPoolID`,`advertiserUserPoolID`,`orderNo`,`emailBroadcasterLimit`,`feedManager`,`displayPoolID`,`galleryMainScaleBy`,`galleryMainScale`,`gallerySmallScaleBy`,`gallerySmallScale`,`galleryMediumScaleBy`,`galleryMediumScale`,`sendLoginScript`,`mailingListConfirmScript`,`publicSubmissionApprovalScript`,`reminderScript`,`loginURL`,`editProfileURL`,`CommentApprovalDefault`,`deploy`,`lastDeployment`,`accountActivationScript`,`useDefaultSMTPServer`) VALUES 
- ('default','Default',NULL,1000,'none','localhost',NULL,NULL,'info@getmura.com','mail.server.com','username@server.com','password',1,1,1,NULL,0,0,1,20,1,3,'Left Column^Main Content^Right Column',2,0,1,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,'default','default','default',1,0,1,'default','y',500,'s',100,'y',250,NULL,NULL,NULL,NULL,'?display=login','?display=editProfile',1,0,NULL,NULL,0);
+ ('default','Default',NULL,1000,'none','localhost',NULL,NULL,'info@getmura.com','mail.server.com','username@server.com','password',0,1,0,NULL,0,0,1,20,1,3,'Left Column^Main Content^Right Column',2,0,0,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,'default','default','default',1,0,1,'default','y',500,'s',100,'y',250,NULL,NULL,NULL,NULL,'?display=login','?display=editProfile',1,0,NULL,NULL,0);
 /*!40000 ALTER TABLE `tsettings` ENABLE KEYS */;
 
 
@@ -1036,7 +818,6 @@ INSERT INTO `tsystemobjects` (`Object`,`SiteID`,`Name`,`OrderNo`) VALUES
  ('seq_nav','default','Sequential Nav',8),
  ('rater','default','Content Rater',16),
  ('favorites','default','User Favorites',17),
- ('dragable_feeds','default','Dragable Feeds',18),
  ('related_content','default','Related Content',19),
  ('user_tools','default','User Tools',20),
  ('tag_cloud','default','Tag Cloud',21),
@@ -1132,9 +913,11 @@ CREATE TABLE `tusers` (
 --
 
 /*!40000 ALTER TABLE `tusers` DISABLE KEYS */;
+<cfoutput>
 INSERT INTO `tusers` (`UserID`,`GroupName`,`Fname`,`Lname`,`UserName`,`Password`,`PasswordCreated`,`Email`,`Company`,`JobTitle`,`mobilePhone`,`Website`,`Type`,`subType`,`Ext`,`ContactForm`,`Admin`,`S2`,`LastLogin`,`LastUpdate`,`LastUpdateBy`,`LastUpdateByID`,`Perm`,`InActive`,`isPublic`,`SiteID`,`Subscribe`,`notes`,`description`,`interests`,`keepPrivate`,`photoFileID`,`IMName`,`IMService`,`created`,`remoteID`,`tags`) VALUES 
- ('22FC551F-FABE-EA01-C6EDD0885DDC1682',NULL,'Admin','User','admin','21232F297A57A5A743894A0E4A801FC3',now(),'admin@localhost.com',NULL,NULL,NULL,NULL,2,'Default',NULL,NULL,NULL,1,now(),now(),'System','22FC551F-FABE-EA01-C6EDD0885DDC1682',0,0,0,'default',0,NULL,NULL,NULL,0,NULL,NULL,NULL,now(),NULL,NULL),
- ('6300EE15-1320-5CC2-F9F48B9DBBA54D9F','Admin',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,1,'Default',NULL,NULL,NULL,0,NULL,now(),'System',NULL,1,0,0,'default',0,NULL,NULL,NULL,0,NULL,NULL,NULL,now(),NULL,NULL);
+ ('#adminUserID#',NULL,'Admin','User','admin','21232F297A57A5A743894A0E4A801FC3',now(),'admin@localhost.com',NULL,NULL,NULL,NULL,2,'Default',NULL,NULL,NULL,1,now(),now(),'System','22FC551F-FABE-EA01-C6EDD0885DDC1682',0,0,0,'default',0,NULL,NULL,NULL,0,NULL,NULL,NULL,now(),NULL,NULL),
+ ('#createUUID()#','Admin',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,1,'Default',NULL,NULL,NULL,0,NULL,now(),'System',NULL,1,0,0,'default',0,NULL,NULL,NULL,0,NULL,NULL,NULL,now(),NULL,NULL);
+</cfoutput>
 /*!40000 ALTER TABLE `tusers` ENABLE KEYS */;
 
 
@@ -1145,7 +928,7 @@ INSERT INTO `tusers` (`UserID`,`GroupName`,`Fname`,`Lname`,`UserName`,`Password`
 CREATE TABLE `tusersfavorites` (
   `favoriteID` char(35) NOT NULL default '',
   `userID` char(35) NOT NULL default '',
-  `favoriteName` varchar(100) default NULL,
+  `favoriteName` varchar(255) default NULL,
   `favorite` mediumtext,
   `type` varchar(30) NOT NULL default '',
   `siteID` varchar(35) default NULL,
@@ -1238,78 +1021,78 @@ ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
 CREATE TABLE `tclassextenddatauseractivity`  (
-	`dataID` INTEGER NOT NULL AUTO_INCREMENT,	
-	`baseID` char (35)  NOT NULL ,
-	`attributeID`INTEGER NOT NULL ,
-	`siteID` varchar (25)  NULL ,
-	`attributeValue` longtext,
-	INDEX `Index_2`(`baseID`),
-	INDEX `Index_3`(`attributeID`),
-	PRIMARY KEY (`dataID`)
+  `dataID` INTEGER NOT NULL AUTO_INCREMENT, 
+  `baseID` char (35)  NOT NULL ,
+  `attributeID`INTEGER NOT NULL ,
+  `siteID` varchar (25)  NULL ,
+  `attributeValue` longtext,
+  INDEX `Index_2`(`baseID`),
+  INDEX `Index_3`(`attributeID`),
+  PRIMARY KEY (`dataID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
 CREATE TABLE `tclassextenddata`  (
-	`dataID` INTEGER NOT NULL AUTO_INCREMENT,
-	`baseID` char (35)  NOT NULL ,
-	`attributeID` INTEGER NOT NULL ,
-	`siteID` varchar (25)  NULL ,
-	`attributeValue` longtext,
-	INDEX `Index_2`(`baseID`),
-	INDEX `Index_3`(`attributeID`),
-	PRIMARY KEY (`dataID`)
+  `dataID` INTEGER NOT NULL AUTO_INCREMENT,
+  `baseID` char (35)  NOT NULL ,
+  `attributeID` INTEGER NOT NULL ,
+  `siteID` varchar (25)  NULL ,
+  `attributeValue` longtext,
+  INDEX `Index_2`(`baseID`),
+  INDEX `Index_3`(`attributeID`),
+  PRIMARY KEY (`dataID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
 CREATE TABLE `tclassextend` (
-	`subTypeID` char (35)  NOT NULL ,
-	`siteID` varchar (25)  NULL ,
-	`baseTable` varchar (50) NULL ,
-	`baseKeyField` varchar (50) NULL ,
-	`dataTable` varchar (50) NULL ,
-	`type` varchar (50) NULL ,
-	`subType` varchar (50) NULL ,
-	`isActive` tinyint(3) NULL ,
-	`notes` longtext ,
-	`lastUpdate` datetime NULL ,
-	`dateCreated` datetime NULL ,
-	`lastUpdateBy` varchar (100)  NULL ,
-	PRIMARY KEY (`subTypeID`)
+  `subTypeID` char (35)  NOT NULL ,
+  `siteID` varchar (25)  NULL ,
+  `baseTable` varchar (50) NULL ,
+  `baseKeyField` varchar (50) NULL ,
+  `dataTable` varchar (50) NULL ,
+  `type` varchar (50) NULL ,
+  `subType` varchar (50) NULL ,
+  `isActive` tinyint(3) NULL ,
+  `notes` longtext ,
+  `lastUpdate` datetime NULL ,
+  `dateCreated` datetime NULL ,
+  `lastUpdateBy` varchar (100)  NULL ,
+  PRIMARY KEY (`subTypeID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
 CREATE TABLE `tclassextendattributes` (
-	`attributeID` INTEGER NOT NULL AUTO_INCREMENT,	
-	`extendSetID` char (35)  NULL ,
-	`siteID` varchar (25) NULL ,
-	`name` varchar (100) NULL ,
-	`label` text  NULL ,
-	`hint` text  NULL ,
-	`type` varchar (100) NULL ,
-	`orderno` int NULL ,
-	`isActive` tinyint(3) NULL ,
-	`required` varchar(50) NULL ,
-	`validation` varchar (50) NULL ,
-	`regex` text  NULL ,
-	`message` text  NULL ,
-	`defaultValue` varchar (100) NULL ,
-	`optionList` longtext ,
-	`optionLabelList` longtext,
-	INDEX `Index_2`(`extendSetID`),
-	PRIMARY KEY (`attributeID`)
+  `attributeID` INTEGER NOT NULL AUTO_INCREMENT,  
+  `extendSetID` char (35)  NULL ,
+  `siteID` varchar (25) NULL ,
+  `name` varchar (100) NULL ,
+  `label` text  NULL ,
+  `hint` text  NULL ,
+  `type` varchar (100) NULL ,
+  `orderno` int NULL ,
+  `isActive` tinyint(3) NULL ,
+  `required` varchar(50) NULL ,
+  `validation` varchar (50) NULL ,
+  `regex` text  NULL ,
+  `message` text  NULL ,
+  `defaultValue` varchar (100) NULL ,
+  `optionList` longtext ,
+  `optionLabelList` longtext,
+  INDEX `Index_2`(`extendSetID`),
+  PRIMARY KEY (`attributeID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
 CREATE TABLE `tclassextendsets` (
-	`extendSetID` char(35) NOT NULL ,
-	`subTypeID` char(35) NULL ,
-	`categoryID` longtext ,
-	`siteID` varchar (25) NULL ,
-	`name` varchar(50)  NULL ,
-	`orderno` int NULL ,
-	`isActive` tinyint(3) NULL,
-	INDEX `Index_2`(`subTypeID`),
-	PRIMARY KEY (`extendSetID`)
+  `extendSetID` char(35) NOT NULL ,
+  `subTypeID` char(35) NULL ,
+  `categoryID` longtext ,
+  `siteID` varchar (25) NULL ,
+  `name` varchar(50)  NULL ,
+  `orderno` int NULL ,
+  `isActive` tinyint(3) NULL,
+  INDEX `Index_2`(`subTypeID`),
+  PRIMARY KEY (`extendSetID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;

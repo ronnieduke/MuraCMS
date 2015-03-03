@@ -69,20 +69,24 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cffunction name="main" output="false">
 <cfargument name="rc">
 	<cfif listFind(session.mura.memberships,'S2IsPrivate')>
-		<cfset variables.fw.redirect(action="home.redirect")>
+		<cfset variables.fw.redirect(action="home.redirect",path="./")>
 	</cfif>
 	
 </cffunction>
 
 <cffunction name="login" output="false">
 	<cfargument name="rc">
-	<cfset application.loginManager.login(arguments.rc)>	
+	<cfif rc.$.validateCSRFTokens()>
+		<cfset application.loginManager.login(arguments.rc)>	
+	<cfelse>
+		<cfset variables.fw.redirect(action="clogin.main",path="./")>
+	</cfif>
 </cffunction>
 
 <cffunction name="logout" output="false">
 	<cfargument name="rc">
 	<cfset variables.loginManager.logout()>	
-	<cfset variables.fw.redirect(action="home.redirect")>
+	<cfset variables.fw.redirect(action="home.redirect",path="./")>
 </cffunction>
 
 </cfcomponent>

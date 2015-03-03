@@ -44,19 +44,21 @@ For clarity, if you create a modified version of Mura CMS, you are not obligated
 modified version; it is your choice whether to do so, or to make such modified version available under the GNU General Public License 
 version 2 without this exception.  You may, if you choose, apply this exception to your own modified versions of Mura CMS.
 --->
-<cfcomponent extends="mura.bean.bean" output="false">
+<cfcomponent extends="mura.bean.bean" entityName="stats" table="tcontentstats" output="false">
 
-<cfproperty name="contenID" type="string" default="" required="true" />
-<cfproperty name="siteID" type="string" default="" required="true" />
+<cfproperty name="contenid" type="string" default="" required="true" />
+<cfproperty name="siteid" type="string" default="" required="true" />
 <cfproperty name="views" type="numeric" default="0" required="true" />
 <cfproperty name="rating" type="numeric" default="0" required="true" />
-<cfproperty name="totalVotes" type="numeric" default="0" required="true" />
-<cfproperty name="upVotes" type="numeric" default="0" required="true" />
-<cfproperty name="downVotes" type="numeric" default="0" required="true" />
+<cfproperty name="totalvotes" type="numeric" default="0" required="true" />
+<cfproperty name="upvotes" type="numeric" default="0" required="true" />
+<cfproperty name="downvotes" type="numeric" default="0" required="true" />
 <cfproperty name="comments" type="numeric" default="0" required="true" />
-<cfproperty name="majorVersion" type="numeric" default="0" required="true" />
-<cfproperty name="minorVersion" type="numeric" default="0" required="true" />
-<cfproperty name="lockID" type="string" default="" required="true" />
+<cfproperty name="disablecomments" type="numeric" default="0" required="true" />
+<cfproperty name="majorversion" type="numeric" default="0" required="true" />
+<cfproperty name="minorversion" type="numeric" default="0" required="true" />
+<cfproperty name="lockid" type="string" default="" required="true" />
+<cfproperty name="locktype" type="string" default="" required="true" />
 
 <cffunction name="init" returntype="any" output="false" access="public">
 	
@@ -68,9 +70,12 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfset variables.instance.upVotes=0/>
 	<cfset variables.instance.downVotes=0/>
 	<cfset variables.instance.comments=0/>
+	<cfset variables.instance.disableComments=0/>
 	<cfset variables.instance.majorVersion=0/>
 	<cfset variables.instance.minorVersion=0/>
 	<cfset variables.instance.lockID=""/>
+	<cfset variables.instance.lockType=""/>
+	<cfset variables.instance.disableComments=0>
 	
 	<cfreturn this />
 </cffunction>
@@ -149,6 +154,14 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfreturn this>
 </cffunction>
 
+<cffunction name="setDisableComments" access="public" output="false">
+	<cfargument name="disableComments" />
+	<cfif isNumeric(arguments.disableComments)>
+	<cfset variables.instance.disableComments = arguments.disableComments />
+	</cfif>
+	<cfreturn this>
+</cffunction>
+
 <cffunction name="load"  access="public" output="false">
 	<cfset var rs=getQuery()>
 	<cfif rs.recordcount>
@@ -159,7 +172,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 
 <cffunction name="getQuery"  access="public" output="false" returntype="query">
 	<cfset var rs=""/>
-	<cfquery name="rs" datasource="#variables.configBean.getReadOnlyDatasource()#" username="#variables.configBean.getReadOnlyDbUsername()#" password="#variables.configBean.getReadOnlyDbPassword()#">
+	<cfquery name="rs">
 	select * from tcontentstats 
 	where contentID=<cfqueryparam cfsqltype="cf_sql_varchar" value="#variables.instance.contentID#">
 	and siteID=<cfqueryparam cfsqltype="cf_sql_varchar" value="#variables.instance.siteID#">
@@ -169,7 +182,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 </cffunction>
 
 <cffunction name="delete" access="public" returntype="void">
-	<cfquery datasource="#variables.configBean.getDatasource()#" username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
+	<cfquery>
 	delete from tcontentstats
 	where contentID=<cfqueryparam cfsqltype="cf_sql_varchar" value="#variables.instance.contentID#">
 	and siteID=<cfqueryparam cfsqltype="cf_sql_varchar" value="#variables.instance.siteID#">
@@ -182,7 +195,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	
 	<cfif getQuery().recordcount>
 		
-		<cfquery datasource="#variables.configBean.getDatasource()#" username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
+		<cfquery>
 		update tcontentstats set
 		rating=<cfqueryparam cfsqltype="cf_sql_float" value="#variables.instance.rating#">,
 		views=#variables.instance.views#,
@@ -190,17 +203,19 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		upVotes=#variables.instance.upVotes#,
 		downVotes=#variables.instance.downVotes#,
 		comments=#variables.instance.comments#,
+		disableComments=#variables.instance.disableComments#,
 		majorVersion=#variables.instance.majorVersion#,
 		minorVersion=#variables.instance.minorVersion#,
-		lockID=<cfqueryparam cfsqltype="cf_sql_varchar" null="#iif(variables.instance.lockID neq '',de('no'),de('yes'))#" value="#variables.instance.lockID#">
+		lockID=<cfqueryparam cfsqltype="cf_sql_varchar" null="#iif(variables.instance.lockID neq '',de('no'),de('yes'))#" value="#variables.instance.lockID#">,
+		lockType=<cfqueryparam cfsqltype="cf_sql_varchar" null="#iif(variables.instance.lockType neq '',de('no'),de('yes'))#" value="#variables.instance.lockType#">
 		where contentID=<cfqueryparam cfsqltype="cf_sql_varchar" value="#variables.instance.contentID#">
 		and siteID=<cfqueryparam cfsqltype="cf_sql_varchar" value="#variables.instance.siteID#">
 		</cfquery>
 		
 	<cfelse>
 	
-		<cfquery datasource="#variables.configBean.getDatasource()#" username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
-		insert into tcontentstats (contentID,siteID,rating,views,totalVotes,upVotes,downVotes,comments,majorVersion,minorVersion,lockID)
+		<cfquery>
+		insert into tcontentstats (contentID,siteID,rating,views,totalVotes,upVotes,downVotes,comments,disableComments,majorVersion,minorVersion,lockID,lockType)
 		values(
 		<cfqueryparam cfsqltype="cf_sql_varchar" value="#variables.instance.contentID#">,
 		<cfqueryparam cfsqltype="cf_sql_varchar" value="#variables.instance.siteID#">,
@@ -210,9 +225,11 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		#variables.instance.upVotes#,
 		#variables.instance.downVotes#,
 		#variables.instance.comments#,
+		#variables.instance.disableComments#,
 		#variables.instance.majorVersion#,
 		#variables.instance.minorVersion#,
-		<cfqueryparam cfsqltype="cf_sql_varchar" null="#iif(variables.instance.lockID neq '',de('no'),de('yes'))#" value="#variables.instance.lockID#">
+		<cfqueryparam cfsqltype="cf_sql_varchar" null="#iif(variables.instance.lockID neq '',de('no'),de('yes'))#" value="#variables.instance.lockID#">,
+		<cfqueryparam cfsqltype="cf_sql_varchar" null="#iif(variables.instance.lockType neq '',de('no'),de('yes'))#" value="#variables.instance.lockType#">
 		)
 		</cfquery>
 		

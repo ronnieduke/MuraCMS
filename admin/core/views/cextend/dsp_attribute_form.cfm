@@ -44,79 +44,162 @@ For clarity, if you create a modified version of Mura CMS, you are not obligated
 modified version; it is your choice whether to do so, or to make such modified version available under the GNU General Public License 
 version 2 without this exception.  You may, if you choose, apply this exception to your own modified versions of Mura CMS.
 --->
-
+<cfscript>
+	if(server.coldfusion.productname != 'ColdFusion Server'){
+		backportdir='';
+		include "/mura/backport/backport.cfm";
+	} else {
+		backportdir='/mura/backport/';
+		include "#backportdir#backport.cfm";
+	}
+</cfscript>
 <cfset typeList="TextBox,TextArea,HTMLEditor,SelectBox,MultiSelectBox,RadioGroup,File,Hidden"/>
 <cfoutput>
+
+
+<ul class="nav nav-pills">
+
 <cfif attributes.action eq "add">
-<p><a href="javascript:;" id="#HTMLEditFormat(attributes.formName)#open" onclick="jQuery('###HTMLEditFormat(attributes.formName)#container').slideDown();this.style.display='none';jQuery('###HTMLEditFormat(attributes.formName)#close').show();return false;">[Add New Attribute]</a></p>
-<p><a href="javascript:;" style="display:none;" id="#HTMLEditFormat(attributes.formName)#close" onclick="jQuery('###HTMLEditFormat(attributes.formName)#container').slideUp();this.style.display='none';jQuery('###HTMLEditFormat(attributes.formName)#open').show();return false;">[Close]</a></p>
+<li>
+<a href="javascript:;" id="#esapiEncode('html_attr',attributes.formName)#open" class="btn" onclick="$('###esapiEncode('html',attributes.formName)#container').slideDown();this.style.display='none';$('###esapiEncode('html',attributes.formName)#close').show();return false;"><i class="icon-plus-sign"></i> Add New Attribute</a></li>
+<li><a href="javascript:;" class="btn" style="display:none;" id="#esapiEncode('html_attr',attributes.formName)#close" onclick="$('###esapiEncode('html',attributes.formName)#container').slideUp();this.style.display='none';$('###esapiEncode('html',attributes.formName)#open').show();return false;"><i class="icon-eye-close"></i> Close</a></li>
+<cfif isDefined('attributes.attributesArray') and ArrayLen(attributes.attributesArray)>
+<li><a href="javascript:;" class="btn" style="display:none;" id="saveSort" onclick="extendManager.saveAttributeSort('attributesList');return false;"><i class="icon-check"></i> Save Order</a></li>
+<li><a href="javascript:;" class="btn" id="showSort" onclick="extendManager.showSaveSort('attributesList');return false;"><i class="icon-move"></i> Reorder</a></li>
 </cfif>
+</cfif>
+</ul>
+
 <cfif attributes.action eq "add">
-<div style="display:none;" id="#HTMLEditFormat(attributes.formName)#container">
+<div style="display:none;" id="#esapiEncode('html_attr',attributes.formName)#container" class="attr-add">
 </cfif>
-<form novalidate="novalidate" method="post" name="#HTMLEDitFormat(attributes.formName)#" action="index.cfm" onsubmit="return validateForm(this);">
-<dl class="oneColumn separate">
+<form <cfif attributes.action eq "add"> class="fieldset-wrap"</cfif> novalidate="novalidate" method="post" name="#esapiEncode('html_attr',attributes.formName)#" action="index.cfm" onsubmit="return validateForm(this);">
+<div class="fieldset">
 <cfif attributes.action neq "add">
-<dt>Attribute ID</dt>
-<dd>#attributes.attributeBean.getAttributeID()#</dd>
+<div class="control-group">
+	<label class="control-label">Attribute ID</label>
+	<div class="controls">
+		#attributes.attributeBean.getAttributeID()#
+	</div>
+</div>
 </cfif>
-<dt <cfif attributes.action eq "add">class="first"</cfif>>Name</dt>
-<dd><input type="text" name="name" required="true" value="#HTMLEditFormat(attributes.attributeBean.getName())#" /></dd>
-<dt>Label</dt>
-<dd><input type="text" name="label" value="#HTMLEditFormat(attributes.attributeBean.getLabel())#" /></dd>
 
-<dt>Hint</dt>
-<dd><input type="text" name="hint"  value="#HTMLEditFormat(attributes.attributeBean.getHint())#" /></dd>
-<dt>Input Type</dt>
-<dd><select name="type">
-	<cfloop list="#typelist#" index="t"><option value="#t#" <cfif attributes.attributeBean.getType() eq t>selected</cfif>>#t#</option></cfloop>
-	</select>
-</dd>
-<dt>Default Value</dt>
-<dd><input type="text" name="defaultValue"  value="#HTMLEditFormat(attributes.attributeBean.getDefaultvalue())#" /></dd>
-<dt>Required</dt>
-<dd><select name="required">
-	<option value="false" <cfif attributes.attributeBean.getRequired() eq "false">selected</cfif>>False</option>
-	<option value="true" <cfif attributes.attributeBean.getRequired() eq "true">selected</cfif>>True</option>
-	</select>
-</dd>
-<dt>Validate</dt>
-<dd><select name="validation">
-	<option value="" <cfif attributes.attributeBean.getValidation() eq "">selected</cfif>>None</option>
-	<option value="Date" <cfif attributes.attributeBean.getValidation() eq "Date">selected</cfif>>Date</option>
-	<option value="Numeric" <cfif attributes.attributeBean.getValidation() eq "Numeric">selected</cfif>>Numeric</option>
-	<option value="Email" <cfif attributes.attributeBean.getValidation() eq "Email">selected</cfif>>Email</option>
-	<option value="Regex" <cfif attributes.attributeBean.getValidation() eq "Regex">selected</cfif>>Regex</option>
-	<option value="Color" <cfif attributes.attributeBean.getValidation() eq "Color">selected</cfif>>Color</option>
-	</select>
-</dd>
-<dt>Regex</dt>
-<dd><input type="text" name="regex"  value="#HTMLEditFormat(attributes.attributeBean.getRegex())#" /></dd>
-<dt>Validation Message</dt>
-<dd><input type="text" name="message"  value="#HTMLEditFormat(attributes.attributeBean.getMessage())#" /></dd>
-<dt>Option List ("^" Delimiter)</dt>
-<dd><input type="text" name="optionList"  value="#HTMLEditFormat(attributes.attributeBean.getOptionList())#" /></dd>
-<dt>Option Label List (Optional, "^" Delimiter)</dt>
-<dd><input type="text" name="optionLabelList"  value="#HTMLEditFormat(attributes.attributeBean.getOptionLabelList())#" /></dd>
-</dl>
+<div class="control-group">
+<div class="span4">
+	<label class="control-label">Name (No spaces)</label>
+	<div class="controls">
+		<input class="span12" type="text" name="name" required="true" value="#esapiEncode('html_attr',attributes.attributeBean.getName())#" />
+	</div>
+</div>
+<div class="span4">
+	<label class="control-label">Label</label>
+	<div class="controls">
+		<input class="span12" type="text" name="label" value="#esapiEncode('html_attr',attributes.attributeBean.getLabel())#" />
+	</div>
+</div>
+<div class="span4">
+	<label class="control-label">Input Type</label>
+	<div class="controls">
+		<select name="type" class="span12">
+		<cfloop list="#typelist#" index="t">
+			<option value="#t#" <cfif attributes.attributeBean.getType() eq t>selected</cfif>>#t#</option>
+		</cfloop>
+		</select>
+	</div>
+</div>
+</div>
 
-<div class="clearfix" id="actionButtons">
+<div class="control-group">
+<div class="span4">
+	<label class="control-label">Default Value</label>
+	<div class="controls">
+		<input class="span12" type="text" name="defaultValue"  value="#esapiEncode('html_attr',attributes.attributeBean.getDefaultvalue())#" />
+	</div>
+</div>
+<div class="span4">
+	<label class="control-label">Tooltip</label>
+	<div class="controls">
+		<input class="span12" type="text" name="hint" value="#esapiEncode('html_attr',attributes.attributeBean.getHint())#" />
+	</div>
+</div>
+<div class="span4">
+	<label class="control-label">Required</label>
+	<div class="controls">
+		<select name="required" class="span12">
+			<option value="false" <cfif attributes.attributeBean.getRequired() eq "false">selected</cfif>>False</option>
+			<option value="true" <cfif attributes.attributeBean.getRequired() eq "true">selected</cfif>>True</option>
+		</select>
+	</div>
+</div>
+</div>
+</div>
+<div class="fieldset">
+<div class="control-group">
+<div class="span4">
+	<label class="control-label">Validate</label>
+	<div class="controls">
+		<select name="validation" class="span12">
+			<option value="" <cfif attributes.attributeBean.getValidation() eq "">selected</cfif>>None</option>
+			<option value="Date" <cfif attributes.attributeBean.getValidation() eq "Date">selected</cfif>>Date</option>
+			<option value="DateTime" <cfif attributes.attributeBean.getValidation() eq "DateTime">selected</cfif>>DateTime</option>
+			<option value="Numeric" <cfif attributes.attributeBean.getValidation() eq "Numeric">selected</cfif>>Numeric</option>
+			<option value="Email" <cfif attributes.attributeBean.getValidation() eq "Email">selected</cfif>>Email</option>
+			<option value="Regex" <cfif attributes.attributeBean.getValidation() eq "Regex">selected</cfif>>Regex</option>
+			<option value="Color" <cfif attributes.attributeBean.getValidation() eq "Color">selected</cfif>>Color</option>
+			<option value="URL" <cfif attributes.attributeBean.getValidation() eq "URL">selected</cfif>>URL</option>
+		</select>
+	</div>
+</div>
+<div class="span4">
+	<label class="control-label">Regex</label>
+	<div class="controls">
+		<input class="span12" type="text" name="regex"  value="#esapiEncode('html_attr',attributes.attributeBean.getRegex())#" />
+	</div>
+</div>
+<div class="span4">
+	<label class="control-label">Validation Message</label>
+	<div class="controls">
+		<input class="span12" type="text" name="message"  value="#esapiEncode('html_attr',attributes.attributeBean.getMessage())#" />
+	</div>
+</div>
+</div>
+
+</div>
+<div class="fieldset">
+<div class="control-group">
+<div class="span4">
+	<label class="control-label">Option List ("^" Delimiter)</label>
+	<div class="controls">
+		<input class="span12" type="text" name="optionList"  value="#esapiEncode('html_attr',attributes.attributeBean.getOptionList())#" />
+	</div>
+</div>
+<div class="span8">
+	<label class="control-label">Option Label List (Optional, "^" Delimiter)</label>
+	<div class="controls">
+		<input class="span12" type="text" name="optionLabelList"  value="#esapiEncode('html_attr',attributes.attributeBean.getOptionLabelList())#" />
+	</div>
+</div>
+</div>
+</div>
+
+<div class="form-actions">
 <cfif attributes.action eq "add">
-	<input type="button" class="submit" onclick="submitForm(document.forms.#HTMLEditFormat(attributes.formName)#,'add');" value="Add" />
-	<input type="button" class="submit" onclick="jQuery('###HTMLEditFormat(attributes.formName)#container').slideUp();jQuery('###HTMLEditFormat(attributes.formName)#close').hide();jQuery('###HTMLEditFormat(attributes.formName)#open').show();" value="Cancel" />
+	<input type="button" class="btn" onclick="submitForm(document.forms.#esapiEncode('html',attributes.formName)#,'add');" value="Add" />
+	<input type="button" class="btn" onclick="$('###esapiEncode('html',attributes.formName)#container').slideUp();$('###esapiEncode('html',attributes.formName)#close').hide();$('###esapiEncode('html',attributes.formName)#open').show();" value="Cancel" />
 <cfelse>
-	<input type="button" class="submit" onclick="submitForm(document.forms.#HTMLEditFormat(attributes.formName)#,'update');" value="Update" />
-	<input type="button" class="submit" onclick="submitForm(document.forms.#HTMLEditFormat(attributes.formName)#,'delete','Delete Attribute?');" value="Delete" />
-	<input type="button" class="submit" onclick="jQuery('###HTMLEditFormat(attributes.formName)#container'));jQuery('###HTMLEditFormat(attributes.formName)#close').hide();jQuery('###HTMLEditFormat(attributes.formName)#open').show();" value="Cancel" />
+	<input type="button" class="btn" onclick="submitForm(document.forms.#esapiEncode('html',attributes.formName)#,'update');" value="Update" />
+	<input type="button" class="btn" onclick="submitForm(document.forms.#esapiEncode('html',attributes.formName)#,'delete','Delete Attribute?');" value="Delete" />
+	<input type="button" class="btn" onclick="$('###esapiEncode('html',attributes.formName)#container').slideUp();$('###esapiEncode('html',attributes.formName)#close').hide();$('###esapiEncode('html',attributes.formName)#open').show();$('li[attributeid=#attributes.attributeBean.getAttributeID()#]').removeClass('attr-edit');" value="Cancel" />
 </cfif>
 </div>
 <input name="orderno" type="hidden" value="#attributes.attributeBean.getOrderno()#"/>
 <input name="isActive" type="hidden" value="#attributes.attributeBean.getIsActive()#"/>
 <input name="siteID" type="hidden" value="#attributes.attributeBean.getSiteID()#"/>
 <input name="muraAction" type="hidden" value="cExtend.updateAttribute"/>
-<input name="action" type="hidden" value="#HTMLEditFormat(attributes.action)#"/>
-<input name="extendSetID" type="hidden" value="#HTMLEditFormat(attributes.attributeBean.getExtendSetID())#"/>
-<input name="subTypeID" type="hidden" value="#HTMLEditFormat(attributes.subTypeID)#"/>
+<input name="action" type="hidden" value="#esapiEncode('html_attr',attributes.action)#"/>
+<input name="extendSetID" type="hidden" value="#esapiEncode('html_attr',attributes.attributeBean.getExtendSetID())#"/>
+<input name="subTypeID" type="hidden" value="#esapiEncode('html_attr',attributes.subTypeID)#"/>
 <input name="attributeID" type="hidden" value="#attributes.attributeBean.getAttributeID()#"/>
+#attributes.muraScope.renderCSRFTokens(context=attributes.attributeBean.getAttributeID(),format="form")#
 </form><cfif attributes.action eq "add"></div></cfif>
 </cfoutput>

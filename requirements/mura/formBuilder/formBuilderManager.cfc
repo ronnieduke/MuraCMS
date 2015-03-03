@@ -48,6 +48,10 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfset variables.fields		= StructNew()>
 
 	<cffunction name="init" access="public" output="false" returntype="FormBuilderManager">
+		<cfargument name="configBean" type="any" required="yes"/>
+		
+		<cfset variables.configBean = configBean />
+				
 		<cfset variables.filePath = "#expandPath("/muraWRM")#/admin/core/utilities/formbuilder/templates" />
 		<cfset variables.templatePath = "/muraWRM/admin/core/utilities/formbuilder/templates" />
 		<cfset variables.fields["en"] = StructNew()>
@@ -246,11 +250,15 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 				<cfreturn arguments.dataset />
 			</cfcase>
 			<cfcase value="object">
-				<cfset arguments.dataset = createObject('component',$.siteConfig().getAssetMap() & "." & dataset.source).getData($,arguments.dataset) />
+				<cfset arguments.dataset = createObject('component',$.siteConfig().getAssetMap() & "." & replacenocase(dataset.source,".cfc","") ).getData($,arguments.dataset) />
 				<cfreturn arguments.dataset />
 			</cfcase>
 			<cfcase value="dsp">
-				<cfinclude template="#$.siteConfig().getIncludePath()##dataset.source#">
+				<cfif fileExists( expandPath( $.siteConfig().getIncludePath() ) & "/includes/display_objects/custom/#dataset.source#"  )>
+					<cfinclude template="#$.siteConfig().getIncludePath()#/includes/display_objects/custom/#dataset.source#">
+				<cfelse>
+					<cfinclude template="#$.siteConfig().getIncludePath()##dataset.source#">
+				</cfif>
 				<cfreturn arguments.dataset />
 			</cfcase>
 			<cfdefaultcase>
@@ -262,5 +270,42 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	
 	</cffunction>
 
+	<cffunction name="getForms" access="public" output="false">
+		<cfargument name="$" required="true" type="any" />
+		<cfargument name="siteid" required="true" type="any" />
+		<cfargument name="excludeformid" required="false" type="string" default="" />
+
+		<cfdump var="#arguments#">
+
+		<cfquery name="rs" datasource="#variables.configBean.getReadOnlyDatasource()#" username="#variables.configBean.getReadOnlyDbUsername()#" password="#variables.configBean.getReadOnlyDbPassword()#">
+			select contentid,title from tcontent
+			where type='form'
+			and siteid=<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteid#" />
+			and active=1
+			<cfif len(arguments.excludeformid)>
+				and contentid != <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.excludeformid#" />
+			</cfif>
+			order by title
+		</cfquery>
+
+		<cfreturn rs />
+	</cffunction>
+	
+	<cffunction name="renderNestedForm">
+		<cfargument name="$" required="true" type="any" />
+		<cfargument name="siteid" required="true" type="any" />
+		<cfargument name="formid" required="true" type="any" />
+		<cfargument name="prefix" required="false" type="string" default="" />
+
+		<cfset var renderedForm = arguments.$.dspObject_Include(
+						thefile='formbuilder/dsp_form.cfm',
+						formid=arguments.formid,
+						siteid=arguments.siteid,
+						isNested=true,
+						prefix=arguments.prefix
+					)/>
+					
+		<cfreturn renderedForm />
+	</cffunction>
 
 </cfcomponent>

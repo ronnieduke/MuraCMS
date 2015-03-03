@@ -124,4 +124,16 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cfset arguments.rc.rslist=application.dashboardManager.getSessionHistory(arguments.rc.urlToken,arguments.rc.siteID)>
 </cffunction>
 
+<cffunction name="dismissAlert" output="false">
+	<cfargument name="rc">
+	<cfset var alerts=session.mura.alerts['#rc.siteid#']>
+	<cfif listFindNoCase('defaultpasswordnotice,cachenotice',rc.alertid)>
+		<cfset alerts[rc.alertid]=false>
+	<cfelse>
+		<cfset structDelete(alerts, rc.alertid)>
+	</cfif>
+	
+	<cfabort>
+</cffunction>
+
 </cfcomponent>

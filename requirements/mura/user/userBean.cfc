@@ -44,53 +44,57 @@ For clarity, if you create a modified version of Mura CMS, you are not obligated
 modified version; it is your choice whether to do so, or to make such modified version available under the GNU General Public License 
 version 2 without this exception.  You may, if you choose, apply this exception to your own modified versions of Mura CMS.
 --->
-<cfcomponent extends="mura.bean.beanExtendable" output="false">
+<cfcomponent extends="mura.bean.beanExtendable" entityName="user" table="tusers" output="false">
 
-<cfproperty name="userID" type="string" default="" required="true" />
-<cfproperty name="remoteID" type="string" default="" required="true" />
-<cfproperty name="groupname" type="string" default="" required="true" />
-<cfproperty name="fname" type="string" default="" required="true" />
-<cfproperty name="lname" type="string" default="" required="true" />
-<cfproperty name="username" type="string" default="" required="true" />
-<cfproperty name="password" type="string" default="" required="true" />
-<cfproperty name="passwordCreate" type="date" default="" required="true" />
-<cfproperty name="email" type="string" default="" required="true" />
-<cfproperty name="company" type="string" default="" required="true" />
-<cfproperty name="jobTitle" type="string" default="" required="true" />
-<cfproperty name="website" type="string" default="" required="true" />
-<cfproperty name="mobilePhone" type="string" default="" required="true" />
-<cfproperty name="type" type="numeric" default="2" required="true" />
-<cfproperty name="subType" type="string" default="Default" required="true" />
-<cfproperty name="s2" type="numeric" default="0" required="true" />
-<cfproperty name="contactFormat" type="string" default="" required="true" />
-<cfproperty name="lastLogin" type="date" default="" required="true" />
-<cfproperty name="lastUpdate" type="date" default="" required="true" />
-<cfproperty name="lastUpdateBy" type="string" default="" required="true" />
-<cfproperty name="lastUpdateByID" type="string" default="" required="true" />
-<cfproperty name="created" type="date" default="" required="true" />
-<cfproperty name="perm" type="numeric" default="0" required="true" />
-<cfproperty name="inActive" type="numeric" default="0" required="true" />
-<cfproperty name="isPublic" type="numeric" default="1" required="true" />
-<cfproperty name="siteID" type="string" default="" required="true" />
-<cfproperty name="subscribe" type="numeric" default="1" required="true" />
-<cfproperty name="notes" type="string" default="" required="true" />
-<cfproperty name="groupID" type="string" default="" required="true" />
-<cfproperty name="categoryID" type="string" default="" required="true" />
-<cfproperty name="primaryAddressID" type="string" default="" required="true" />
-<cfproperty name="addressID" type="string" default="" required="true" />
-<cfproperty name="addresses" type="query" default="" required="true" />
-<cfproperty name="description" type="string" default="" required="true" />
-<cfproperty name="interests" type="string" default="" required="true" />
-<cfproperty name="photoFileID" type="string" default="" required="true" />
-<cfproperty name="photoFileExt" type="string" default="" required="true" />
-<cfproperty name="keepPrivate" type="numeric" default="0" required="true" />
-<cfproperty name="IMName" type="string" default="" required="true" />
-<cfproperty name="IMService" type="string" default="" required="true" />
-<cfproperty name="extendDataTable" type="string" default="tclassextenddatauseractivity" required="true" />
-<cfproperty name="isNew" type="numeric" default="1" required="true" />
-<cfproperty name="tablist" type="string" default="" required="true" />
-<cfproperty name="newFile" type="string" default="" required="true" />
-	
+<cfproperty name="userID" fieldtype="id" type="string" />
+<cfproperty name="remoteID" type="string" default="" />
+<cfproperty name="groupname" type="string" default="" />
+<cfproperty name="fname" type="string" default=""/>
+<cfproperty name="lname" type="string" default=""/>
+<cfproperty name="username" type="string" default=""/>
+<cfproperty name="password" type="string" default="" />
+<cfproperty name="passwordCreate" type="date" default="" />
+<cfproperty name="email" type="string" default=""/>
+<cfproperty name="company" type="string" default="" />
+<cfproperty name="jobTitle" type="string" default="" />
+<cfproperty name="website" type="string" default="" />
+<cfproperty name="mobilePhone" type="string" default="" />
+<cfproperty name="type" type="numeric" default="2"/>
+<cfproperty name="subType" type="string" default="Default"/>
+<cfproperty name="s2" type="numeric" default="0"/>
+<cfproperty name="contactFormat" type="string" default="" />
+<cfproperty name="lastLogin" type="date" default="" />
+<cfproperty name="lastUpdate" type="date" default="" />
+<cfproperty name="lastUpdateBy" type="string" default="" />
+<cfproperty name="lastUpdateByID" type="string" default="" />
+<cfproperty name="created" type="date" default="" />
+<cfproperty name="perm" type="numeric" default="0" />
+<cfproperty name="inActive" type="numeric" default="0" />
+<cfproperty name="isPublic" type="numeric" default="1" />
+<cfproperty name="siteID" type="string" default=""/>
+<cfproperty name="subscribe" type="numeric" default="1"/>
+<cfproperty name="notes" type="string" default=""/>
+<cfproperty name="groupID" type="string" default=""/>
+<cfproperty name="categoryID" type="string" default=""/>
+<cfproperty name="primaryAddressID" type="string" default=""/>
+<cfproperty name="addressID" type="string" default=""/>
+<cfproperty name="addresses" type="query" default=""/>
+<cfproperty name="description" type="string" default=""/>
+<cfproperty name="interests" type="string" default=""/>
+<cfproperty name="photoFileID" type="string" default=""/>
+<cfproperty name="photoFileExt" type="string" default=""/>
+<cfproperty name="keepPrivate" type="numeric" default="0"/>
+<cfproperty name="IMName" type="string" default=""/>
+<cfproperty name="IMService" type="string" default=""/>
+<cfproperty name="extendDataTable" type="string" default="tclassextenddatauseractivity"/>
+<cfproperty name="isNew" type="numeric" default="1"/>
+<cfproperty name="tablist" type="string" default=""/>
+<cfproperty name="newFile" type="string" default=""/>
+
+<cfset variables.primaryKey = 'userid'>
+<cfset variables.entityName = 'user'>
+<cfset variables.instanceName = 'fullname'>
+
 <cffunction name="init" returntype="any" output="false" access="public">
 	
 	<cfset super.init(argumentCollection=arguments)>
@@ -168,7 +172,16 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 </cffunction>
 
 <cffunction name="set" returnType="any" output="false" access="public">
-	<cfargument name="user" type="any" required="true">
+	<cfargument name="property" required="true">
+    <cfargument name="propertyValue">
+    
+    <cfif not isDefined('arguments.user')>
+	    <cfif isSimpleValue(arguments.property)>
+	      <cfreturn setValue(argumentCollection=arguments)>
+	    </cfif>
+
+	    <cfset arguments.user=arguments.property>
+    </cfif>
 
 	<cfset var prop="" />
 		
@@ -271,6 +284,23 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	</cfif>
 	<cfreturn this>
 </cffunction>
+
+<cffunction name="removeGroupID" access="public" output="false">
+	<cfargument name="groupID" type="String" />
+	<cfset var i=0>
+	<cfset var offset=0>
+	
+	<cfif len(arguments.groupID)>
+		<cfloop from="1" to="#listLen(arguments.groupID)#" index="i">
+		<cfif listFindNoCase(variables.instance.groupID,listGetAt(arguments.groupID,i))>
+	    	<cfset variables.instance.groupID = listDeleteAt(variables.instance.groupID,i-offset) /> />
+	    	<cfset offset=offset+1>
+	    </cfif>
+	    </cfloop> 
+	</cfif>
+	
+	<cfreturn this>
+</cffunction>
   
 <cffunction name="setUsernameNoCache" output="false" access="public">
     <cfargument name="Username" type="string" required="true">
@@ -298,6 +328,23 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	    </cfif> 
 	    </cfloop>
 	</cfif>
+	<cfreturn this>
+</cffunction>
+
+<cffunction name="removeCategoryID" access="public" output="false">
+	<cfargument name="categoryID" type="String" />
+	<cfset var i=0>
+	<cfset var offset=0>
+	
+	<cfif len(arguments.categoryID)>
+		<cfloop from="1" to="#listLen(arguments.categoryID)#" index="i">
+		<cfif listFindNoCase(variables.instance.categoryID,listGetAt(arguments.categoryID,i))>
+	    	<cfset variables.instance.categoryID = listDeleteAt(variables.instance.categoryID,i-offset) /> />
+	    	<cfset offset=offset+1>
+	    </cfif>
+	    </cfloop> 
+	</cfif>
+	
 	<cfreturn this>
 </cffunction>
 
@@ -366,7 +413,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<cfset extErrors=variables.configBean.getClassExtensionManager().validateExtendedData(getAllValues())>
 	</cfif>
 		
-	<cfset variables.instance.errors=structnew() />
+	<cfset super.validate()>
 		
 	<cfif not structIsEmpty(extErrors)>
 		<cfset structAppend(variables.instance.errors,extErrors)>
@@ -403,6 +450,28 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfelse>
 		<cfset variables.instance.errors.siteid="The 'SiteID' variable is missing." />
 	</cfif>
+
+	<cfscript>
+		var errorCheck={};
+		var checknum=1;
+		var checkfound=false;
+
+		if(arrayLen(variables.instance.addObjects)){
+			for(var obj in variables.instance.addObjects){	
+				errorCheck=obj.validate().getErrors();
+				if(!structIsEmpty(errorCheck)){
+					do{
+						if( !structKeyExists(variables.instance.errors,obj.getEntityName() & checknum) ){
+							variables.instance.errors[obj.getEntityName()  & checknum ]=errorCheck;
+							checkfound=true;
+						}
+					} while (!checkfound);
+				}
+				
+			}
+		}
+	</cfscript>
+
 	<cfreturn this>
 </cffunction>
  
@@ -450,11 +519,12 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cffunction name="save" output="false" access="public">
 	<cfset var i="">
 	<cfset var address="">
+	<cfset var newAddressArr = variables.newAddresses>
 	<cfset setAllValues(variables.userManager.save(this).getAllValues())>
 	
-	<cfif arrayLen(variables.newAddresses)>
-		<cfloop from="1" to="#arrayLen(variables.newAddresses)#" index="i">
-			<cfset address=variables.newAddresses[i]>
+	<cfif !structCount(getErrors()) and arrayLen(newAddressArr)>
+		<cfloop from="1" to="#arrayLen(newAddressArr)#" index="i">
+			<cfset address=newAddressArr[i]>
 			<cfset address.save()>
 		</cfloop>
 	</cfif>
@@ -536,7 +606,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 					</cfif>
 				</cfloop>
 			<cfelse>
-				<cfreturn "Basic,Meta Data,Content Objects,Categorization,Related Content,Extended Attributes,Advanced,Usage Report"> 
+				<cfreturn getBean('contentManager').getTabList()> 
 			</cfif>
 		</cfloop>
 	</cfif>
@@ -608,4 +678,30 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cffunction name="getExtendBaseID" output="false">
 	<cfreturn getUserID()>
 </cffunction>
+
+<cffunction name="getImageURL" output="false">
+	<cfargument name="size" required="true" default="undefined">
+	<cfargument name="direct" default="true"/>
+	<cfargument name="complete" default="false"/>
+	<cfargument name="height" default=""/>
+	<cfargument name="width" default=""/>
+	<cfargument name="default" default=""/>
+	<cfscript>
+		var image = variables.settingsManager.getSite(variables.instance.siteID).getContentRenderer().createHREFForImage(variables.instance.siteID, variables.instance.photofileid, variables.instance.photofileEXT, arguments.size, arguments.direct, arguments.complete, arguments.height, arguments.width);
+		return Len(image) ? image : arguments.default;
+	</cfscript>
+</cffunction>
+
+<cffunction name="getPrimaryKey" output="false">
+	<cfreturn "userID">
+</cffunction>
+
+<cffunction name="getFullName" access="public" returntype="any" output="false">
+	<cfif variables.instance.type eq 2>
+		<cfreturn trim("#variables.instance.fname# # variables.instance.lname#")>
+	<cfelse>
+		<cfreturn variables.instance.groupname>
+	</cfif>
+</cffunction>
+
 </cfcomponent>

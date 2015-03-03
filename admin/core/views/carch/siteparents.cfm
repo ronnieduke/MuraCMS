@@ -48,51 +48,59 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cfparam name="rc.keywords" default="">
 <cfparam name="rc.isNew" default="1">
 <cfset counter=0 />
+<cfset hasParentID=false />
 <cfoutput>
-<h3>#application.rbFactory.getKeyValue(session.rb,'sitemanager.content.fields.searchforcontent')#</h3>
-	<input id="parentSearch" name="parentSearch" value="#HTMLEditFormat(rc.keywords)#" type="text" class="text" maxlength="50"/><input type="button" class="submit" onclick="loadSiteParents('#rc.siteid#','#rc.contentid#','#rc.parentid#',document.getElementById('parentSearch').value,0);return false;" value="#application.rbFactory.getKeyValue(session.rb,'sitemanager.content.fields.search')#" />
+<div class="form-inline">
+<h2>#application.rbFactory.getKeyValue(session.rb,'sitemanager.content.fields.searchforcontent')#</h2>
+	<input id="parentSearch" name="parentSearch" value="#esapiEncode('html_attr',rc.keywords)#" type="text" class="text" maxlength="50"/> <input type="button" class="btn" onclick="siteManager.loadSiteParents('#rc.siteid#','#rc.contentid#','#rc.parentid#',document.getElementById('parentSearch').value,0);return false;" value="#application.rbFactory.getKeyValue(session.rb,'sitemanager.content.fields.search')#" />
 </cfoutput>
-<br/><br/><cfif not rc.isNew>
+</div>
+<cfif not rc.isNew>
 <cfset rc.rsList=application.contentManager.getPrivateSearch(rc.siteid,rc.keywords)/>
 <cfset parentBean=application.serviceFactory.getBean("content").loadBy(contentID=rc.parentID,siteID=rc.siteID)>
 <cfif not parentBean.getIsNew()>
 <cfset parentCrumb=application.contentManager.getCrumbList(rc.parentid, rc.siteid)/>
 </cfif>
- <table class="mura-table-grid stripe">
+ <table class="mura-table-grid">
     <cfif not parentBean.getIsNew()>
 	<tr> 
-      <th class="varWidth"><cfoutput>#application.rbFactory.getKeyValue(session.rb,'sitemanager.content.fields.selectnewcontentparent')#</cfoutput></th>
-	  <th class="administration">&nbsp;</th>
+      <th class="var-width"><cfoutput>#application.rbFactory.getKeyValue(session.rb,'sitemanager.content.fields.selectnewcontentparent')#</cfoutput></th>
+	  <th class="actions">&nbsp;</th>
     </tr>
 	</cfif>
 	<cfif rc.rslist.recordcount>
 		<cfif not parentBean.getIsNew()>
 			<tr class="alt"><cfoutput>  
-	         <td class="varWidth">#application.contentRenderer.dspZoomNoLinks(parentCrumb)#</td>
-			  <td class="administration"><input type="radio" name="parentid" value="#rc.parentid#" checked="checked"></td>
+	         <td class="var-width">#$.dspZoomNoLinks(parentCrumb)#</td>
+			  <td class="actions"><input type="radio" name="parentid" value="#esapiEncode('html_attr',rc.parentid)#" checked="checked"></td>
 			</tr></cfoutput>
+			<cfset hasParentID=true />
 		</cfif>
     	<cfoutput query="rc.rslist" startrow="1" maxrows="100">
-			<cfif rc.rslist.contentid neq rc.parentid and rc.rslist.type neq 'File' and rc.rslist.type neq 'Link'>
+			<cfif rc.rslist.contentid neq rc.parentid>
 			<cfset crumbdata=application.contentManager.getCrumbList(rc.rslist.contentid, rc.siteid)/>
 	        <cfset verdict=application.permUtility.getnodePerm(crumbdata)/>
 			<cfif verdict neq 'none' and arrayLen(crumbdata) and structKeyExists(crumbdata[1],"parentArray") and not listFind(arraytolist(crumbdata[1].parentArray),rc.contentid) and rc.rslist.type neq 'Link' and rc.rslist.type neq 'File'>
 			<cfset counter=counter+1/>
+			<cfset hasParentID=true />
 			<tr <cfif not(counter mod 2)>class="alt"</cfif>>  
-	          <td class="varWidth">#application.contentRenderer.dspZoomNoLinks(crumbdata,rc.rslist.fileExt)#</td>
-			  <td class="administration"><input type="radio" name="parentid" value="#rc.rslist.contentid#"></td>
+	          <td class="var-width">#$.dspZoomNoLinks(crumbdata)#</td>
+			  <td class="actions"><input type="radio" name="parentid" value="#rc.rslist.contentid#"></td>
 			</tr>
 		 	</cfif></cfif>
        </cfoutput>
 	 	</cfif>
 	 	<cfif not counter>
 		<tr class="alt"><cfoutput>  
-		  <td class="noResults" colspan="2">#application.rbFactory.getKeyValue(session.rb,'sitemanager.noresults')#<input type="hidden" id="parentid" name="parentid" value="#rc.parentid#" /> </td>
+		  <td class="noResults" colspan="2">#application.rbFactory.getKeyValue(session.rb,'sitemanager.noresults')#<!---<input type="hidden" id="parentid" name="parentid" value="#rc.parentid#" />---> </td>
 		</tr></cfoutput>
 		</cfif>
   </table>
 </td></tr></table>
+<cfif not hasParentID>
+	<cfoutput><input type="hidden" id="parentid" name="parentid" value="#esapiEncode('html_attr',rc.parentid)#" /></cfoutput>
+</cfif>
 <cfelse>
-<cfoutput><input type="hidden" id="parentid" name="parentid" value="#rc.parentid#" /></cfoutput>
+<cfoutput><input type="hidden" id="parentid" name="parentid" value="#esapiEncode('html_attr',rc.parentid)#" /></cfoutput>
 </cfif>
 

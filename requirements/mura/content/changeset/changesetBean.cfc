@@ -1,18 +1,24 @@
-<cfcomponent extends="mura.bean.bean" output="false">
+<cfcomponent extends="mura.bean.bean" entityName="changeset" table="tchangesets" output="false">
 
-<cfproperty name="changesetID" type="string" default="" required="true" />
+<cfproperty name="changesetID" fieldtype="id" type="string" default="" required="true" />
 <cfproperty name="siteID" type="string" default="" required="true" />
 <cfproperty name="name" type="string" default="" required="true" />
-<cfproperty name="created" type="date" default="" required="true" />
-<cfproperty name="description" type="string" default="" required="true" />
-<cfproperty name="publishDate" type="date" default="" required="true" />
+<cfproperty name="created" type="date" default="" />
+<cfproperty name="description" type="string" default="" />
+<cfproperty name="publishDate" type="date" default="" />
 <cfproperty name="published" type="numeric" default="0" required="true" />
-<cfproperty name="remoteID" type="string" default="" required="true" />
-<cfproperty name="remoteSourceURL" type="string" default="" required="true" />
-<cfproperty name="remotePubDate" type="date" default="" required="true" />
-<cfproperty name="lastUpdate" type="date" default="" required="true" />
-<cfproperty name="lastUpdateBy" type="string" default="" required="true" />
+<cfproperty name="remoteID" type="string" default="" />
+<cfproperty name="remoteSourceURL" type="string" default="" />
+<cfproperty name="remotePubDate" type="date" default="" />
+<cfproperty name="lastUpdate" type="date" default="" />
+<cfproperty name="lastUpdateBy" type="string" default="" />
+<cfproperty name="closeDate" type="date" default="" />
+<cfproperty name="categoryID" type="string" default="" />
+<cfproperty name="tags" type="string" default="" />
 <cfproperty name="isNew" type="numeric" default="1" required="true" />
+
+<cfset variables.primaryKey = 'changesetID'>
+<cfset variables.entityName = 'changeset'>
 
 <cffunction name="init" output="false">
 	
@@ -30,7 +36,10 @@
 	<cfset variables.instance.remotePubDate = "">
 	<cfset variables.instance.lastUpdate="#now()#"/>
 	<cfset variables.instance.lastUpdateBy=""/>
+	<cfset variables.instance.closeDate=""/>
 	<cfset variables.instance.isNew=1 />
+	<cfset variables.instance.categoryID=""/>
+	<cfset variables.instance.tags=""/>
 	<cfset variables.instance.errors=structNew()>
 	
 	<cfif isDefined("session.mura") and session.mura.isLoggedIn>
@@ -57,8 +66,17 @@
 </cffunction>
 
 <cffunction name="set" returnType="any" output="false" access="public">
-		<cfargument name="data" type="any" required="true">
+		<cfargument name="property" required="true">
+	    <cfargument name="propertyValue">
+	    
+	    <cfif not isDefined('arguments.data')>
+		    <cfif isSimpleValue(arguments.property)>
+		      <cfreturn setValue(argumentCollection=arguments)>
+		    </cfif>
 
+		    <cfset arguments.data=arguments.property>
+	    </cfif>
+	    
 		<cfset var prop="" />
 		<cfset var publishhour="">
 		
@@ -72,31 +90,6 @@
 			<cfloop collection="#arguments.data#" item="prop">
 				<cfset setValue(prop,arguments.data[prop]) />
 			</cfloop>
-			
-			<cfif isDate(variables.instance.publishDate)>
-				
-				<cfif isdefined("arguments.data.publishhour")
-				and isdefined("arguments.data.publishMinute")
-				and isdefined("arguments.data.publishDayPart")>
-				
-					<cfif arguments.data.publishdaypart eq "PM">
-						<cfset publishhour = arguments.data.publishhour + 12>
-						
-						<cfif publishhour eq 24>
-							<cfset publishhour = 12>
-						</cfif>
-					<cfelse>
-						<cfset publishhour = arguments.data.publishhour>
-						
-						<cfif publishhour eq 12>
-							<cfset publishhour = 0>
-						</cfif>
-					</cfif>
-					
-					<cfset setpublishDate(createDateTime(year(variables.instance.publishDate), month(variables.instance.publishDate), day(variables.instance.publishDate), publishhour, arguments.data.publishMinute, "0"))>
-			
-				</cfif>
-			</cfif>
 			
 		</cfif>
 		
@@ -140,6 +133,12 @@
 	<cfreturn this>
 </cffunction>
 
+<cffunction name="setCloseDate" access="public" output="false">
+	<cfargument name="closeDate" type="String" />
+	<cfset variables.instance.closeDate = parseDateArg(arguments.closeDate) />
+	<cfreturn this>
+</cffunction>
+
 <cffunction name="setLastUpdateBy" access="public" output="false">
 	<cfargument name="lastUpdateBy" type="String" />
 	<cfset variables.instance.lastUpdateBy = left(trim(arguments.lastUpdateBy),50) />
@@ -170,5 +169,67 @@
 <cffunction name="delete" output="false" access="public">
 	<cfset variables.changesetManager.delete(getChangesetID()) />
 </cffunction>
+
+<cffunction name="getPrimaryKey" output="false">
+	<cfreturn "changesetID">
+</cffunction>
+
+<cffunction name="setCategoryID" access="public" output="false">
+	<cfargument name="categoryID" type="String" />
+	<cfargument name="append" type="boolean" default="false" required="true" />
+	<cfset var i="">
+	
+    <cfif not arguments.append>
+		<cfset variables.instance.categoryID = trim(arguments.categoryID) />
+	<cfelse>
+		<cfloop list="#arguments.categoryID#" index="i">
+		<cfif not listFindNoCase(variables.instance.categoryID,trim(i))>
+	    	<cfset variables.instance.categoryID = listAppend(variables.instance.categoryID,trim(i)) />
+	    </cfif>
+	    </cfloop> 
+	</cfif>
+	<cfreturn this>
+</cffunction>
+
+<cffunction name="hasPendingApprovals" output="false">
+		<cfreturn variables.changesetManager.hasPendingApprovals(getValue('changesetID'))>
+</cffunction>
+
+<cffunction name="getAssignmentsIterator" output="false">
+		<cfreturn variables.changesetManager.getAssignmentsIterator(getValue('changesetID'))>
+</cffunction>
+
+<cffunction name="getAssignmentsQuery" output="false">
+		<cfreturn variables.changesetManager.getAssignmentsQuery(getValue('changesetID'))>
+</cffunction>
+
+<cffunction name="rollback" output="false">
+	<cfif variables.instance.published>
+		<cfset var it=getBean('changesetRollBack')
+			.getFeed()
+			.setNextN(0)
+			.setSiteID(getValue('siteID'))
+			.addParam(column='changesetID',criteria=getValue('changesetID'))
+			.getIterator()>
+
+		<cfif it.hasNext()>
+			<cfloop condition="it.hasNext()">
+				<cfset it.next().rollback()>
+			</cfloop>
+		</cfif>	
+	</cfif>
+
+	<cfset variables.instance.published=0>
+	<cfset variables.instance.publishDate="">
+	<cfset save()>
+	<!---<cfdump var="#variables.instance.published#" abort="true">--->
+
+	<cfreturn this>
+</cffunction>
+
+<cffunction name="getFeed" access="public" returntype="any" output="false">
+	<cfreturn getBean("beanFeed").setSiteID(getValue('siteid')).setEntityName('changeset').setTable('tchangesets').setOrderBy('name asc')>
+</cffunction>
+
 
 </cfcomponent>

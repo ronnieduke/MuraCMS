@@ -76,9 +76,19 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 </cffunction>
 
 <cffunction name="set" output="false" access="public">
-		<cfargument name="data" type="any" required="true">
+		<cfargument name="property" required="true">
+		<cfargument name="propertyValue">  	
+		
+		<cfif not isDefined('arguments.data')>
+			<cfif isSimpleValue(arguments.property)>
+				<cfreturn setValue(argumentCollection=arguments)>
+			</cfif>
+
+			<cfset arguments.data=arguments.property>
+		</cfif>
 
 		<cfset var prop=""/>
+		<cfset var tempFunc="">
 		
 		<cfif isquery(arguments.data)>
 		
@@ -103,7 +113,8 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<!--- <cfdump var="#arguments.data#"><cfabort> --->
 			<cfloop collection="#arguments.data#" item="prop">
 				<cfif isdefined("variables.instance.#prop#")>
-					<cfset evaluate("set#prop#(arguments.data[prop])") />
+					<cfset tempFunc=this["set#prop#"]>
+          			<cfset tempFunc(arguments.data['#prop#'])>
 				</cfif>
 			</cfloop>
 			
@@ -207,8 +218,12 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 
 <cffunction name="setIsActive" access="public" output="false">
 	<cfargument name="IsActive" />
-	<cfif isNumeric(arguments.isActive)>
-		<cfset variables.instance.IsActive = arguments.IsActive />
+	<cfif isBoolean(arguments.IsActive)>
+		<cfif arguments.IsActive>
+			<cfset variables.instance.IsActive = 1 />
+		<cfelse>
+			<cfset variables.instance.IsActive = 0 />
+		</cfif>
 	</cfif>
 	<cfreturn this>
 </cffunction>
@@ -310,10 +325,10 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 
 <cffunction name="load"  access="public" output="false">
 <cfset var rs=""/>
-	<cfquery name="rs" datasource="#variables.configBean.getReadOnlyDatasource()#" username="#variables.configBean.getReadOnlyDbUsername()#" password="#variables.configBean.getReadOnlyDbPassword()#">
+	<cfquery attributeCollection="#variables.configBean.getReadOnlyQRYAttrs(name='rs')#">
 	select * from tclassextendattributes where 
 	<cfif getAttributeID()>
-	attributesID=<cfqueryparam cfsqltype="cf_sql_numeric" value="#getAttributeID()#">
+	attributeID=<cfqueryparam cfsqltype="cf_sql_numeric" value="#getAttributeID()#">
 	<cfelse>
 	extendSetID=<cfqueryparam cfsqltype="cf_sql_char" maxlength="35" value="#getExtendSetID()#">
 	and name=<cfqueryparam cfsqltype="cf_sql_varchar" maxlength="50" value="#getName()#">
@@ -333,7 +348,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	
 	<cfif getAttributeID()>
 		
-		<cfquery datasource="#variables.configBean.getDatasource()#" username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
+		<cfquery>
 		update tclassextendattributes set
 		ExtendSetID=<cfqueryparam cfsqltype="cf_sql_varchar" null="#iif(getExtendSetID() neq '',de('no'),de('yes'))#" value="#getExtendSetID()#">,
 		siteID=<cfqueryparam cfsqltype="cf_sql_varchar" null="#iif(getSiteID() neq '',de('no'),de('yes'))#" value="#getSiteID()#">,
@@ -357,7 +372,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	
 		<cflock name="addingAttribute#application.instanceID#" timeout="100">
 			
-			<cfquery datasource="#variables.configBean.getDatasource()#" username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
+			<cfquery>
 			Insert into tclassextendattributes (ExtendSetID,siteID,name,hint,type,isActive,orderno,required,validation,regex,message,label,defaultValue,optionList,optionLabelList) 
 			values(
 			<cfqueryparam cfsqltype="cf_sql_varchar" null="#iif(getExtendSetID() neq '',de('no'),de('yes'))#" value="#getExtendSetID()#">,
@@ -397,7 +412,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cfset var fileManager=getBean("fileManager") />	
 <cfset var rs =""/>
 	
-	<cfquery name="rs" datasource="#variables.configBean.getReadOnlyDatasource()#" username="#variables.configBean.getReadOnlyDbUsername()#" password="#variables.configBean.getReadOnlyDbPassword()#">
+	<cfquery attributeCollection="#variables.configBean.getReadOnlyQRYAttrs(name='rs')#">
 	select attributeValue,baseID from tclassextenddata
 	inner join tclassextendattributes on (tclassextenddata.attributeID=tclassextendattributes.attributeID)
 	where tclassextenddata.attributeID=<cfqueryparam cfsqltype="cf_sql_numeric"  value="#getAttributeID()#">
@@ -409,12 +424,12 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<cfset fileManager.deleteIfNotUsed(rs.attributeValue,rs.baseID) />
 	</cfloop>
 	
-	<cfquery datasource="#variables.configBean.getDatasource()#" username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
+	<cfquery>
 	delete from tclassextenddata
 	where attributeID=<cfqueryparam cfsqltype="cf_sql_numeric"  value="#getAttributeID()#">
 	</cfquery>
 	
-	<cfquery name="rs" datasource="#variables.configBean.getReadOnlyDatasource()#" username="#variables.configBean.getReadOnlyDbUsername()#" password="#variables.configBean.getReadOnlyDbPassword()#">
+	<cfquery attributeCollection="#variables.configBean.getReadOnlyQRYAttrs(name='rs')#">
 	select attributeValue,baseID from tclassextenddatauseractivity
 	inner join tclassextendattributes on (tclassextenddatauseractivity.attributeID=tclassextendattributes.attributeID)
 	where tclassextenddatauseractivity.attributeID=<cfqueryparam cfsqltype="cf_sql_numeric"  value="#getAttributeID()#">
@@ -426,12 +441,12 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<cfset fileManager.deleteIfNotUsed(rs.attributeValue,rs.baseID) />
 	</cfloop>
 	
-	<cfquery datasource="#variables.configBean.getDatasource()#" username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
+	<cfquery>
 	delete from tclassextenddatauseractivity
 	where attributeID=<cfqueryparam cfsqltype="cf_sql_numeric"  value="#getAttributeID()#">
 	</cfquery>
 	
-	<cfquery datasource="#variables.configBean.getDatasource()#" username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
+	<cfquery>
 	delete from tclassextendattributes
 	where attributeID=<cfqueryparam cfsqltype="cf_sql_numeric"  value="#getAttributeID()#">
 	</cfquery>
@@ -441,6 +456,9 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 
 <cffunction name="renderAttribute" output="false" returntype="string">
 <cfargument name="theValue" required="true" default="useMuraDefault"/>
+<cfargument name="bean" default=""/>
+<cfargument name="compactDisplay" default="false">
+<cfargument name="size" default="medium">
 <cfset var renderValue= arguments.theValue />
 <cfset var optionValue= "" />
 <cfset var str=""/>
@@ -454,16 +472,21 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfset renderValue=variables.contentRenderer.setDynamicContent(getDefaultValue()) />
 </cfif>
 
-<cfif getValidation() eq "Date">
-	<cfset renderValue=lsDateFormat(renderValue,session.dateKeyFormat) />
-</cfif>
-
 <cfswitch expression="#getType()#">
 <cfcase value="Hidden">
 <cfsavecontent variable="str"><cfoutput><input type="hidden" name="#key#" id="#key#" data-label="#XMLFormat(getlabel())#" value="#HTMLEditFormat(renderValue)#" /></cfoutput></cfsavecontent>
 </cfcase>
 <cfcase value="TextBox,Text">
-<cfsavecontent variable="str"><cfoutput><input type="text" name="#key#" class="text<cfif getValidation() eq 'date'> datepicker<cfelseif getValidation() eq 'Color'> colorpicker</cfif>" id="#key#" data-label="#XMLFormat(getlabel())#" value="#HTMLEditFormat(renderValue)#" data-required="#getRequired()#"<cfif len(getvalidation())> data-validate="#getValidation()#"</cfif><cfif getvalidation() eq "Regex"> data-regex="#getRegex()#"</cfif><cfif len(getMessage())> data-message="#XMLFormat(getMessage())#"</cfif> /></cfoutput></cfsavecontent>
+<cfif getValidation() neq 'datetime'>
+	<cfif getValidation() eq "date">
+		<cfset renderValue=lsDateFormat(renderValue,session.dateKeyFormat) />
+	</cfif>
+	<cfsavecontent variable="str">
+	<cfoutput><input type="text" name="#key#" class="text<cfif getValidation() eq 'date'> datepicker<cfelseif getValidation() eq 'Color'> colorpicker</cfif>" id="#key#" data-label="#XMLFormat(getlabel())#" value="#HTMLEditFormat(renderValue)#" data-required="#getRequired()#"<cfif len(getvalidation())> data-validate="#getValidation()#"</cfif><cfif getvalidation() eq "Regex"> data-regex="#getRegex()#"</cfif><cfif len(getMessage())> data-message="#XMLFormat(getMessage())#"</cfif> /></cfoutput>
+	</cfsavecontent>
+<cfelse>
+	<cfsavecontent variable="str"><cfoutput><cf_datetimeselector name="#key#" datetime="#renderValue#" id="#key#" label="#getlabel()#" required="#getRequired()#" validation="#getValidation()#" regex="#getRegex()#" message="#getMessage()#"></cfoutput></cfsavecontent>
+</cfif>
 </cfcase>
 <cfcase value="TextArea,HTMLEditor">
 <cfsavecontent variable="str"><cfoutput><textarea name="#key#" id="#key#" data-label="#XMLFormat(getlabel())#" data-required="#getRequired()#"<cfif len(getMessage())> data-message="#XMLFormat(getMessage())#"</cfif><cfif getType() eq "HTMLEditor"> class="htmlEditor"</cfif><cfif len(getvalidation())> data-validate="#getValidation()#"</cfif><cfif getvalidation() eq "Regex"> data-regex="#getRegex()#"</cfif>>#HTMLEditFormat(renderValue)#</textarea></cfoutput></cfsavecontent>
@@ -479,11 +502,54 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cfsavecontent variable="str"><cfoutput><cfif listLen(optionlist,'^')><cfloop from="1" to="#listLen(optionlist,'^')#" index="o"><cfset optionValue=listGetAt(optionlist,o,'^') /><input type="radio" id="#key#" name="#key#" value="#XMLFormat(optionValue)#"<cfif optionValue eq renderValue> checked="checked"</cfif> /> <cfif len(optionlabellist)>#listGetAt(optionlabellist,o,'^')#<cfelse>#optionValue#</cfif> </cfloop></cfif></cfoutput></cfsavecontent>
 </cfcase>
 <cfcase value="File">
+<cfif isObject(arguments.bean)>
+<cfsavecontent variable="str"><cfoutput><cf_fileselector name="#key#" property="#key#" id="#key#" label="#getlabel()#" required="#getRequired()#" validation="#getValidation()#" regex="#getRegex()#" message="#getMessage()#" bean="#arguments.bean#" compactDisplay="#arguments.compactDisplay#"  deleteKey="extDelete#getAttributeID()#" size="#arguments.size#"></cfoutput></cfsavecontent>
+<cfelse>
 <cfsavecontent variable="str"><cfoutput><input type="file" name="#key#" id="#key#" data-label="#XMLFormat(getlabel())#" value="" data-required="#getRequired()#"<cfif len(getvalidation())> data-validate="#getValidation()#"</cfif><cfif getvalidation() eq "Regex"> data-regex="#getRegex()#"</cfif><cfif len(getMessage())> data-message="#XMLFormat(getMessage())#"</cfif>/></cfoutput></cfsavecontent>
+</cfif>
 </cfcase>
 </cfswitch>
 
 <cfreturn str/>
+</cffunction>
+
+<cffunction name="getAllValues" ouput="false">
+	<cfset var extensionData = duplicate(variables.instance) />
+	<cfset structDelete(extensionData,"errors") />
+
+	<cfreturn extensionData />
+</cffunction>	
+
+<cffunction name="getAsXML" ouput="false" returntype="xml">
+	<cfargument name="documentXML">
+	<cfargument name="includeIDs" type="boolean" default="false" >
+	
+	<cfset var extensionData = {} />
+	<cfset var item = "" />
+	<cfset var i = 0 />
+
+	<cfset var xmlAttributes = XmlElemNew( documentXML, "", "attribute" ) />
+
+	<cfset extensionData = duplicate(variables.instance) />
+	<cfset structDelete(extensionData,"errors") />
+	<cfif not(arguments.includeIDs)>
+		<cfset structDelete(extensionData,"extendsetID") />
+	</cfif>
+
+	<cfset structDelete(extensionData,"isNew") />
+	<cfset structDelete(extensionData,"isActive") />
+	<cfset structDelete(extensionData,"siteid") />
+	<!--- Append the personality to the root. --->
+	<cfloop collection="#extensionData#" item="item">
+		<cfif isSimpleValue(extensionData[item])>
+			<cfif arguments.includeIDs or item neq "attributeid">
+				<cfset xmlAttributes.XmlAttributes[lcase(item)] = extensionData[item] />
+			</cfif>
+		</cfif>
+	</cfloop>
+
+	<cfreturn xmlAttributes />	
+
 </cffunction>
 
 </cfcomponent>

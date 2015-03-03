@@ -161,7 +161,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfif ID neq ''>
 		
 		<cfloop condition="ID neq ''">
-				<cfset path =  listAppend(path,"'#ID#'")>
+				<cfset path =  listAppend(path,"#ID#")>
 				<cfquery name="rsCat" datasource="#variables.configBean.getReadOnlyDatasource()#"  username="#variables.configBean.getReadOnlyDbUsername()#" password="#variables.configBean.getReadOnlyDbPassword()#">
 				select parentid from tcontentcategories where categoryid='#ID#' and siteid='#arguments.categoryBean.getSiteID()#'
 				</cfquery>
@@ -231,7 +231,9 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfset var categoryBean=getBean("categoryBean") />
 	<cfset var pluginEvent = createObject("component","mura.event").init(arguments.data) />
 	<cfset var parentBean="">
+
 	<cfset categoryBean.set(arguments.data) />
+	<cfset var addObjects=categoryBean.getAddObjects()>
 	<cfset categoryBean.validate()>
 
 	<cfset pluginEvent.setValue("categoryBean",categoryBean)>
@@ -266,6 +268,17 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		
 		<cfset variables.utility.logEvent("CategoryID:#categoryBean.getCategoryID()# Name:#categoryBean.getName()# was created","mura-content","Information",true) />
 		<cfset variables.DAO.create(categoryBean) />
+
+		<cfscript>
+			if(arrayLen(addObjects)){
+				for(var obj in addObjects){	
+					obj.save();
+				}
+			}
+
+			categoryBean.setAddObjects([]);
+			categoryBean.setRemoveObjects([]);
+		</cfscript>
 		
 		<cfset variables.trashManager.takeOut(categoryBean)>
 		<cfset categoryBean.setIsNew(0)>
@@ -291,6 +304,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 			select categoryID from tcontentcategories 
 			where categoryID != <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.categoryBean.getCategoryID()#">
 			and filename=<cfqueryparam cfsqltype="cf_sql_varchar" value="#tempFilename#">
+			and siteid=<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.categoryBean.getSiteID()#">
 		</cfquery>
 		<cfif rsCheck.recordcount>
 			<cfset count=count+1>
@@ -311,6 +325,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfargument name="name" required="true" default=""/>
 	<cfargument name="remoteID" required="true" default=""/>
 	<cfargument name="filename" required="true" default=""/>
+	<cfargument name="urltitle" required="true" default=""/>
 	<cfargument name="siteID" required="true" default=""/>
 	<cfargument name="categoryBean" required="true" default=""/>		
 	<cfset var key= "" />
@@ -318,7 +333,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfset var cacheFactory="">
 	<cfset var bean=arguments.categoryBean>	
 	
-	<cfif not len(arguments.siteID) and isdefined("session.siteID")>
+	<cfif isdefined("session.siteID") and not len(arguments.siteID)>
 		<cfset arguments.siteID=session.siteID>
 	</cfif>
 	
@@ -329,6 +344,8 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 			<cfreturn readByRemoteID(arguments.remoteID, arguments.siteID, bean) />
 		<cfelseif len(arguments.filename)>
 			<cfreturn readByFilename(arguments.filename, arguments.siteID, bean) />
+		<cfelseif len(arguments.urltitle)>
+			<cfreturn readByUrlTItle(arguments.urltitle, arguments.siteID, bean) />
 		</cfif>
 	</cfif>
 
@@ -344,6 +361,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 			<cfif not bean.getIsNew()>
 				<cfset cacheFactory.get( key, structCopy(bean.getAllValues()) ) />
 			</cfif>
+			<cfset commitTracePoint(initTracePoint(detail="DATA CACHE MISS: {class: categoryBean, key: #key#}"))>
 			<cfreturn bean/>
 		<cfelse>
 			<cftry>
@@ -351,12 +369,14 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 					<cfset bean=variables.DAO.getBean("category")/>
 				</cfif>
 				<cfset bean.setAllValues( structCopy(cacheFactory.get( key )) )>
+				<cfset commitTracePoint(initTracePoint(detail="DATA CACHE HIT: {class: categoryBean, key: #key#}"))>
 				<cfreturn bean />
 				<cfcatch>
 					<cfset bean=variables.DAO.read(arguments.categoryID,bean)>
 					<cfif not bean.getIsNew()>
 						<cfset cacheFactory.get( key, structCopy(bean.getAllValues()) ) />
 					</cfif>
+					<cfset commitTracePoint(initTracePoint(detail="DATA CACHE HIT: {class: categoryBean, key: #key#}"))>
 					<cfreturn bean/>
 				</cfcatch>
 			</cftry>
@@ -384,6 +404,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 			<cfif not isArray(bean) and not bean.getIsNew()>
 				<cfset cacheFactory.get( key, structCopy(bean.getAllValues()) ) />
 			</cfif>
+			<cfset commitTracePoint(initTracePoint(detail="DATA CACHE MISS: {class: categoryBean, key: #key#}"))>
 			<cfreturn bean/>
 		<cfelse>
 			<cftry>
@@ -391,18 +412,63 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 					<cfset bean=variables.DAO.getBean("category")/>
 				</cfif>
 				<cfset bean.setAllValues( structCopy(cacheFactory.get( key )) )>
+				<cfset commitTracePoint(initTracePoint(detail="DATA CACHE HIT: {class: categoryBean, key: #key#}"))>
 				<cfreturn bean />
 				<cfcatch>
 					<cfset bean=variables.DAO.readByName(arguments.name,arguments.siteID,bean) >
 					<cfif not isArray(bean) and not bean.getIsNew()>
 						<cfset cacheFactory.get( key, structCopy(bean.getAllValues()) ) />
 					</cfif>
+					<cfset commitTracePoint(initTracePoint(detail="DATA CACHE HIT: {class: categoryBean, key: #key#}"))>
 					<cfreturn bean/>
 				</cfcatch>
 			</cftry>
 		</cfif>
 	<cfelse>
 		<cfreturn variables.DAO.readByName(arguments.name,arguments.siteID,bean) />
+	</cfif>	
+
+</cffunction>
+
+<cffunction name="readByURLTitle" access="public" returntype="any" output="false">
+	<cfargument name="urlTitle" type="String" />		
+	<cfargument name="siteid" type="string" />
+	<cfargument name="categoryBean" required="true" default=""/>
+	<cfset var key= "category" & arguments.siteid & arguments.urlTitle />
+	<cfset var site=variables.settingsManager.getSite(arguments.siteid)/>
+	<cfset var cacheFactory=site.getCacheFactory(name="data")>
+	<cfset var bean=arguments.categoryBean>	
+	
+	<cfif site.getCache()>
+		<!--- check to see if it is cached. if not then pass in the context --->
+		<!--- otherwise grab it from the cache --->
+		<cfif NOT cacheFactory.has( key )>
+			<cfset bean=variables.DAO.readByURLTitle(arguments.urlTitle,arguments.siteID,bean) >
+			<cfif not isArray(bean) and not bean.getIsNew()>
+				<cfset cacheFactory.get( key, structCopy(bean.getAllValues()) ) />
+			</cfif>
+			<cfset commitTracePoint(initTracePoint(detail="DATA CACHE MISS: {class: categoryBean, key: #key#}"))>
+			<cfreturn bean/>
+		<cfelse>
+			<cftry>
+				<cfif not isObject(bean)>
+					<cfset bean=variables.DAO.getBean("category")/>
+				</cfif>
+				<cfset bean.setAllValues( structCopy(cacheFactory.get( key )) )>
+				<cfset commitTracePoint(initTracePoint(detail="DATA CACHE HIT: {class: categoryBean, key: #key#}"))>
+				<cfreturn bean />
+				<cfcatch>
+					<cfset bean=variables.DAO.readByURLTitle(arguments.urlTitle,arguments.siteID,bean) >
+					<cfif not isArray(bean) and not bean.getIsNew()>
+						<cfset cacheFactory.get( key, structCopy(bean.getAllValues()) ) />
+					</cfif>
+					<cfset commitTracePoint(initTracePoint(detail="DATA CACHE HIT: {class: categoryBean, key: #key#}"))>
+					<cfreturn bean/>
+				</cfcatch>
+			</cftry>
+		</cfif>
+	<cfelse>
+		<cfreturn variables.DAO.readByURLTitle(arguments.urlTitle,arguments.siteID,bean) />
 	</cfif>	
 
 </cffunction>
@@ -446,6 +512,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 			<cfif not isArray(bean) and not bean.getIsNew()>
 				<cfset cacheFactory.get( key, structCopy(bean.getAllValues()) ) />
 			</cfif>
+			<cfset commitTracePoint(initTracePoint(detail="DATA CACHE MISS: {class: categoryBean, key: #key#}"))>
 			<cfreturn bean/>
 		<cfelse>
 			<cftry>
@@ -453,12 +520,14 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 					<cfset bean=variables.DAO.getBean("category")/>
 				</cfif>
 				<cfset bean.setAllValues( structCopy(cacheFactory.get( key )) )>
+				<cfset commitTracePoint(initTracePoint(detail="DATA CACHE HIT: {class: categoryBean, key: #key#}"))>
 				<cfreturn bean />
 				<cfcatch>
 					<cfset bean=variables.DAO.readByFilename(arguments.filename,arguments.siteID,bean) >
 					<cfif not isArray(bean) and not bean.getIsNew()>
 						<cfset cacheFactory.get( key, structCopy(bean.getAllValues()) ) />
 					</cfif>
+					<cfset commitTracePoint(initTracePoint(detail="DATA CACHE HIT: {class: categoryBean, key: #key#}"))>
 					<cfreturn bean/>
 				</cfcatch>
 			</cftry>
@@ -486,6 +555,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 			<cfif not isArray(bean) and not bean.getIsNew()>
 				<cfset cacheFactory.get( key, structCopy(bean.getAllValues()) ) />
 			</cfif>
+			<cfset commitTracePoint(initTracePoint(detail="DATA CACHE MISS: {class: categoryBean, key: #key#}"))>
 			<cfreturn bean/>
 		<cfelse>
 			<cftry>
@@ -493,12 +563,14 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 					<cfset bean=variables.DAO.getBean("category")/>
 				</cfif>
 				<cfset bean.setAllValues( structCopy(cacheFactory.get( key )) )>
+				<cfset commitTracePoint(initTracePoint(detail="DATA CACHE HIT: {class: categoryBean, key: #key#}"))>
 				<cfreturn bean />
 				<cfcatch>
 					<cfset bean=variables.DAO.readByRemoteID(arguments.remoteID,arguments.siteID,bean) >
 					<cfif not isArray(bean) and not bean.getIsNew()>
 						<cfset cacheFactory.get( key, structCopy(bean.getAllValues()) ) />
 					</cfif>
+					<cfset commitTracePoint(initTracePoint(detail="DATA CACHE HIT: {class: categoryBean, key: #key#}"))>
 					<cfreturn bean/>
 				</cfcatch>
 			</cftry>
@@ -531,6 +603,10 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		</cfif>
 		<cfif len(arguments.categoryBean.getFilename())>
 			<cfset cache.purge("category" & arguments.categoryBean.getSiteID() & arguments.categoryBean.getFilename())>
+		</cfif>
+
+		<cfif len(arguments.categoryBean.getURLTitle())>
+			<cfset cache.purge("category" & arguments.categoryBean.getSiteID() & arguments.categoryBean.getURLTitle())>
 		</cfif>
 		
 		<cfif arguments.broadcast>
@@ -588,6 +664,8 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfset currentPath=categoryBean.getPath() />
 	
 	<cfset pluginEvent.setValue("categoryBean",categoryBean)>
+	<cfset var addObjects=categoryBean.getAddObjects()>
+	<cfset var removeObjects=categoryBean.getRemoveObjects()>
 	<cfset pluginEvent.setValue("siteID", categoryBean.getSiteID())>
 	<cfset variables.pluginManager.announceEvent("onBeforeCategorySave",pluginEvent)>
 	<cfset variables.pluginManager.announceEvent("onBeforeCategoryUpdate",pluginEvent)>
@@ -629,6 +707,26 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		
 		<cfset categoryBean.setLastUpdateBy(left(session.mura.fname & " " & session.mura.lname,50)) />
 		<cfset variables.DAO.update(categoryBean) />
+
+		<cfscript>
+			var obj='';
+
+			if(arrayLen(addObjects)){
+				for(obj in addObjects){	
+					obj.save();
+				}
+			}
+
+			if(arrayLen(removeObjects)){
+				for(obj in removeObjects){	
+					obj.delete();
+				}
+			}
+
+			categoryBean.setAddObjects([]);
+			categoryBean.setRemoveObjects([]);
+		</cfscript>
+
 		<cfif isdefined('arguments.data.OrderID')>
 			<cfset setListOrder(categoryBean.getCategoryID(),arguments.data.OrderID,arguments.data.Orderno,arguments.data.siteID) />
 		</cfif>
@@ -703,13 +801,14 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	
 	<cfloop query="rsCategories">
 		<cfif isdefined('arguments.data.categoryAssign#replace(rsCategories.categoryID,'-','','ALL')#')
+		and listFind(arguments.data.categoryid,rsCategories.categoryID)
 		and arguments.data['categoryAssign#replace(rsCategories.categoryID,'-','','ALL')#'] neq ''>
 		
 		<cfset catTrim=replace(rsCategories.categoryID,'-','','ALL') />
 		
 			<cfset isFeature=arguments.data['categoryAssign#catTrim#'] />
 			
-			
+			<!---
 			<cfif isFeature>
 			
 				<cfset orderno = variables.DAO.getCurrentOrderNO(rsCategories.categoryID,arguments.contentid,arguments.siteid) />
@@ -719,15 +818,20 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 				</cfif>
 				
 			</cfif>
-			
+			--->
 			<cfif isFeature eq 2>
 				<cfset schedule.featureStart=arguments.data['featureStart#catTrim#'] />
 				<cfset schedule.starthour=arguments.data['starthour#catTrim#'] />
 				<cfset schedule.startMinute=arguments.data['startMinute#catTrim#'] />
+
+				<cfparam name="arguments.data.startDayPart#catTrim#" default="" />
 				<cfset schedule.startDayPart=arguments.data['startDayPart#catTrim#'] />
+				
 				<cfset schedule.featureStop=arguments.data['featureStop#catTrim#'] />
 				<cfset schedule.stopHour=arguments.data['stopHour#catTrim#'] />
 				<cfset schedule.stopMinute=arguments.data['stopMinute#catTrim#'] />
+				
+				<cfparam name="arguments.data.stopDayPart#catTrim#" default="" />
 				<cfset schedule.stopDayPart=arguments.data['stopDayPart#catTrim#'] />
 			<cfelse>
 				<cfset schedule.featureStart="" />

@@ -48,7 +48,6 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 
 <cffunction name="init" access="public" returntype="any" output="false">
 <cfargument name="configBean" type="any" required="yes"/>
-<cfargument name="advertiserGateway" type="any" required="yes"/>
 <cfargument name="userGateway" type="any" required="yes"/>
 <cfargument name="contentGateway" type="any" required="yes"/>
 <cfargument name="sessionTrackingGateway" type="any" required="yes"/>
@@ -58,7 +57,6 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cfargument name="feedGateway" type="any" required="yes"/>
 
 		<cfset variables.configBean=arguments.configBean />
-		<cfset variables.advertiserGateway=arguments.advertiserGateway />
 		<cfset variables.userGateway=arguments.userGateway />
 		<cfset variables.contentGateway=arguments.contentGateway />
 		<cfset variables.sessionTrackingGateway=arguments.sessionTrackingGateway />
@@ -331,11 +329,11 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfargument name="beforeDate"/>
 	
 	<cfset var rs = "" />
-	<cfquery name="rs" datasource="#variables.configBean.getReadOnlyDatasource()#"  username="#variables.configBean.getReadOnlyDbUsername()#" password="#variables.configBean.getReadOnlyDbPassword()#">
+	<cfquery attributeCollection="#variables.configBean.getReadOnlyQRYAttrs(name='rs')#">
 	select max(entered) as lastRequest
 	from tsessiontracking 
 	where originalUrlToken=<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.originalUrlToken#"/>
-	and urlToken != <cfqueryparam cfsqltype="cf_sql_varchar" value="#urlToken#"/>
+	and urlToken <> <cfqueryparam cfsqltype="cf_sql_varchar" value="#urlToken#"/>
 	and entered < <cfqueryparam cfsqltype="cf_sql_timestamp" value="#LSDateFormat(arguments.beforeDate,'mm/dd/yyyy')#">
 	</cfquery>
 	
@@ -359,6 +357,22 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<cfreturn rs.fname & " " & rs.lname />
 	<cfelse>
 		<cfreturn "Anonymous" />
+	</cfif>
+</cffunction>
+
+<cffunction name="getUserAgentFromSessionQuery" access="public" returntype="String">
+	<cfargument name="rsSession"/>
+	
+	<cfset var rs = "" />
+	
+	<cfquery name="rs" dbType="query">
+	select user_agent from arguments.rsSession where user_agent > ''
+	</cfquery>
+	
+	<cfif rs.recordcount>
+		<cfreturn rs.user_agent />
+	<cfelse>
+		<cfreturn "unknown" />
 	</cfif>
 </cffunction>
 

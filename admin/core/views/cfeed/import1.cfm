@@ -44,13 +44,16 @@ For clarity, if you create a modified version of Mura CMS, you are not obligated
 modified version; it is your choice whether to do so, or to make such modified version available under the GNU General Public License 
 version 2 without this exception.  You may, if you choose, apply this exception to your own modified versions of Mura CMS.
 --->
+<cfset rc.formatsupported=true>
 <cfinclude template="js.cfm">
 <cfoutput>
-<h2>#application.rbFactory.getKeyValue(session.rb,'collections.remotefeedimportselection')#</h2>
+<h1>#application.rbFactory.getKeyValue(session.rb,'collections.remotefeedimportselection')#</h1>
 
-<form novalidate="novalidate" action="index.cfm?muraAction=cFeed.import2&feedid=#URLEncodedFormat(rc.feedid)#&siteid=#URLEncodedFormat(rc.siteid)#" method="post" name="contentForm" onsubmit="return false;">
+<cfinclude template="dsp_secondary_menu.cfm">
+
+<form novalidate="novalidate" action="./?muraAction=cFeed.import2&feedid=#esapiEncode('url',rc.feedid)#&siteid=#esapiEncode('url',rc.siteid)#" method="post" name="contentForm" onsubmit="return false;">
 	<cfset feedBean=application.feedManager.read(rc.feedID) />
-	<h3>#feedBean.getName()#</h3>
+	<h2>#feedBean.getName()#</h2>
 		</cfoutput>
 		
 	<CFHTTP url="#feedBean.getChannelLink()#" method="GET" resolveurl="Yes" throwOnError="Yes" />
@@ -66,15 +69,15 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 			</cfif>
 		
 <cfloop from="1" to="#maxItems#" index="i">
-			<cfsilent>
+		<cfsilent>
 		<cftry>
-		 <cfset remoteID=left(items[i].guid.xmlText,255) />
-		 <cfcatch>
-		  <cfset remoteID=left(items[i].link.xmlText,255) />
-		 </cfcatch>
-		 </cftry>
+			<cfset remoteID=hash(left(items[i].guid.xmlText,255)) />
+			<cfcatch>
+				<cfset remoteID=hash(left(items[i].link.xmlText,255)) />
+			</cfcatch>
+		</cftry>
 		 
-			<cfset rc.newBean=application.contentManager.getActiveByRemoteID(remoteID,rc.siteid) />
+		<cfset rc.newBean=application.contentManager.getActiveByRemoteID(remoteID,rc.siteid) />
 		
 		</cfsilent>
 		<cfif not (not rc.newBean.getIsNew() and (items[i].pubDate.xmlText eq rc.newBean.getRemotePubDate())) >
@@ -82,7 +85,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		
 			<cfoutput>
 				<dl class="oneColumn">
-				<dt><a href="#items[i].link.xmlText#" target="_blank">#items[i].title.xmlText#<cfif not rc.newBean.getIsNew()> [#application.rbFactory.getKeyValue(session.rb,'collections.update')#]</cfif></a>&nbsp;&nbsp;#application.rbFactory.getKeyValue(session.rb,'collections.import')# <input name="remoteID" value="#remoteID#" type="checkbox" checked /></dt>
+				<dt><a href="#esapiEncode('html_attr',items[i].link.xmlText)#" target="_blank">#esapiEncode('html',items[i].title.xmlText)#<cfif not rc.newBean.getIsNew()> [#application.rbFactory.getKeyValue(session.rb,'collections.update')#]</cfif></a>&nbsp;&nbsp;#application.rbFactory.getKeyValue(session.rb,'collections.import')# <input name="remoteID" value="#esapiEncode('html_attr',remoteID)#" type="checkbox" checked /></dt>
 				<dd>#items[i].description.xmlText#</dd>
 			<!---	<cfinclude template="dsp_categories_import_nest.cfm">--->
 				</dl>
@@ -92,9 +95,14 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		
 		</cfcase>
 		<cfcase value="atom">
-			<cfoutput><p>#application.rbFactory.getKeyValue(session.rb,'collections.formatnosupported')#</p></cfoutput>
+			<cfset rc.formatsupported=false>
+			<cfoutput><p>#application.rbFactory.getKeyValue(session.rb,'collections.formatnotsupport')#</p></cfoutput>
 		</cfcase>
 	</cfswitch>
-	<cfoutput><input type="button" class="submit" onclick="confirmImport();" value="#application.rbFactory.getKeyValue(session.rb,'collections.import')#" /></cfoutput>
+	<cfif rc.formatsupported>
+	<div class="form-actions">
+	<cfoutput><input type="button" class="btn" onclick="feedManager.confirmImport();" value="#application.rbFactory.getKeyValue(session.rb,'collections.import')#" /></cfoutput>
+	</div>
 	<input type="hidden" name="action" value="import" />
+	</cfif>
 </form>
